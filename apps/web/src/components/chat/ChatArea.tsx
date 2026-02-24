@@ -78,6 +78,7 @@ interface ChatAreaProps {
   onOpenThread?: (message: ApiMessage) => void;
   workspaceMembers?: MentionUser[];
   onNewReply?: (msg: ApiMessage) => void;
+  onBack?: () => void;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -108,7 +109,7 @@ const TYPING_STOP_MS = 3_000;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply }: ChatAreaProps) {
+export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onBack }: ChatAreaProps) {
   const { token, user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1159,6 +1160,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       {ImageModal}
       {/* Header */}
       <div className="h-16 w-full bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+        {/* Mobile back button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Back to sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <h2 className="text-white font-semibold truncate"># {channelName}</h2>
         </div>

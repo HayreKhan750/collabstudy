@@ -466,6 +466,10 @@ export default function DashboardPage() {
                   conversationId={selectedConversation.id}
                   recipient={recipient}
                   onlineUserIds={onlineUserIds}
+                  onBack={() => {
+                    setSelectedConversation(null);
+                    setMobileSidebarOpen(true);
+                  }}
                   onStartCall={(targetUserId, targetName) => {
                     const roomId = [user?.id, targetUserId].sort().join('_');
                     setOutgoingCall({ targetUserId, targetName, roomId });
@@ -483,6 +487,10 @@ export default function DashboardPage() {
                 onOpenThread={(msg) => setActiveThread(msg)}
                 workspaceMembers={workspaceMembers}
                 onNewReply={(msg) => setPendingThreadReply(msg)}
+                onBack={() => {
+                  setSelectedChannel(null);
+                  setMobileSidebarOpen(true);
+                }}
               />
               {activeThread && (
                 <ThreadPanel
