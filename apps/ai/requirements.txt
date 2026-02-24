@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+redis
+openai
+langchain
+langchain-openai
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+asyncpg
+sqlalchemy
+httpx

@@ -1,0 +1,257 @@
+// CollabStudy Database Schema - Phase 2A: Core Domain Modeling
+// Focus: Foundational infrastructure with proper relational integrity
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+  DO_NOT_DISTURB
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ============================================================================
+// CORE MODELS
+// ============================================================================
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  username     String     @unique
+  passwordHash String
+  fullName     String?
+  avatar       String?
+  status       UserStatus @default(OFFLINE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relationships - DO NOT BREAK EXISTING AUTH
+  ownedWorkspaces      Workspace[]        @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+  messages             Message[]
+  reactions            Reaction[]
+  mentionedIn          Message[]          @relation("MessageMentions")
+  readReceipts         ReadReceipt[]
+
+  // Direct messaging
+  directParticipations DirectParticipant[]
+  directMessagesSent   DirectMessage[]
+  channelMemberships   ChannelMember[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  ownerId   String   @db.Uuid
+  isPublic  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  owner    User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members  WorkspaceMember[]
+  channels Channel[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @db.Uuid
+  workspaceId String        @db.Uuid
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relationships
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Composite unique constraint: one user can only be a member of a workspace once
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model Channel {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  workspaceId String   @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships - Cascade delete when workspace is deleted
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  readReceipts ReadReceipt[]
+  members      ChannelMember[]
+
+  @@index([workspaceId])
+  @@map("channels")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  content   String?  // nullable: file-only messages have no text
+  userId    String   @db.Uuid
+  channelId String   @db.Uuid
+  parentId  String?  @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isEdited  Boolean  @default(false)
+  fileUrl      String?  // public URL to the uploaded file
+  fileType     String?  // MIME type, e.g. 'image/jpeg', 'application/pdf'
+  fileSize     Int?     // file size in bytes
+  originalName String?  // original filename as uploaded
+
+  // Relationships - Cascade delete when user or channel is deleted
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+
+  // Self-relation for threaded replies
+  parent  Message?  @relation("ThreadReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Message[] @relation("ThreadReplies")
+
+  // Implicit many-to-many for mentions
+  mentions User[] @relation("MessageMentions")
+
+  // Read receipts pointing at this message as the last-read
+  readReceipts ReadReceipt[]
+
+  // Indexes for optimized queries
+  @@index([channelId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([channelId, createdAt])
+  @@index([parentId])
+  @@map("messages")
+}
+
+model ReadReceipt {
+  id        String   @id @default(uuid()) @db.Uuid
+  readAt    DateTime @default(now())
+  userId    String   @db.Uuid
+  channelId String   @db.Uuid
+  messageId String   @db.Uuid
+
+  // Relationships - cascade delete when any parent is removed
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  // One read-state record per user per channel (upserted on each read)
+  @@unique([userId, channelId])
+  @@index([channelId])
+  @@index([userId])
+  @@map("read_receipts")
+}
+
+model Reaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  emoji     String
+  userId    String   @db.Uuid
+  messageId String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  // Relationships - Cascade delete when user or message is deleted
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  // One user can only add a given emoji once per message
+  @@unique([userId, messageId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("reactions")
+}
+
+// ============================================================================
+// DIRECT MESSAGING
+// ============================================================================
+
+model DirectConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants DirectParticipant[]
+  messages     DirectMessage[]
+
+  @@map("direct_conversations")
+}
+
+model DirectParticipant {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  conversationId String   @db.Uuid
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime @default(now())
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("direct_participants")
+}
+
+model ChannelMember {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  channelId  String   @db.Uuid
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelId])
+  @@index([userId])
+  @@index([channelId])
+  @@map("channel_members")
+}
+
+model DirectMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  content        String?
+  fileUrl        String?
+  fileType       String?
+  fileSize       Int?
+  originalName   String?
+  senderId       String   @db.Uuid
+  conversationId String   @db.Uuid
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  isEdited       Boolean  @default(false)
+
+  sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("direct_messages")
+}

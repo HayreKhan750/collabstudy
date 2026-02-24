@@ -1,0 +1,10 @@
+{
+  "name": "@collabstudy/ai",
+  "version": "0.1.0",
+  "description": "CollabStudy AI Service - FastAPI Python application",
+  "scripts": {
+    "dev": "uvicorn main:app --reload --port 8000",
+    "start": "uvicorn main:app --host 0.0.0.0 --port 8000",
+    "install": "pip install -r requirements.txt"
+  }
+}

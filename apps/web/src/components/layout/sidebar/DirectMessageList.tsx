@@ -1,0 +1,169 @@
+'use client';
+
+import { motion, AnimatePresence } from 'framer-motion';
+import { DirectConversation } from '@/lib/api';
+import { SidebarTooltip } from './SidebarTooltip';
+
+interface DirectMessageListProps {
+  directConversations: DirectConversation[];
+  selectedConversationId: string | null | undefined;
+  onConversationSelect: (conv: DirectConversation) => void;
+  onNewDM: () => void;
+  onlineUserIds: Set<string>;
+  userId: string | undefined;
+  collapsed: boolean;
+}
+
+function PlusIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
+  );
+}
+
+function UnreadBadge({ count }: { count: number }) {
+  return (
+    <motion.span
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0, opacity: 0 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center leading-none flex-shrink-0"
+    >
+      {count > 99 ? '99+' : count}
+    </motion.span>
+  );
+}
+
+export function DirectMessageList({
+  directConversations,
+  selectedConversationId,
+  onConversationSelect,
+  onNewDM,
+  onlineUserIds,
+  userId,
+  collapsed,
+}: DirectMessageListProps) {
+  // ── Collapsed mode ───────────────────────────────────────────────────────
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center gap-1 py-2 border-t border-white/10">
+        {directConversations.slice(0, 5).map((conv) => {
+          const other = conv.participants.find((p) => p.userId !== userId)?.user;
+          if (!other) return null;
+          const displayName = other.fullName || other.username;
+          const isOnline = onlineUserIds.has(other.id);
+          const isSelected = selectedConversationId === conv.id;
+          return (
+            <SidebarTooltip key={conv.id} label={displayName}>
+              <button
+                onClick={() => onConversationSelect(conv)}
+                className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
+                  ${isSelected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-white/10 text-gray-300 hover:bg-indigo-500/60 hover:text-white'}`}
+              >
+                {displayName.charAt(0).toUpperCase()}
+                {/* Online dot */}
+                <span className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border-2 border-gray-900 ${isOnline ? 'bg-green-400' : 'bg-gray-600'}`} />
+                {/* Unread dot */}
+                <AnimatePresence>
+                  {conv.unreadCount && conv.unreadCount > 0 ? (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center"
+                    >
+                      {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
+              </button>
+            </SidebarTooltip>
+          );
+        })}
+        <SidebarTooltip label="New direct message">
+          <button
+            onClick={onNewDM}
+            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-500/20 text-gray-500 hover:text-purple-400 flex items-center justify-center transition-all duration-150 mx-auto"
+          >
+            <PlusIcon />
+          </button>
+        </SidebarTooltip>
+      </div>
+    );
+  }
+
+  // ── Expanded mode ────────────────────────────────────────────────────────
+  return (
+    <div className="border-t border-white/10 pt-3 pb-2">
+      <div className="flex items-center justify-between px-3 mb-1">
+        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Direct Messages</span>
+        <button
+          onClick={onNewDM}
+          className="p-0.5 rounded text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+          title="New direct message"
+        >
+          <PlusIcon />
+        </button>
+      </div>
+
+      {directConversations.length === 0 ? (
+        <div className="px-3 py-4 flex flex-col items-center text-center gap-2">
+          <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center">
+            <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.112v4.604c0 1.108-.806 2.057-1.907 2.185-.173.02-.347.038-.52.054-.85.065-1.615.304-2.273.686-.325.19-.673-.083-.673-.46V14.25a.75.75 0 01.75-.75h3a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75H6.75A.75.75 0 006 9.75v3c0 .414.336.75.75.75h3a.75.75 0 01.75.75v2.44c0 .377-.348.651-.673.46a6.735 6.735 0 00-2.273-.685 49.141 49.141 0 01-.52-.055C5.556 16.18 4.75 15.23 4.75 14.123V9.518c0-.984.616-1.828 1.5-2.112" />
+            </svg>
+          </div>
+          <p className="text-xs text-gray-500">No direct messages yet</p>
+          <button onClick={onNewDM} className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
+            + Start a conversation
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-0.5 px-1.5">
+          {directConversations.map((conv) => {
+            const other = conv.participants.find((p) => p.userId !== userId)?.user;
+            if (!other) return null;
+            const displayName = other.fullName || other.username;
+            const lastMsg = conv.messages[0];
+            const isSelected = selectedConversationId === conv.id;
+            const isOnline = onlineUserIds.has(other.id);
+
+            return (
+              <button
+                key={conv.id}
+                onClick={() => onConversationSelect(conv)}
+                className={`w-full text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
+                  ${isSelected ? 'bg-indigo-500/20 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+              >
+                {/* Avatar with online dot */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-purple-500/80 flex items-center justify-center text-white text-xs font-semibold">
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-gray-900 ${isOnline ? 'bg-green-400' : 'bg-gray-600'}`} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs truncate ${conv.unreadCount && conv.unreadCount > 0 ? 'font-semibold text-white' : 'font-medium'}`}>
+                    {displayName}
+                  </p>
+                  {lastMsg?.content && (
+                    <p className="text-[11px] text-gray-500 truncate">{lastMsg.content}</p>
+                  )}
+                </div>
+
+                <AnimatePresence>
+                  {conv.unreadCount && conv.unreadCount > 0 ? (
+                    <UnreadBadge count={conv.unreadCount} />
+                  ) : null}
+                </AnimatePresence>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

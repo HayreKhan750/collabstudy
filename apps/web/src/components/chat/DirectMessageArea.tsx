@@ -1,0 +1,703 @@
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { io, Socket } from 'socket.io-client';
+import { api } from '@/lib/api';
+import SummaryModal from './SummaryModal';
+import { MessageBubble, MessageData } from './message/MessageBubble';
+import { TypingIndicator } from './message/TypingIndicator';
+import { UnreadDivider } from './message/UnreadDivider';
+import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+interface DMUser {
+  id: string;
+  username: string;
+  fullName: string | null;
+  avatar: string | null;
+  status?: string;
+}
+
+interface DirectMessage {
+  id: string;
+  content: string | null;
+  fileUrl: string | null;
+  fileType: string | null;
+  fileSize: number | null;
+  originalName: string | null;
+  senderId: string;
+  conversationId: string;
+  createdAt: string;
+  updatedAt: string;
+  isEdited: boolean;
+  sender: DMUser;
+}
+
+interface DirectMessageAreaProps {
+  conversationId: string;
+  onlineUserIds?: Set<string>;
+  recipient: DMUser;
+  onBack?: () => void;
+  /** Called when user clicks the Call button — parent handles WebRTC setup. */
+  onStartCall?: (targetUserId: string, targetName: string) => void;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export default function DirectMessageArea({ conversationId, recipient, onBack, onStartCall, onlineUserIds = new Set() }: DirectMessageAreaProps) {
+  const { token, user } = useAuth();
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{ url: string; type: string; name: string; size: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const socketRef = useRef<Socket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const lastMsgIdRef = useRef<string | null>(null);
+  const summaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isTypingRef = useRef(false);
+  const typingStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── AI Summary modal state ───────────────────────────────────────────────
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryText, setSummaryText] = useState<string | null>(null);
+
+  const handleSummarize = async () => {
+    if (!token) return;
+    setSummaryOpen(true);
+    setSummaryLoading(true);
+    setSummaryText(null);
+
+    // 15-second timeout: if the WS event never fires, fail gracefully
+    if (summaryTimeoutRef.current) clearTimeout(summaryTimeoutRef.current);
+    summaryTimeoutRef.current = setTimeout(() => {
+      setSummaryLoading((stillLoading) => {
+        if (stillLoading) {
+          setSummaryText('⚠️ AI took too long to respond. Please try again.');
+        }
+        return false;
+      });
+      summaryTimeoutRef.current = null;
+    }, 15_000);
+
+    try {
+      // POST to queue the job — result arrives via summary_generated WS event
+      await api.requestDmSummary(token, conversationId);
+      // summaryLoading stays true until the WS event fires (or timeout above)
+    } catch {
+      if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }
+      setSummaryText('⚠️ Failed to queue summary. Please try again.');
+      setSummaryLoading(false);
+    }
+  };
+
+  // ── Unread divider & scroll FAB (Tasks 3 & 4) ───────────────────────────
+  // Capture lastReadAt at mount time so new incoming messages don't shift the divider
+  const lastReadAtRef = useRef<string | null>(null);
+  const unreadDividerRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollFab, setShowScrollFab] = useState(false);
+  const [fabUnreadCount, setFabUnreadCount] = useState(0);
+  const fabScrolledPastDividerRef = useRef(false);
+
+  // ── Fetch messages ───────────────────────────────────────────────────────
+
+  const fetchMessages = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/direct/${conversationId}/messages?limit=50`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setMessages(data.messages ?? []);
+      setNextCursor(data.nextCursor ?? null);
+      setHasMore(!!data.nextCursor);
+      // Capture lastReadAt at mount time — used to place the unread divider
+      if (lastReadAtRef.current === null && data.lastReadAt !== undefined) {
+        lastReadAtRef.current = data.lastReadAt ?? null;
+      }
+    } catch (e) {
+      console.warn('[DM] fetch error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [conversationId, token]);
+
+  useEffect(() => {
+    setMessages([]);
+    lastMsgIdRef.current = null;
+    fetchMessages();
+  }, [conversationId]);
+
+  // ── Auto-scroll & scroll-to-unread divider (Task 3) ─────────────────────
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last) return;
+    if (last.id !== lastMsgIdRef.current) {
+      lastMsgIdRef.current = last.id;
+      // Short delay so images/media have time to paint before scrolling.
+      const tid = setTimeout(() => {
+        if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
+          unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 80);
+      return () => clearTimeout(tid);
+    }
+  }, [messages]);
+
+  // ── Scroll FAB visibility + auto mark-as-read on scroll-to-bottom ──────────
+  // A single scroll listener handles both concerns:
+  //   • Shows/hides the FAB when the user is >120px from the bottom.
+  //   • Debounced (300 ms) mark-as-read call when the user reaches the bottom
+  //     (<10px away). Updates lastReadAtRef immediately so the "Unread messages"
+  //     divider vanishes from the UI without a page refresh.
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !token || !conversationId) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleScroll = () => {
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+
+      // FAB visibility
+      setShowScrollFab(distanceFromBottom > 120);
+
+      // Mark as read when at the bottom — debounced 300 ms to avoid spamming
+      if (distanceFromBottom < 10) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          // Update local ref immediately so the divider disappears instantly
+          lastReadAtRef.current = new Date().toISOString();
+          setFabUnreadCount(0);
+          fabScrolledPastDividerRef.current = false;
+          // Persist to backend (fire-and-forget)
+          api.markDmRead(token, conversationId).catch(() => {});
+        }, 300);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, [conversationId, token]);
+
+  // ── WebSocket ────────────────────────────────────────────────────────────
+  // Uses the same instanceId + deferred-connect pattern as ChatArea to survive
+  // React 18 Strict Mode double-mount without the "WebSocket closed before
+  // connection is established" error.
+
+  useEffect(() => {
+    if (!token || !conversationId || !user?.id) return;
+
+    // Unique symbol for this effect invocation — guards against Strict Mode
+    // cleanup racing with the 50 ms deferred connect.
+    const instanceId = Symbol();
+    let connectTimer: ReturnType<typeof setTimeout>;
+
+    // Tear down any socket left over from a previous conversation/session.
+    const prev = socketRef.current;
+    if (prev) {
+      prev.removeAllListeners();
+      prev.disconnect();
+      socketRef.current = null;
+    }
+
+    // Create with autoConnect: false so all listeners are attached before
+    // the handshake starts — eliminates the race condition.
+    const socket = io(API_URL, {
+      auth: { token },
+      transports: ['websocket'],
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10_000,
+      upgrade: false,
+    });
+    socketRef.current = socket;
+    (socket as any).__instanceId = instanceId;
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────
+
+    socket.on('connect', () => {
+      console.log(`[DM WS] ✅ Connected socket=${socket.id} conv=${conversationId}`);
+      socket.emit('join_direct', { conversationId });
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn(`[DM WS] ⚠️ Connect error: ${err.message}`);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.warn(`[DM WS] ⚠️ Disconnected: ${reason}`);
+    });
+
+    socket.on('reconnect', () => {
+      console.log('[DM WS] ✅ Reconnected — rejoining DM room');
+      socket.emit('join_direct', { conversationId });
+      // Catch up on any messages missed during the disconnect
+      fetchMessages();
+    });
+
+    // ── Events ─────────────────────────────────────────────────────────────
+
+    socket.on('new_direct_message', (msg: DirectMessage) => {
+      setMessages(prev => {
+        if (prev.some(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    });
+
+    socket.on('dm_typing', ({ userId, username }: { userId: string; username: string; conversationId: string }) => {
+      if (userId === user.id) return;
+      setTypingUsers(prev => { const n = new Map(prev); n.set(userId, username || 'Someone'); return n; });
+    });
+
+    socket.on('dm_stopped_typing', ({ userId }: { userId: string }) => {
+      setTypingUsers(prev => { const n = new Map(prev); n.delete(userId); return n; });
+    });
+
+    // ── summary_generated (Phase 9.3) ────────────────────────────────────────
+    // Fired by the BullMQ worker once the Gemini API call completes.
+    socket.on('summary_generated', (payload: { summary: string; conversationId?: string }) => {
+      if (payload.conversationId && payload.conversationId !== conversationId) return;
+      // Clear the 15s timeout — WS arrived in time
+      if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }
+      setSummaryText(payload.summary);
+      setSummaryLoading(false);
+    });
+
+    // Defer connect by 50 ms — gives the React Strict Mode first-invoke cleanup
+    // time to cancel this timer before socket.connect() is ever called.
+    connectTimer = setTimeout(() => {
+      if (
+        socketRef.current === socket &&
+        (socket as any).__instanceId === instanceId
+      ) {
+        socket.connect();
+      }
+    }, 50);
+
+    // ── Cleanup ─────────────────────────────────────────────────────────────
+
+    return () => {
+      clearTimeout(connectTimer);
+      (socket as any).__instanceId = null;
+      socket.removeAllListeners();
+      socket.disconnect();
+      if (socketRef.current === socket) socketRef.current = null;
+      setTypingUsers(new Map());
+    };
+  }, [conversationId, token, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Typing emit ──────────────────────────────────────────────────────────
+
+  const emitStopTyping = useCallback(() => {
+    if (!isTypingRef.current) return;
+    isTypingRef.current = false;
+    socketRef.current?.emit('dm_stopped_typing', { conversationId });
+  }, [conversationId]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    if (e.target.value.length > 0 && !isTypingRef.current) {
+      isTypingRef.current = true;
+      socketRef.current?.emit('dm_typing', { conversationId });
+    }
+    if (typingStopRef.current) clearTimeout(typingStopRef.current);
+    typingStopRef.current = setTimeout(emitStopTyping, 3000);
+  };
+
+  // ── Send message ─────────────────────────────────────────────────────────
+
+  const handleSend = async () => {
+    if (!input.trim() && !pendingFile) return;
+    if (!token) return;
+    emitStopTyping();
+
+    const content = input.trim();
+    const file = pendingFile;
+    setInput('');
+    setPendingFile(null);
+    setSending(true);
+
+    try {
+      await fetch(`${API_URL}/direct/${conversationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          content: content || undefined,
+          fileUrl: file?.url,
+          fileType: file?.type,
+          fileSize: file?.size,
+          originalName: file?.name,
+        }),
+      });
+    } catch (e) {
+      console.warn('[DM] send error:', e);
+      if (content) setInput(content);
+      if (file) setPendingFile(file);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  // ── File upload ──────────────────────────────────────────────────────────
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!token) return;
+    setUploadingFile(true);
+    try {
+      const result = await api.uploadFile(token, file);
+      setPendingFile({ url: result.url, type: result.mimeType, name: result.originalName, size: result.size });
+    } catch (e) {
+      console.warn('[DM] upload error:', e);
+    } finally {
+      setUploadingFile(false);
+    }
+  }, [token]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+    e.target.value = '';
+  };
+
+  // ── Drag & Drop ──────────────────────────────────────────────────────────
+
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  };
+
+  // ── Load older messages ──────────────────────────────────────────────────
+
+  const loadOlder = async () => {
+    if (!token || !nextCursor) return;
+    setLoadingOlder(true);
+    const topId = messages[0]?.id;
+    try {
+      const res = await fetch(`${API_URL}/direct/${conversationId}/messages?limit=50&cursor=${encodeURIComponent(nextCursor)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const older: DirectMessage[] = data.messages ?? [];
+      setMessages(prev => {
+        const ids = new Set(prev.map(m => m.id));
+        return [...older.filter(m => !ids.has(m.id)), ...prev];
+      });
+      setNextCursor(data.nextCursor ?? null);
+      setHasMore(!!data.nextCursor);
+      if (topId) requestAnimationFrame(() => document.getElementById(`dm-${topId}`)?.scrollIntoView({ block: 'start' }));
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
+  const displayName = recipient.fullName || recipient.username;
+  const initial = displayName.charAt(0).toUpperCase();
+
+  if (loading) return (
+    <div className="flex-1 flex items-center justify-center bg-gray-700">
+      <p className="text-gray-400">Loading…</p>
+    </div>
+  );
+
+  return (
+    <div
+      className={`flex-1 flex flex-col h-full bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-blue-500/20 z-40 flex items-center justify-center pointer-events-none">
+          <div className="bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-300 text-lg font-semibold">
+            Drop file to send
+          </div>
+        </div>
+      )}
+
+      {/* AI Summary Modal */}
+      <SummaryModal
+        isOpen={summaryOpen}
+        onClose={() => setSummaryOpen(false)}
+        loading={summaryLoading}
+        summary={summaryText}
+        channelName={`${recipient.fullName ?? recipient.username}`}
+      />
+
+      {/* ── Premium DM Header ───────────────────────────────────────────────── */}
+      <div className="h-16 bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+
+        {/* Back button (mobile) */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="text-gray-400 hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        {/* Large avatar with presence dot */}
+        <div className="relative flex-shrink-0">
+          {recipient.avatar ? (
+            <img
+              src={recipient.avatar}
+              alt={displayName}
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-white/10"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base ring-2 ring-white/10 shadow-lg">
+              {initial}
+            </div>
+          )}
+          <span
+            className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-gray-900 shadow ${
+              onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'
+            }`}
+            title={onlineUserIds.has(recipient.id) ? 'Online' : 'Offline'}
+            aria-label={onlineUserIds.has(recipient.id) ? 'Online' : 'Offline'}
+          />
+        </div>
+
+        {/* Name + status — takes remaining space, truncates gracefully */}
+        <div className="min-w-0 flex-1">
+          <p className="text-white font-semibold text-sm leading-tight truncate">{displayName}</p>
+          <p className="text-gray-400 text-xs leading-tight truncate flex items-center gap-1">
+            <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+            <span>{onlineUserIds.has(recipient.id) ? 'Active now' : `@${recipient.username}`}</span>
+          </p>
+        </div>
+
+        {/* Action buttons — premium glassmorphism ghost style */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => onStartCall?.(recipient.id, displayName)}
+            className="flex items-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
+            title="Start video call"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.89L15 14M4 8a2 2 0 012-2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8z" />
+            </svg>
+            <span className="hidden sm:inline">Call</span>
+          </button>
+          {messages.length > 0 && (
+            <button
+              onClick={handleSummarize}
+              className="flex items-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
+            >
+              <span aria-hidden="true">✨</span>
+              <span className="hidden sm:inline">Summarize</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Messages + scroll FAB wrapper */}
+      <div className="flex-1 min-h-0 relative overflow-hidden">
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-6 pb-2 space-y-1">
+          {hasMore && (
+            <div className="flex justify-center pb-2">
+              <button onClick={loadOlder} disabled={loadingOlder}
+                className="px-4 py-1.5 text-xs text-gray-400 hover:text-white bg-transparent hover:bg-gray-600 border border-gray-600 rounded-full transition-all disabled:opacity-50">
+                {loadingOlder ? 'Loading…' : '⬆ Load older'}
+              </button>
+            </div>
+          )}
+
+          {messages.map((msg, i) => {
+            const isMine = msg.senderId === user?.id;
+            const prevMsg = messages[i - 1];
+            const nextMsg = messages[i + 1];
+            // Group with previous if same sender within 5 minutes
+            const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId ||
+              (new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) >= 5 * 60 * 1000;
+            const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId ||
+              (new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime()) >= 5 * 60 * 1000;
+
+            // Unread divider
+            const lastReadAt = lastReadAtRef.current;
+            const isFirstUnread = lastReadAt &&
+              new Date(msg.createdAt) > new Date(lastReadAt) &&
+              (!prevMsg || new Date(prevMsg.createdAt) <= new Date(lastReadAt));
+
+            // Convert DirectMessage → MessageData for MessageBubble
+            const messageData: MessageData = {
+              id: msg.id,
+              content: msg.content,
+              createdAt: msg.createdAt,
+              updatedAt: msg.updatedAt,
+              isEdited: msg.isEdited,
+              user: {
+                id: msg.sender.id,
+                username: msg.sender.username,
+                fullName: msg.sender.fullName || msg.sender.username,
+                avatar: msg.sender.avatar,
+              },
+              reactions: [],
+              fileUrl: msg.fileUrl,
+              fileType: msg.fileType,
+              fileSize: msg.fileSize,
+              originalName: msg.originalName,
+            };
+
+            return (
+              <div key={msg.id}>
+                {isFirstUnread && <UnreadDivider ref={unreadDividerRef} />}
+                <div id={`dm-${msg.id}`}>
+                  <MessageBubble
+                    message={messageData}
+                    isFirstInGroup={isFirstInGroup}
+                    isLastInGroup={isLastInGroup}
+                    isOwnMessage={isMine}
+                    isHighlighted={false}
+                    currentUserId={user?.id ?? ''}
+                    onAddReaction={() => {}}
+                    onRemoveReaction={() => {}}
+                    onOpenThread={() => {}}
+                    onStartEdit={() => {}}
+                    onDeleteRequest={() => {}}
+                    isEditing={false}
+                    editContent=""
+                    editError={null}
+                    editSaving={false}
+                    onEditChange={() => {}}
+                    onEditSave={() => {}}
+                    onEditCancel={() => {}}
+                  />
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Scroll-to-bottom FAB */}
+        <ScrollToBottomFAB
+          show={showScrollFab}
+          unreadCount={fabUnreadCount}
+          onClick={() => {
+            if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
+              unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              fabScrolledPastDividerRef.current = true;
+              setFabUnreadCount(0);
+            } else {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              fabScrolledPastDividerRef.current = false;
+            }
+          }}
+        />
+      </div>
+
+      {/* Typing indicator */}
+      <div className="flex-shrink-0 min-h-[1.75rem]">
+        <TypingIndicator typingUsers={typingUsers} />
+      </div>
+
+      {/* Pending file preview */}
+      {pendingFile && (
+        <div className="px-4 pb-2 flex-shrink-0">
+          <div className="flex items-center gap-3 bg-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 w-fit">
+            {pendingFile.type.startsWith('image/') ? (
+              <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
+            ) : (
+              <span className="text-xl flex-shrink-0">
+                {pendingFile.type.startsWith('video/') ? '🎬' : pendingFile.type.startsWith('audio/') ? '🎵' : '📎'}
+              </span>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="truncate max-w-xs">{pendingFile.name}</span>
+              <span className="text-gray-400 text-xs">{formatFileSize(pendingFile.size)}</span>
+            </div>
+            <button onClick={() => setPendingFile(null)} className="text-gray-400 hover:text-red-400 ml-1 flex-shrink-0">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="px-4 pb-4 flex-shrink-0">
+        <div className="flex items-center gap-2 bg-gray-600 rounded-xl px-3 py-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingFile}
+            className="text-gray-400 hover:text-white transition-colors disabled:opacity-50 flex-shrink-0"
+            title="Attach file"
+          >
+            {uploadingFile ? (
+              <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+            )}
+          </button>
+          <input
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={`Message ${displayName}`}
+            className="flex-1 bg-transparent text-white placeholder-gray-400 text-sm focus:outline-none"
+          />
+          <button
+            onClick={handleSend}
+            disabled={sending || (!input.trim() && !pendingFile)}
+            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0"
+            aria-label="Send message"
+            title="Send message"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

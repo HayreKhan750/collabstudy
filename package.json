@@ -1,0 +1,44 @@
+{
+  "name": "collabstudy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-Powered Real-Time Academic Collaboration Platform",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "pnpm --filter @collabstudy/web dev",
+    "dev:api": "pnpm --filter @collabstudy/api start:dev",
+    "dev:ai": "cd apps/ai && source venv/bin/activate && uvicorn main:app --reload --port 8000",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:setup": "cd packages/db && pnpm prisma db push && pnpm prisma generate",
+    "db:studio": "cd packages/db && pnpm prisma studio",
+    "build": "turbo run build",
+    "build:web": "pnpm --filter @collabstudy/web build",
+    "build:api": "pnpm --filter @collabstudy/api build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:generate": "pnpm --filter @collabstudy/db db:generate",
+    "db:push": "pnpm --filter @collabstudy/db db:push",
+    "db:migrate": "pnpm --filter @collabstudy/db db:migrate",
+    "db:studio": "pnpm --filter @collabstudy/db db:studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "clean:full": "pnpm clean && rm -rf .turbo && find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.11.3",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.1"
+}
