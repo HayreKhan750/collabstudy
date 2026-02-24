@@ -1158,8 +1158,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       )}
       {ImageModal}
       {/* Header */}
-      <div className="h-16 bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
-        <h2 className="text-white font-semibold whitespace-nowrap"># {channelName}</h2>
+      <div className="h-16 w-full bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-white font-semibold truncate"># {channelName}</h2>
+        </div>
         {messages.length > 0 && (
           <button
             onClick={handleSummarize}

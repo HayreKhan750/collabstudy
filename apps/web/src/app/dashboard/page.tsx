@@ -395,7 +395,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-900 text-gray-100">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-gray-900 text-gray-100">
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <Sidebar
         workspaces={workspaces}

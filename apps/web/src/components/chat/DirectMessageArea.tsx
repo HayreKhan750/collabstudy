@@ -460,7 +460,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       />
 
       {/* ── Premium DM Header ───────────────────────────────────────────────── */}
-      <div className="h-16 bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-16 w-full bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
 
         {/* Back button (mobile) */}
         {onBack && (
