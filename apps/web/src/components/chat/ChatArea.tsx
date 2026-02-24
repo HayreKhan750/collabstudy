@@ -183,21 +183,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     // 15-second timeout: if the WS event never fires, fail gracefully
     if (summaryTimeoutRef.current) clearTimeout(summaryTimeoutRef.current);
     summaryTimeoutRef.current = setTimeout(() => {
-      setSummaryLoading((stillLoading) => {
-        if (stillLoading) {
-          setSummaryText('⚠️ AI took too long to respond. Please try again.');
-        }
-        return false;
-      });
       summaryTimeoutRef.current = null;
+      setSummaryText('⚠️ AI took too long to respond. Please try again.');
+      setSummaryLoading(false);
     }, 15_000);
 
     try {
       // POST to queue the job — result arrives via summary_generated WS event
       await api.requestChannelSummary(token, channelId);
       // summaryLoading stays true until the WS event fires (or timeout above)
-    } catch {
+    } catch (err) {
       if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }
+      console.error('Summary API Error:', err);
       setSummaryText('⚠️ Failed to queue summary. Please try again.');
       setSummaryLoading(false);
     }
