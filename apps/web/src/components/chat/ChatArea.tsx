@@ -1233,7 +1233,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Search Results Panel — slides in from the right when search is active */}
       {isSearchActive && (
-        <div className="absolute inset-y-0 right-0 w-96 bg-gray-800 border-l border-white/5 flex flex-col z-30 shadow-2xl">
+        <div className="absolute inset-y-0 right-0 w-96 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-white/5 flex flex-col z-30 shadow-2xl">
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 flex-shrink-0">
             <div>
@@ -1288,7 +1288,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   return (
                     <li
                       key={result.id}
-                      className="px-4 py-3 hover:bg-gray-700/60 transition-colors cursor-pointer"
+                      className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
                       role="button"
                       tabIndex={0}
                       onClick={() => jumpToMessage(result.id)}
@@ -1304,17 +1304,17 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                           {initial}
                         </div>
                         <span className="text-white text-xs font-semibold">{displayName}</span>
-                        <span className="text-gray-500 text-xs ml-auto" title={new Date(result.createdAt).toLocaleString()}>
+                        <span className="text-slate-400 dark:text-slate-500 text-xs ml-auto" title={new Date(result.createdAt).toLocaleString()}>
                           {formatRelativeTime(result.createdAt)}
                         </span>
                       </div>
                       {/* Message content with keyword highlight */}
-                      <p className="text-gray-300 text-sm leading-snug break-words pl-8">
+                      <p className="text-slate-600 dark:text-slate-300 text-sm leading-snug break-words pl-8">
                         {highlightText(result.content, searchQuery.trim())}
                       </p>
                       {/* Similarity score badge */}
                       <div className="pl-8 mt-1">
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-slate-400 dark:text-slate-500">
                           {Math.round(result.similarity * 100)}% match
                         </span>
                       </div>
@@ -1336,7 +1336,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
             <button
               onClick={loadOlderMessages}
               disabled={loadingOlder}
-              className="px-4 py-1.5 text-xs text-gray-400 hover:text-gray-200 bg-transparent hover:bg-gray-600 border border-gray-600 hover:border-gray-500 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {loadingOlder ? (
                 <>
@@ -1355,7 +1355,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-400 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               No messages yet. Start the conversation!
             </p>
           </div>
@@ -1449,19 +1449,19 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
         {/* Pending file preview */}
         {pendingFile && (
-          <div className="mb-2 flex items-center gap-3 bg-gray-600 rounded-lg px-3 py-2 text-sm">
+          <div className="mb-2 flex items-center gap-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm">
             {pendingFile.type.startsWith('image/') ? (
               <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
             ) : (
-              <div className="flex items-center gap-2 text-gray-200 min-w-0">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 min-w-0">
                 <span className="text-xl flex-shrink-0">{pendingFile.type.startsWith('video/') ? '🎬' : pendingFile.type.startsWith('audio/') ? '🎵' : '📎'}</span>
                 <span className="truncate max-w-xs">{pendingFile.name}</span>
-                <span className="text-gray-400 text-xs flex-shrink-0">({pendingFile.size < 1024*1024 ? (pendingFile.size/1024).toFixed(1)+' KB' : (pendingFile.size/(1024*1024)).toFixed(1)+' MB'})</span>
+                <span className="text-slate-400 dark:text-slate-400 text-xs flex-shrink-0">({pendingFile.size < 1024*1024 ? (pendingFile.size/1024).toFixed(1)+' KB' : (pendingFile.size/(1024*1024)).toFixed(1)+' MB'})</span>
               </div>
             )}
             <button
               onClick={() => setPendingFile(null)}
-              className="ml-auto text-gray-400 hover:text-red-400 transition-colors flex-shrink-0"
+              className="ml-auto text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
               title="Remove attachment"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1485,7 +1485,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingFile}
-            className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-600 disabled:opacity-50"
+            className="flex-shrink-0 p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 disabled:opacity-50"
             title="Attach file"
             aria-label="Attach file"
           >

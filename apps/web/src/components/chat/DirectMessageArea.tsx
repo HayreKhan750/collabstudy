@@ -650,7 +650,7 @@ export default function DirectMessageArea({
           )}
           <span
             className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-gray-900 shadow ${
-              onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'
+              onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-slate-400'
             }`}
             title={onlineUserIds.has(recipient.id) ? 'Online' : 'Offline'}
             aria-label={onlineUserIds.has(recipient.id) ? 'Online' : 'Offline'}
@@ -664,7 +664,7 @@ export default function DirectMessageArea({
           </p>
           <p className="text-slate-500 dark:text-slate-400 text-xs leading-tight truncate flex items-center gap-1">
             <span
-              className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'}`}
+              className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-slate-400'}`}
             />
             <span>{onlineUserIds.has(recipient.id) ? 'Active now' : `@${recipient.username}`}</span>
           </p>
@@ -851,11 +851,11 @@ export default function DirectMessageArea({
             )}
             <div className="flex flex-col min-w-0">
               <span className="truncate max-w-xs">{pendingFile.name}</span>
-              <span className="text-gray-400 text-xs">{formatFileSize(pendingFile.size)}</span>
+              <span className="text-slate-400 dark:text-slate-400 text-xs">{formatFileSize(pendingFile.size)}</span>
             </div>
             <button
               onClick={() => setPendingFile(null)}
-              className="text-gray-400 hover:text-red-400 ml-1 flex-shrink-0"
+              className="text-slate-400 hover:text-red-400 ml-1 flex-shrink-0"
             >
               ✕
             </button>

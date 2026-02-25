@@ -18,19 +18,19 @@ export function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-gray-400 select-none">
+    <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 select-none">
       {/* Bouncing dots */}
       <span className="flex items-center gap-0.5 h-4">
         <span
-          className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+          className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce"
           style={{ animationDelay: '0ms', animationDuration: '0.8s' }}
         />
         <span
-          className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+          className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce"
           style={{ animationDelay: '160ms', animationDuration: '0.8s' }}
         />
         <span
-          className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+          className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce"
           style={{ animationDelay: '320ms', animationDuration: '0.8s' }}
         />
       </span>

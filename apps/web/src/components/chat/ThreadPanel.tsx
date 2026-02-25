@@ -163,18 +163,18 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 flex-shrink-0 bg-gray-800 border-l border-gray-700 flex flex-col h-screen">
+    <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-screen">
       {/* Header */}
       <div className="h-12 flex items-center justify-between px-4 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
           <span className="text-white font-semibold text-sm">Thread</span>
         </div>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-gray-700"
+          className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
           aria-label="Close thread"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -185,7 +185,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
 
       {/* Parent message */}
       <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
-        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Original message</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">Original message</p>
         <div className="flex items-start gap-2">
           <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
             {getInitial(parentMessage)}
@@ -193,9 +193,9 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="text-white text-sm font-semibold">{getDisplayName(parentMessage)}</span>
-              <span className="text-gray-500 text-xs">{formatTime(parentMessage.createdAt)}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs">{formatTime(parentMessage.createdAt)}</span>
             </div>
-            <p className="text-gray-300 text-sm break-words">
+            <p className="text-slate-700 dark:text-slate-300 text-sm break-words">
               {renderMessageContent(parentMessage.content, parentMessage.mentions ?? [])}
             </p>
           </div>
@@ -203,8 +203,8 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
       </div>
 
       {/* Reply count summary */}
-      <div className="px-4 py-2 border-b border-gray-700 flex-shrink-0">
-        <span className="text-xs text-gray-400">
+      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+        <span className="text-xs text-slate-400 dark:text-slate-500">
           {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
         </span>
       </div>
@@ -212,9 +212,9 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
       {/* Replies list */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {loading ? (
-          <p className="text-gray-500 text-xs text-center">Loading replies…</p>
+          <p className="text-slate-400 dark:text-slate-500 text-xs text-center">Loading replies…</p>
         ) : replies.length === 0 ? (
-          <p className="text-gray-500 text-xs text-center">
+          <p className="text-slate-400 dark:text-slate-500 text-xs text-center">
             No replies yet. Be the first to reply!
           </p>
         ) : (
@@ -226,9 +226,9 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="text-white text-xs font-semibold">{getDisplayName(reply)}</span>
-                  <span className="text-gray-500 text-xs">{formatTime(reply.createdAt)}</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-xs">{formatTime(reply.createdAt)}</span>
                 </div>
-                <p className="text-gray-300 text-sm break-words">
+                <p className="text-slate-700 dark:text-slate-300 text-sm break-words">
                   {renderMessageContent(reply.content, reply.mentions ?? [])}
                 </p>
 
@@ -243,7 +243,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
                     ).map(([emoji, count]) => (
                       <span
                         key={emoji}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs bg-gray-700 border border-gray-600 text-gray-300"
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300"
                       >
                         {emoji} {count}
                       </span>

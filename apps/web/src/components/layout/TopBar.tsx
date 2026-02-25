@@ -14,7 +14,7 @@ function HashIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 text-gray-400 flex-shrink-0"
+      className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -29,7 +29,7 @@ function AtIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 text-gray-400 flex-shrink-0"
+      className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"

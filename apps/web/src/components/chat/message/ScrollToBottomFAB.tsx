@@ -15,10 +15,10 @@ export function ScrollToBottomFAB({ show, unreadCount, onClick }: ScrollToBottom
       className="
         absolute bottom-4 right-4 z-30
         w-10 h-10 rounded-full
-        bg-gray-700 hover:bg-gray-600
+        bg-slate-700 hover:bg-slate-600
         border border-white/15 shadow-lg
         flex items-center justify-center
-        text-gray-300 hover:text-white
+        text-slate-300 hover:text-white
         transition-all duration-200
         active:scale-95
       "

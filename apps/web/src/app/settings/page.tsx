@@ -130,18 +130,18 @@ function ProfileTab({ token }: { token: string }) {
               </div>
             )}
             {uploading && (
-              <div className="absolute inset-0 rounded-2xl bg-black/60 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
           <div className="space-y-2">
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-            <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2 text-sm font-medium text-white bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl transition-colors">
+            <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-white bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 rounded-xl transition-colors">
               {uploading ? 'Uploading…' : 'Upload photo'}
             </button>
             {avatar && (
-              <button type="button" onClick={() => setAvatar('')} className="block text-xs text-gray-500 hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setAvatar('')} className="block text-xs text-slate-500 hover:text-red-400 transition-colors">
                 Remove avatar
               </button>
             )}
@@ -277,13 +277,13 @@ function AppearanceTab() {
             className={`relative flex flex-col items-start gap-2 p-4 rounded-2xl border transition-all text-left ${
               theme === t.value
                 ? 'bg-indigo-600/20 border-indigo-500/50 ring-2 ring-indigo-500/30'
-                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20'
             }`}
           >
             <span className="text-2xl">{t.icon}</span>
             <div>
-              <p className="text-sm font-semibold text-white">{t.label}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{t.desc}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t.label}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t.desc}</p>
             </div>
             {theme === t.value && (
               <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-indigo-400" />
