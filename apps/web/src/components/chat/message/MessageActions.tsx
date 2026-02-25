@@ -45,11 +45,11 @@ function ActionButton({
           onClick();
         }}
         className={`
-          p-1.5 rounded-lg transition-all duration-150
+          p-1.5 rounded-md transition-colors duration-150
           ${
             danger
-              ? 'text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+              ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
+              : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
           }
         `}
       >
@@ -87,13 +87,12 @@ export function MessageActions({
   return (
     <div
       className="
-        absolute -top-5 right-2 z-20
+        absolute -top-4 right-2 z-20
         flex items-center gap-0.5
-        bg-white dark:bg-[#1B2130] border border-slate-200 dark:border-white/[0.08] rounded-xl
-        shadow-lg dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)]
+        bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl
         px-1 py-0.5
-        opacity-0 scale-95 group-hover/message:opacity-100 group-hover/message:scale-100
-        transition-all duration-150 ease-out
+        opacity-0 group-hover/message:opacity-100
+        transition-opacity duration-150
         pointer-events-none group-hover/message:pointer-events-auto
       "
       onClick={(e) => e.stopPropagation()}
@@ -106,7 +105,7 @@ export function MessageActions({
               e.stopPropagation();
               setShowEmojiPicker((v) => !v);
             }}
-            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-150"
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors duration-150"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -125,7 +124,7 @@ export function MessageActions({
           </button>
         </Tooltip>
         {showEmojiPicker && (
-          <div className="absolute bottom-full right-0 mb-2 flex gap-1 bg-white dark:bg-[#1B2130] border border-slate-200 dark:border-white/[0.08] rounded-xl px-2 py-1.5 shadow-xl dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] z-30 animate-scale-in">
+          <div className="absolute bottom-full right-0 mb-2 flex gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-30">
             {QUICK_EMOJIS.map((emoji) => (
               <button
                 key={emoji}

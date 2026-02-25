@@ -110,11 +110,11 @@ export function WorkspaceSwitcher({
           <SidebarTooltip key={ws.id} label={ws.name}>
             <button
               onClick={() => onWorkspaceSelect(ws)}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mx-auto
+              className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
                 ${
                   selectedWorkspace?.id === ws.id
-                    ? 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 rounded-2xl scale-105'
-                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-violet-500/80 hover:text-white hover:rounded-2xl hover:scale-105'
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 rounded-2xl'
+                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-indigo-500/80 hover:text-white hover:rounded-2xl'
                 }`}
             >
               {ws.name.charAt(0).toUpperCase()}
@@ -146,7 +146,7 @@ export function WorkspaceSwitcher({
     <div className="px-3 pt-4 pb-3 border-b border-slate-200 dark:border-white/10">
       {/* Header row */}
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em]">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
           Workspaces
         </span>
         <div className="flex items-center gap-1">
@@ -175,7 +175,7 @@ export function WorkspaceSwitcher({
             const ws = workspaces.find((w) => w.id === e.target.value);
             if (ws) onWorkspaceSelect(ws);
           }}
-          className="w-full bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none cursor-pointer transition-all duration-200 hover:border-violet-300 dark:hover:border-violet-500/30"
+          className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
         >
           <option value="" className="bg-white dark:bg-slate-800">
             Select workspace…
