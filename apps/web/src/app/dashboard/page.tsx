@@ -14,6 +14,7 @@ import MentionToast, { MentionNotification } from '@/components/chat/MentionToas
 import { NoWorkspaceState, NoChannelState } from '@/components/chat/EmptyState';
 import { io, Socket } from 'socket.io-client';
 import CallModal, { IncomingCallPayload } from '@/components/chat/CallModal';
+import { SearchModal } from '@/components/chat/SearchModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -58,6 +59,10 @@ export default function DashboardPage() {
 
   // ── Presence state ────────────────────────────────────────────────────────
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+
+  // ── Search state ──────────────────────────────────────────────────────────
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchJumpTarget, setSearchJumpTarget] = useState<{ channelId: string; messageId: string } | null>(null);
 
   // ── Voice/Video call state ────────────────────────────────────────────────
   const [incomingCall, setIncomingCall] = useState<IncomingCallPayload | null>(null);
@@ -453,6 +458,8 @@ export default function DashboardPage() {
           onMobileMenuOpen={() => setMobileSidebarOpen(true)}
           onLogout={logout}
           username={user?.username}
+          hasWorkspace={!!selectedWorkspace}
+          onSearchOpen={() => setSearchOpen(true)}
         />
 
         {/* Content */}
@@ -487,6 +494,8 @@ export default function DashboardPage() {
                 onOpenThread={(msg) => setActiveThread(msg)}
                 workspaceMembers={workspaceMembers}
                 onNewReply={(msg) => setPendingThreadReply(msg)}
+                jumpToMessageId={searchJumpTarget?.channelId === selectedChannel.id ? searchJumpTarget.messageId : undefined}
+                onJumpHandled={() => setSearchJumpTarget(null)}
                 onBack={() => {
                   setSelectedChannel(null);
                   setMobileSidebarOpen(true);
@@ -513,6 +522,26 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ── Search Modal ──────────────────────────────────────────────────── */}
+      {searchOpen && token && selectedWorkspace && (
+        <SearchModal
+          isOpen={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          workspaceId={selectedWorkspace.id}
+          token={token}
+          onSelectResult={(channelId, messageId) => {
+            // Find the channel in current list and select it
+            const target = channels.find(c => c.id === channelId);
+            if (target) {
+              setSelectedChannel(target);
+              setSelectedConversation(null);
+              setSearchJumpTarget({ channelId, messageId });
+            }
+            setSearchOpen(false);
+          }}
+        />
+      )}
 
       {/* ── Mention toasts ────────────────────────────────────────────────── */}
       <MentionToast

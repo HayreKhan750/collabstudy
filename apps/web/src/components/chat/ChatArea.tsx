@@ -79,6 +79,10 @@ interface ChatAreaProps {
   workspaceMembers?: MentionUser[];
   onNewReply?: (msg: ApiMessage) => void;
   onBack?: () => void;
+  /** When set, ChatArea will jump to this message ID on next render */
+  jumpToMessageId?: string;
+  /** Called after the jump has been handled so parent can clear it */
+  onJumpHandled?: () => void;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -109,7 +113,7 @@ const TYPING_STOP_MS = 3_000;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onBack }: ChatAreaProps) {
+export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onBack, jumpToMessageId, onJumpHandled }: ChatAreaProps) {
   const { token, user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -226,6 +230,13 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   const isTypingRef = useRef(false);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ─── External jump-to-message (from search modal) ─────────────────────────
+  useEffect(() => {
+    if (!jumpToMessageId) return;
+    jumpToMessage(jumpToMessageId);
+    onJumpHandled?.();
+  }, [jumpToMessageId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Close picker on outside click ────────────────────────────────────────
 
