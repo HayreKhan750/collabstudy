@@ -194,8 +194,8 @@ function FileAttachment({
       {preview}
       {viewerOpen && (
         <MediaViewer
-          url={url}
-          type={type}
+          src={url}
+          mimeType={type}
           name={name}
           onClose={() => setViewerOpen(false)}
         />
