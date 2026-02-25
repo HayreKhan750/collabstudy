@@ -52,13 +52,13 @@ export function TopBar({
   username,
 }: TopBarProps) {
   return (
-    <header className="h-14 flex-shrink-0 bg-gray-800/80 backdrop-blur-sm border-b border-white/10 flex items-center justify-between px-4 gap-4 z-10">
+    <header className="h-14 flex-shrink-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/10 flex items-center justify-between px-4 gap-4 z-10">
       {/* Left — hamburger (mobile) + breadcrumb */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Mobile hamburger */}
         <button
           onClick={onMobileMenuOpen}
-          className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+          className="md:hidden p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex-shrink-0"
           aria-label="Open menu"
         >
           <HamburgerIcon />
@@ -68,7 +68,7 @@ export function TopBar({
         <nav className="flex items-center gap-1.5 text-sm min-w-0" aria-label="Breadcrumb">
           {workspaceName && (
             <>
-              <span className="text-gray-400 font-medium truncate max-w-[120px]">{workspaceName}</span>
+              <span className="text-gray-500 dark:text-gray-400 font-medium truncate max-w-[120px]">{workspaceName}</span>
               {(channelName || isDM) && (
                 <svg className="h-3.5 w-3.5 text-gray-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -77,17 +77,17 @@ export function TopBar({
             </>
           )}
           {isDM && dmRecipientName ? (
-            <span className="flex items-center gap-1.5 text-white font-semibold min-w-0">
+            <span className="flex items-center gap-1.5 text-gray-900 dark:text-white font-semibold min-w-0">
               <AtIcon />
               <span className="truncate">{dmRecipientName}</span>
             </span>
           ) : channelName ? (
-            <span className="flex items-center gap-1.5 text-white font-semibold min-w-0">
+            <span className="flex items-center gap-1.5 text-gray-900 dark:text-white font-semibold min-w-0">
               <HashIcon />
               <span className="truncate">{channelName}</span>
             </span>
           ) : (
-            <span className="text-gray-500 text-sm">
+            <span className="text-gray-400 dark:text-gray-500 text-sm">
               {workspaceName ? 'Select a channel' : 'Welcome to CollabStudy'}
             </span>
           )}
@@ -96,10 +96,10 @@ export function TopBar({
 
       {/* Right — user + logout */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="hidden sm:block text-sm text-gray-400 font-medium">{username}</span>
+        <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 font-medium">{username}</span>
         <button
           onClick={onLogout}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-red-500/20 border border-transparent hover:border-red-500/30 transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-500/20 border border-transparent hover:border-red-200 dark:hover:border-red-500/30 transition-all"
           title="Logout"
         >
           <LogoutIcon />

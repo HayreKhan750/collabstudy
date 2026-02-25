@@ -19,7 +19,7 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
   return (
     <div className="relative group/tip">
       {children}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-gray-900 text-gray-100 text-xs rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 border border-white/10">
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-gray-800 dark:bg-gray-900 text-gray-100 text-xs rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 border border-white/10">
         {label}
       </div>
     </div>
@@ -79,7 +79,7 @@ export function MessageActions({
       className="
         absolute -top-4 right-2 z-20
         flex items-center gap-0.5
-        bg-gray-800 border border-white/10 rounded-lg shadow-xl
+        bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg shadow-xl
         px-1 py-0.5
         opacity-0 group-hover/message:opacity-100
         transition-opacity duration-150
@@ -100,7 +100,7 @@ export function MessageActions({
           </button>
         </Tooltip>
         {showEmojiPicker && (
-          <div className="absolute bottom-full right-0 mb-2 flex gap-1 bg-gray-800 border border-white/10 rounded-lg px-2 py-1.5 shadow-xl z-30">
+          <div className="absolute bottom-full right-0 mb-2 flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 shadow-xl z-30">
             {QUICK_EMOJIS.map((emoji) => (
               <button
                 key={emoji}

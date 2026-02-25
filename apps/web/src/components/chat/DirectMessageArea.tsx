@@ -9,6 +9,7 @@ import { MessageBubble, MessageData } from './message/MessageBubble';
 import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -71,6 +72,15 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isTypingRef = useRef(false);
   const typingStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Edit state ───────────────────────────────────────────────────────────
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+
+  // ── Delete confirm state ─────────────────────────────────────────────────
+  const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
 
   // ── AI Summary modal state ───────────────────────────────────────────────
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -279,6 +289,18 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       setTypingUsers(prev => { const n = new Map(prev); n.delete(userId); return n; });
     });
 
+    // ── dm_message_updated ───────────────────────────────────────────────────
+    socket.on('dm_message_updated', (updated: DirectMessage) => {
+      setMessages(prev => prev.map(m =>
+        m.id === updated.id ? { ...m, content: updated.content, isEdited: true, updatedAt: updated.updatedAt } : m
+      ));
+    });
+
+    // ── dm_message_deleted ───────────────────────────────────────────────────
+    socket.on('dm_message_deleted', ({ messageId }: { messageId: string }) => {
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+    });
+
     // ── summary_generated (Phase 9.3) ────────────────────────────────────────
     // Fired by the BullMQ worker once the Gemini API call completes.
     socket.on('summary_generated', (payload: { summary: string; conversationId?: string }) => {
@@ -399,6 +421,59 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     if (file) handleFileUpload(file);
   };
 
+  // ── Edit handlers ────────────────────────────────────────────────────────
+
+  const handleStartEdit = useCallback((msg: DirectMessage) => {
+    setEditingMessageId(msg.id);
+    setEditContent(msg.content ?? '');
+    setEditError(null);
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessageId(null);
+    setEditContent('');
+    setEditError(null);
+  }, []);
+
+  const handleSaveEdit = useCallback(async (messageId: string) => {
+    if (!token || !editContent.trim()) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: editContent.trim() }),
+      });
+      setEditingMessageId(null);
+      setEditContent('');
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to save edit');
+    } finally {
+      setEditSaving(false);
+    }
+  }, [conversationId, token, editContent]);
+
+  // ── Delete handlers ──────────────────────────────────────────────────────
+
+  const handleDeleteRequest = useCallback((messageId: string) => {
+    setDeleteConfirm({ messageId });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!token || !deleteConfirm) return;
+    const { messageId } = deleteConfirm;
+    setDeleteConfirm(null);
+    try {
+      await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.warn('[DM] delete error:', err);
+    }
+  }, [conversationId, token, deleteConfirm]);
+
   // ── Load older messages ──────────────────────────────────────────────────
 
   const loadOlder = async () => {
@@ -427,14 +502,14 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
   const initial = displayName.charAt(0).toUpperCase();
 
   if (loading) return (
-    <div className="flex-1 flex items-center justify-center bg-gray-700">
-      <p className="text-gray-400">Loading…</p>
+    <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+      <p className="text-gray-500 dark:text-gray-400">Loading…</p>
     </div>
   );
 
   return (
     <div
-      className={`flex-1 flex flex-col h-full bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full bg-gray-100 dark:bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -442,7 +517,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       {/* Drag overlay */}
       {isDragging && (
         <div className="absolute inset-0 bg-blue-500/20 z-40 flex items-center justify-center pointer-events-none">
-          <div className="bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-300 text-lg font-semibold">
+          <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-500 dark:text-blue-300 text-lg font-semibold">
             Drop file to send
           </div>
         </div>
@@ -458,13 +533,13 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       />
 
       {/* ── Premium DM Header ───────────────────────────────────────────────── */}
-      <div className="h-16 w-full bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-16 w-full bg-white/80 dark:bg-gray-900/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
 
         {/* Back button (mobile) */}
         {onBack && (
           <button
             onClick={onBack}
-            className="text-gray-400 hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
             aria-label="Back"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -497,8 +572,8 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
 
         {/* Name + status — takes remaining space, truncates gracefully */}
         <div className="min-w-0 flex-1">
-          <p className="text-white font-semibold text-sm leading-tight truncate">{displayName}</p>
-          <p className="text-gray-400 text-xs leading-tight truncate flex items-center gap-1">
+          <p className="text-gray-900 dark:text-white font-semibold text-sm leading-tight truncate">{displayName}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs leading-tight truncate flex items-center gap-1">
             <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'}`} />
             <span>{onlineUserIds.has(recipient.id) ? 'Active now' : `@${recipient.username}`}</span>
           </p>
@@ -508,7 +583,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => onStartCall?.(recipient.id, displayName)}
-            className="flex items-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
             title="Start video call"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -519,7 +594,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
           {messages.length > 0 && (
             <button
               onClick={handleSummarize}
-              className="flex items-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
+              className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
             >
               <span aria-hidden="true">✨</span>
               <span className="hidden sm:inline">Summarize</span>
@@ -534,7 +609,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
           {hasMore && (
             <div className="flex justify-center pb-2">
               <button onClick={loadOlder} disabled={loadingOlder}
-                className="px-4 py-1.5 text-xs text-gray-400 hover:text-white bg-transparent hover:bg-gray-600 border border-gray-600 rounded-full transition-all disabled:opacity-50">
+                className="px-4 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-full transition-all disabled:opacity-50">
                 {loadingOlder ? 'Loading…' : '⬆ Load older'}
               </button>
             </div>
@@ -590,15 +665,15 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
                     onAddReaction={() => {}}
                     onRemoveReaction={() => {}}
                     onOpenThread={() => {}}
-                    onStartEdit={() => {}}
-                    onDeleteRequest={() => {}}
-                    isEditing={false}
-                    editContent=""
-                    editError={null}
-                    editSaving={false}
-                    onEditChange={() => {}}
-                    onEditSave={() => {}}
-                    onEditCancel={() => {}}
+                    onStartEdit={() => handleStartEdit(msg)}
+                    onDeleteRequest={() => handleDeleteRequest(msg.id)}
+                    isEditing={editingMessageId === msg.id}
+                    editContent={editContent}
+                    editError={editError}
+                    editSaving={editSaving}
+                    onEditChange={setEditContent}
+                    onEditSave={() => handleSaveEdit(msg.id)}
+                    onEditCancel={handleCancelEdit}
                   />
                 </div>
               </div>
@@ -629,10 +704,20 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
         <TypingIndicator typingUsers={typingUsers} />
       </div>
 
+      {/* Delete confirm modal */}
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Delete Message"
+        message="Are you sure you want to delete this message? This cannot be undone."
+        danger={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
+
       {/* Pending file preview */}
       {pendingFile && (
         <div className="px-4 pb-2 flex-shrink-0">
-          <div className="flex items-center gap-3 bg-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 w-fit">
+          <div className="flex items-center gap-3 bg-gray-200 dark:bg-gray-600 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 w-fit">
             {pendingFile.type.startsWith('image/') ? (
               <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
             ) : (
@@ -651,7 +736,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
 
       {/* Input */}
       <div className="px-4 pb-4 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-gray-600 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-gray-200 dark:bg-gray-600 rounded-xl px-3 py-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -681,7 +766,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={`Message ${displayName}`}
-            className="flex-1 bg-transparent text-white placeholder-gray-400 text-sm focus:outline-none"
+            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 text-sm focus:outline-none"
           />
           <button
             onClick={handleSend}

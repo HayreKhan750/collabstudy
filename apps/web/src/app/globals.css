@@ -126,9 +126,9 @@
 }
 
 /* --------------------------------------------------------------------------
-   LIGHT MODE — activated by [data-theme="light"] on <html>
+   LIGHT MODE — activated by .light class on <html> (via next-themes)
    -------------------------------------------------------------------------- */
-[data-theme="light"] {
+:root.light, [data-theme="light"] {
   color-scheme: light;
 
   --color-primary:          #7c3aed;

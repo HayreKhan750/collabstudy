@@ -372,9 +372,9 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="flex items-center gap-3 text-gray-400">
-          <div className="w-5 h-5 border-2 border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+          <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-indigo-500 rounded-full animate-spin" />
           <span>Loading…</span>
         </div>
       </div>
@@ -385,9 +385,9 @@ export default function DashboardPage() {
 
   if (loadingWorkspaces) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="flex items-center gap-3 text-gray-400">
-          <div className="w-5 h-5 border-2 border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+          <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-indigo-500 rounded-full animate-spin" />
           <span>Loading workspaces…</span>
         </div>
       </div>
@@ -395,7 +395,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-gray-900 text-gray-100">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <Sidebar
         workspaces={workspaces}
@@ -503,11 +503,11 @@ export default function DashboardPage() {
               )}
             </>
           ) : selectedWorkspace ? (
-            <div className="flex-1 min-h-0 flex flex-col bg-gray-800">
+            <div className="flex-1 min-h-0 flex flex-col bg-gray-100 dark:bg-gray-800">
               <NoChannelState workspaceName={selectedWorkspace.name} />
             </div>
           ) : (
-            <div className="flex-1 min-h-0 flex flex-col bg-gray-800">
+            <div className="flex-1 min-h-0 flex flex-col bg-gray-100 dark:bg-gray-800">
               <NoWorkspaceState onCreate={() => setShowCreateModal(true)} />
             </div>
           )}
@@ -536,16 +536,16 @@ export default function DashboardPage() {
       {/* ── New DM Modal ──────────────────────────────────────────────────── */}
       {showNewDMModal && token && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 border border-white/10 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <h3 className="text-white font-semibold text-lg mb-4">New Direct Message</h3>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 className="text-gray-900 dark:text-white font-semibold text-lg mb-4">New Direct Message</h3>
             {dmUsers.length === 0 ? (
-              <p className="text-gray-400 text-sm">No other members in this workspace.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">No other members in this workspace.</p>
             ) : (
               <ul className="space-y-1 max-h-64 overflow-y-auto">
                 {dmUsers.map(({ user: u }) => (
                   <li key={u.id}>
                     <button
-                      className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors"
+                      className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                       onClick={async () => {
                         setShowNewDMModal(false);
                         if (!token) return;
@@ -563,8 +563,8 @@ export default function DashboardPage() {
                         {(u.fullName || u.username).charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-white text-sm font-medium">{u.fullName || u.username}</p>
-                        <p className="text-gray-400 text-xs">@{u.username}</p>
+                        <p className="text-gray-900 dark:text-white text-sm font-medium">{u.fullName || u.username}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs">@{u.username}</p>
                       </div>
                     </button>
                   </li>
@@ -572,7 +572,7 @@ export default function DashboardPage() {
               </ul>
             )}
             <div className="mt-4 flex justify-end">
-              <button onClick={() => setShowNewDMModal(false)} className="px-4 py-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+              <button onClick={() => setShowNewDMModal(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                 Cancel
               </button>
             </div>
@@ -592,11 +592,11 @@ export default function DashboardPage() {
       {/* ── Create Workspace Modal ─────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white mb-4">Create New Workspace</h3>
-            {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create New Workspace</h3>
+            {error && <p className="text-red-500 dark:text-red-400 text-sm mb-3">{error}</p>}
             <form onSubmit={handleCreateWorkspace}>
-              <label htmlFor="ws-name" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="ws-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Workspace Name *
               </label>
               <input
@@ -605,7 +605,7 @@ export default function DashboardPage() {
                 id="ws-name"
                 required
                 maxLength={100}
-                className="block w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                className="block w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 px-3 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
                 placeholder="My Study Group"
               />
               <div className="mt-5 flex justify-end gap-3">
@@ -613,7 +613,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   disabled={createLoading}
-                  className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>

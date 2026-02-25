@@ -1142,7 +1142,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   return (
     <div
-      className={`flex-1 flex flex-col h-full bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full bg-gray-100 dark:bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -1150,14 +1150,14 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       {/* Drag overlay */}
       {isDragging && (
         <div className="absolute inset-0 bg-blue-500/20 z-40 flex items-center justify-center pointer-events-none">
-          <div className="bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-300 text-lg font-semibold">
+          <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-500 dark:text-blue-300 text-lg font-semibold">
             Drop file to upload
           </div>
         </div>
       )}
       {ImageModal}
       {/* Header */}
-      <div className="h-16 w-full bg-gray-900/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-16 w-full bg-white/80 dark:bg-gray-900/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
         {/* Mobile back button */}
         {onBack && (
           <button

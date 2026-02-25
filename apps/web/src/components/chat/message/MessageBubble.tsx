@@ -249,7 +249,7 @@ export function MessageBubble({
 
   const bubbleColorClass = isOwnMessage
     ? 'bg-blue-600 text-white'
-    : 'bg-gray-600 text-gray-100';
+    : 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm';
 
   const hasFileOnly = !!message.fileUrl && !message.content;
 
@@ -287,8 +287,8 @@ export function MessageBubble({
         {/* Sender name + timestamp — only on first message in group */}
         {isFirstInGroup && (
           <div className={`flex items-baseline gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-            <span className="text-xs font-semibold text-gray-200">{displayName}</span>
-            <span className="text-[11px] text-gray-500">{formatTime(message.createdAt)}</span>
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{displayName}</span>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">{formatTime(message.createdAt)}</span>
           </div>
         )}
 
@@ -316,16 +316,16 @@ export function MessageBubble({
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onEditSave(); }
                   if (e.key === 'Escape') onEditCancel();
                 }}
-                className="w-full bg-gray-700 border border-blue-500/60 rounded-lg px-3 py-2 text-sm text-gray-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-gray-100 dark:bg-gray-700 border border-blue-500/60 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
                 rows={2}
                 autoFocus
                 disabled={editSaving}
               />
               {editError && <p className="text-xs text-red-400">{editError}</p>}
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500">
-                  Press <kbd className="px-1 py-0.5 bg-gray-700 rounded text-gray-300">Enter</kbd> to save,{' '}
-                  <kbd className="px-1 py-0.5 bg-gray-700 rounded text-gray-300">Esc</kbd> to cancel
+                <span className="text-gray-500 dark:text-gray-500">
+                  Press <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">Enter</kbd> to save,{' '}
+                  <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">Esc</kbd> to cancel
                 </span>
                 <button
                   onClick={onEditSave}
@@ -336,7 +336,7 @@ export function MessageBubble({
                 </button>
                 <button
                   onClick={onEditCancel}
-                  className="px-2.5 py-1 bg-gray-600 hover:bg-gray-500 text-gray-200 rounded-md transition-colors"
+                  className="px-2.5 py-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
@@ -362,7 +362,7 @@ export function MessageBubble({
                   <span
                     className={`
                       block w-3 h-3 rounded-sm
-                      ${isOwnMessage ? 'bg-blue-600 -rotate-45 origin-bottom-left' : 'bg-gray-600 rotate-45 origin-bottom-right'}
+                      ${isOwnMessage ? 'bg-blue-600 -rotate-45 origin-bottom-left' : 'bg-white dark:bg-gray-600 rotate-45 origin-bottom-right'}
                     `}
                   />
                 </span>

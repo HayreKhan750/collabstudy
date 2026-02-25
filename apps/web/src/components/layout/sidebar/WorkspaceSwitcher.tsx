@@ -105,7 +105,7 @@ export function WorkspaceSwitcher({
     <div className="px-3 pt-4 pb-3 border-b border-white/10">
       {/* Header row */}
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Workspaces</span>
+        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Workspaces</span>
         <div className="flex items-center gap-1">
           <button
             onClick={onDiscoverWorkspaces}
@@ -132,7 +132,7 @@ export function WorkspaceSwitcher({
             const ws = workspaces.find((w) => w.id === e.target.value);
             if (ws) onWorkspaceSelect(ws);
           }}
-          className="w-full bg-white/10 text-white text-sm px-3 py-2 rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+          className="w-full bg-white/10 dark:bg-white/10 text-gray-900 dark:text-white text-sm px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer bg-gray-100 dark:bg-white/10"
         >
           <option value="" className="bg-gray-800">Select workspace…</option>
           {workspaces.map((ws) => (

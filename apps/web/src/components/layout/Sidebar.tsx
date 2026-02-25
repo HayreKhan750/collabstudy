@@ -191,14 +191,14 @@ export default function Sidebar({
   const sidebarContent = (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center h-14 border-b border-white/10 flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'justify-between px-3'}`}>
+      <div className={`flex items-center h-14 border-b border-gray-200 dark:border-white/10 flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'justify-between px-3'}`}>
         {!collapsed && (
-          <span className="text-white font-bold text-base tracking-tight">CollabStudy</span>
+          <span className="text-gray-900 dark:text-white font-bold text-base tracking-tight">CollabStudy</span>
         )}
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
@@ -256,7 +256,7 @@ export default function Sidebar({
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col h-full bg-gray-900 border-r border-white/10 transition-all duration-300 ease-in-out flex-shrink-0 z-20
+        className={`hidden md:flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 transition-all duration-300 ease-in-out flex-shrink-0 z-20
           ${collapsed ? 'w-[60px]' : 'w-60'}`}
         style={{ minWidth: collapsed ? 60 : 240 }}
       >
@@ -284,7 +284,7 @@ export default function Sidebar({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-72 bg-gray-900 border-r border-white/10 z-50 md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-72 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 z-50 md:hidden flex flex-col"
             >
               {sidebarContent}
             </motion.aside>
