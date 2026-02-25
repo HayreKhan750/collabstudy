@@ -66,8 +66,8 @@ export function DirectMessageList({
             <SidebarTooltip key={conv.id} label={displayName}>
               <button
                 onClick={() => onConversationSelect(conv)}
-                className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
-                  ${isSelected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-indigo-500/60 hover:text-white'}`}
+                className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mx-auto
+                  ${isSelected ? 'bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/30 rounded-2xl scale-105' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-violet-500/60 hover:text-white hover:rounded-2xl hover:scale-105'}`}
               >
                 {displayName.charAt(0).toUpperCase()}
                 {/* Online dot */}
@@ -107,7 +107,7 @@ export function DirectMessageList({
   return (
     <div className="border-t border-slate-200 dark:border-white/10 pt-3 pb-2">
       <div className="flex items-center justify-between px-3 mb-1">
-        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em]">
           Direct Messages
         </span>
         <button
@@ -158,8 +158,8 @@ export function DirectMessageList({
               <button
                 key={conv.id}
                 onClick={() => onConversationSelect(conv)}
-                className={`w-full text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
-                  ${isSelected ? 'bg-purple-500/20 dark:bg-purple-500/30 text-purple-600 dark:text-purple-200' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`w-full text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-200
+                  ${isSelected ? 'bg-violet-500/15 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 font-medium shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
               >
                 {/* Avatar with online dot */}
                 <div className="relative flex-shrink-0">

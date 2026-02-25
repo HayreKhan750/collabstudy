@@ -191,11 +191,11 @@ export function ChannelList({
           <SidebarTooltip key={channel.id} label={`# ${channel.name}`}>
             <button
               onClick={() => onChannelSelect(channel)}
-              className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 mx-auto
+              className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 mx-auto
                 ${
                   selectedChannel?.id === channel.id
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 rounded-2xl scale-105'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:rounded-2xl hover:scale-105'
                 }`}
             >
               <HashIcon />
@@ -233,7 +233,7 @@ export function ChannelList({
     <div className="pt-3 pb-1">
       {/* Section header */}
       <div className="flex items-center justify-between px-3 mb-1">
-        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em]">
           Channels
         </span>
         {canManage && hasWorkspace && (
@@ -264,10 +264,10 @@ export function ChannelList({
             <div key={channel.id} className="relative group/ch flex items-center">
               <button
                 onClick={() => onChannelSelect(channel)}
-                className={`flex-1 min-w-0 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
+                className={`flex-1 min-w-0 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-200
                   ${
                     selectedChannel?.id === channel.id
-                      ? 'bg-indigo-500/20 dark:bg-indigo-500/30 text-indigo-600 dark:text-indigo-200'
+                      ? 'bg-violet-500/15 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 font-medium shadow-sm'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
