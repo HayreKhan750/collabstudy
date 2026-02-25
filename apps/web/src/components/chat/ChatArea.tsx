@@ -186,7 +186,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       summaryTimeoutRef.current = null;
       setSummaryText('⚠️ AI took too long to respond. Please try again.');
       setSummaryLoading(false);
-    }, 15_000);
+    }, 35_000);
 
     try {
       console.log('🚀 SENDING SUMMARY REQUEST TO BACKEND... channel:', channelId);

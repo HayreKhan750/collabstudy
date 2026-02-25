@@ -89,7 +89,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       summaryTimeoutRef.current = null;
       setSummaryText('⚠️ AI took too long to respond. Please try again.');
       setSummaryLoading(false);
-    }, 15_000);
+    }, 35_000);
 
     try {
       console.log('🚀 SENDING SUMMARY REQUEST TO BACKEND... conversationId:', conversationId);
