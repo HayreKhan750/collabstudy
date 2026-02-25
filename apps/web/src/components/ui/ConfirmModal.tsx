@@ -64,7 +64,7 @@ export function ConfirmModal({
 
           {/* Dialog */}
           <motion.div
-            className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[var(--color-surface)] p-6 shadow-2xl"
+            className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl"
             initial={{ opacity: 0, scale: 0.92, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 8 }}
@@ -86,17 +86,17 @@ export function ConfirmModal({
               )}
             </div>
 
-            <h2 id="confirm-title" className="mb-2 text-center text-base font-semibold text-[var(--color-fg)]">
+            <h2 id="confirm-title" className="mb-2 text-center text-base font-semibold text-slate-900 dark:text-white">
               {title}
             </h2>
-            <p className="mb-6 text-center text-sm text-[var(--color-fg-muted)] leading-relaxed">
+            <p className="mb-6 text-center text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
               {message}
             </p>
 
             <div className="flex gap-3">
               <button
                 onClick={onCancel}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-[var(--color-fg-muted)] transition-all hover:bg-white/10 hover:text-[var(--color-fg)]"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
               >
                 {cancelLabel}
               </button>
@@ -107,7 +107,7 @@ export function ConfirmModal({
                   'flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all',
                   danger
                     ? 'bg-red-500 hover:bg-red-600 active:bg-red-700'
-                    : 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]'
+                    : 'bg-blue-600 hover:bg-blue-700'
                 )}
               >
                 {confirmLabel}

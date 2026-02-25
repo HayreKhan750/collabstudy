@@ -51,7 +51,13 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function DirectMessageArea({ conversationId, recipient, onBack, onStartCall, onlineUserIds = new Set() }: DirectMessageAreaProps) {
+export default function DirectMessageArea({
+  conversationId,
+  recipient,
+  onBack,
+  onStartCall,
+  onlineUserIds = new Set(),
+}: DirectMessageAreaProps) {
   const { token, user } = useAuth();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +68,12 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [pendingFile, setPendingFile] = useState<{ url: string; type: string; name: string; size: number } | null>(null);
+  const [pendingFile, setPendingFile] = useState<{
+    url: string;
+    type: string;
+    name: string;
+    size: number;
+  } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
@@ -106,9 +117,13 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       await api.requestDmSummary(token, conversationId);
       // summaryLoading stays true until the WS event fires (or timeout above)
     } catch (err) {
-      if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }
+      if (summaryTimeoutRef.current) {
+        clearTimeout(summaryTimeoutRef.current);
+        summaryTimeoutRef.current = null;
+      }
       console.error('Summary API Error:', err);
-      const msg = err instanceof Error ? err.message : 'Failed to queue DM summary. Please try again.';
+      const msg =
+        err instanceof Error ? err.message : 'Failed to queue DM summary. Please try again.';
       setSummaryText(`⚠️ ${msg}`);
       setSummaryLoading(false);
     }
@@ -274,31 +289,46 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     // ── Events ─────────────────────────────────────────────────────────────
 
     socket.on('new_direct_message', (msg: DirectMessage) => {
-      setMessages(prev => {
-        if (prev.some(m => m.id === msg.id)) return prev;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
     });
 
-    socket.on('dm_typing', ({ userId, username }: { userId: string; username: string; conversationId: string }) => {
-      if (userId === user.id) return;
-      setTypingUsers(prev => { const n = new Map(prev); n.set(userId, username || 'Someone'); return n; });
-    });
+    socket.on(
+      'dm_typing',
+      ({ userId, username }: { userId: string; username: string; conversationId: string }) => {
+        if (userId === user.id) return;
+        setTypingUsers((prev) => {
+          const n = new Map(prev);
+          n.set(userId, username || 'Someone');
+          return n;
+        });
+      }
+    );
 
     socket.on('dm_stopped_typing', ({ userId }: { userId: string }) => {
-      setTypingUsers(prev => { const n = new Map(prev); n.delete(userId); return n; });
+      setTypingUsers((prev) => {
+        const n = new Map(prev);
+        n.delete(userId);
+        return n;
+      });
     });
 
     // ── dm_message_updated ───────────────────────────────────────────────────
     socket.on('dm_message_updated', (updated: DirectMessage) => {
-      setMessages(prev => prev.map(m =>
-        m.id === updated.id ? { ...m, content: updated.content, isEdited: true, updatedAt: updated.updatedAt } : m
-      ));
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === updated.id
+            ? { ...m, content: updated.content, isEdited: true, updatedAt: updated.updatedAt }
+            : m
+        )
+      );
     });
 
     // ── dm_message_deleted ───────────────────────────────────────────────────
     socket.on('dm_message_deleted', ({ messageId }: { messageId: string }) => {
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
     });
 
     // ── summary_generated (Phase 9.3) ────────────────────────────────────────
@@ -306,7 +336,10 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     socket.on('summary_generated', (payload: { summary: string; conversationId?: string }) => {
       if (payload.conversationId && payload.conversationId !== conversationId) return;
       // Clear the 15s timeout — WS arrived in time
-      if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }
+      if (summaryTimeoutRef.current) {
+        clearTimeout(summaryTimeoutRef.current);
+        summaryTimeoutRef.current = null;
+      }
       setSummaryText(payload.summary);
       setSummaryLoading(false);
     });
@@ -314,10 +347,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     // Defer connect by 50 ms — gives the React Strict Mode first-invoke cleanup
     // time to cancel this timer before socket.connect() is ever called.
     connectTimer = setTimeout(() => {
-      if (
-        socketRef.current === socket &&
-        (socket as any).__instanceId === instanceId
-      ) {
+      if (socketRef.current === socket && (socket as any).__instanceId === instanceId) {
         socket.connect();
       }
     }, 50);
@@ -387,23 +417,34 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   // ── File upload ──────────────────────────────────────────────────────────
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    if (!token) return;
-    setUploadingFile(true);
-    try {
-      const result = await api.uploadFile(token, file);
-      setPendingFile({ url: result.url, type: result.mimeType, name: result.originalName, size: result.size });
-    } catch (e) {
-      console.warn('[DM] upload error:', e);
-    } finally {
-      setUploadingFile(false);
-    }
-  }, [token]);
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!token) return;
+      setUploadingFile(true);
+      try {
+        const result = await api.uploadFile(token, file);
+        setPendingFile({
+          url: result.url,
+          type: result.mimeType,
+          name: result.originalName,
+          size: result.size,
+        });
+      } catch (e) {
+        console.warn('[DM] upload error:', e);
+      } finally {
+        setUploadingFile(false);
+      }
+    },
+    [token]
+  );
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -413,10 +454,14 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
 
   // ── Drag & Drop ──────────────────────────────────────────────────────────
 
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
   const handleDragLeave = () => setIsDragging(false);
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false);
+    e.preventDefault();
+    setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file);
   };
@@ -435,24 +480,53 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     setEditError(null);
   }, []);
 
-  const handleSaveEdit = useCallback(async (messageId: string) => {
-    if (!token || !editContent.trim()) return;
-    setEditSaving(true);
-    setEditError(null);
-    try {
-      await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content: editContent.trim() }),
-      });
-      setEditingMessageId(null);
-      setEditContent('');
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : 'Failed to save edit');
-    } finally {
-      setEditSaving(false);
-    }
-  }, [conversationId, token, editContent]);
+  const handleSaveEdit = useCallback(
+    async (messageId: string) => {
+      if (!token || !editContent.trim()) return;
+      setEditSaving(true);
+      setEditError(null);
+      try {
+        await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ content: editContent.trim() }),
+        });
+        setEditingMessageId(null);
+        setEditContent('');
+      } catch (err) {
+        setEditError(err instanceof Error ? err.message : 'Failed to save edit');
+      } finally {
+        setEditSaving(false);
+      }
+    },
+    [conversationId, token, editContent]
+  );
+
+  // ── Reaction handlers ──────────────────────────────────────────────────────
+  const handleReactionClick = useCallback(
+    async (emoji: string, messageId: string) => {
+      if (!token) return;
+      try {
+        const res = await fetch(
+          `${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ emoji }),
+          }
+        );
+        if (res.ok) {
+          const updated = await res.json();
+          setMessages((prev) =>
+            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions || [] } : m))
+          );
+        }
+      } catch (err) {
+        console.warn('[DM] reaction error:', err);
+      }
+    },
+    [conversationId, token]
+  );
 
   // ── Delete handlers ──────────────────────────────────────────────────────
 
@@ -481,18 +555,24 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     setLoadingOlder(true);
     const topId = messages[0]?.id;
     try {
-      const res = await fetch(`${API_URL}/direct/${conversationId}/messages?limit=50&cursor=${encodeURIComponent(nextCursor)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${API_URL}/direct/${conversationId}/messages?limit=50&cursor=${encodeURIComponent(nextCursor)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const data = await res.json();
       const older: DirectMessage[] = data.messages ?? [];
-      setMessages(prev => {
-        const ids = new Set(prev.map(m => m.id));
-        return [...older.filter(m => !ids.has(m.id)), ...prev];
+      setMessages((prev) => {
+        const ids = new Set(prev.map((m) => m.id));
+        return [...older.filter((m) => !ids.has(m.id)), ...prev];
       });
       setNextCursor(data.nextCursor ?? null);
       setHasMore(!!data.nextCursor);
-      if (topId) requestAnimationFrame(() => document.getElementById(`dm-${topId}`)?.scrollIntoView({ block: 'start' }));
+      if (topId)
+        requestAnimationFrame(() =>
+          document.getElementById(`dm-${topId}`)?.scrollIntoView({ block: 'start' })
+        );
     } finally {
       setLoadingOlder(false);
     }
@@ -501,11 +581,12 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
   const displayName = recipient.fullName || recipient.username;
   const initial = displayName.charAt(0).toUpperCase();
 
-  if (loading) return (
-    <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-      <p className="text-gray-500 dark:text-gray-400">Loading…</p>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+        <p className="text-gray-500 dark:text-gray-400">Loading…</p>
+      </div>
+    );
 
   return (
     <div
@@ -534,7 +615,6 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
 
       {/* ── Premium DM Header ───────────────────────────────────────────────── */}
       <div className="h-16 w-full bg-white/80 dark:bg-gray-900/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
-
         {/* Back button (mobile) */}
         {onBack && (
           <button
@@ -542,7 +622,14 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
             className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
             aria-label="Back"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -572,9 +659,13 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
 
         {/* Name + status — takes remaining space, truncates gracefully */}
         <div className="min-w-0 flex-1">
-          <p className="text-gray-900 dark:text-white font-semibold text-sm leading-tight truncate">{displayName}</p>
+          <p className="text-gray-900 dark:text-white font-semibold text-sm leading-tight truncate">
+            {displayName}
+          </p>
           <p className="text-gray-500 dark:text-gray-400 text-xs leading-tight truncate flex items-center gap-1">
-            <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+            <span
+              className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'}`}
+            />
             <span>{onlineUserIds.has(recipient.id) ? 'Active now' : `@${recipient.username}`}</span>
           </p>
         </div>
@@ -586,8 +677,19 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
             className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
             title="Start video call"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.89L15 14M4 8a2 2 0 012-2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.75}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.89L15 14M4 8a2 2 0 012-2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"
+              />
             </svg>
             <span className="hidden sm:inline">Call</span>
           </button>
@@ -608,8 +710,11 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
         <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-6 pb-2 space-y-1">
           {hasMore && (
             <div className="flex justify-center pb-2">
-              <button onClick={loadOlder} disabled={loadingOlder}
-                className="px-4 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-full transition-all disabled:opacity-50">
+              <button
+                onClick={loadOlder}
+                disabled={loadingOlder}
+                className="px-4 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-full transition-all disabled:opacity-50"
+              >
                 {loadingOlder ? 'Loading…' : '⬆ Load older'}
               </button>
             </div>
@@ -620,14 +725,21 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
             const prevMsg = messages[i - 1];
             const nextMsg = messages[i + 1];
             // Group with previous if same sender within 5 minutes
-            const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId ||
-              (new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) >= 5 * 60 * 1000;
-            const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId ||
-              (new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime()) >= 5 * 60 * 1000;
+            const isFirstInGroup =
+              !prevMsg ||
+              prevMsg.senderId !== msg.senderId ||
+              new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() >=
+                5 * 60 * 1000;
+            const isLastInGroup =
+              !nextMsg ||
+              nextMsg.senderId !== msg.senderId ||
+              new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime() >=
+                5 * 60 * 1000;
 
             // Unread divider
             const lastReadAt = lastReadAtRef.current;
-            const isFirstUnread = lastReadAt &&
+            const isFirstUnread =
+              lastReadAt &&
               new Date(msg.createdAt) > new Date(lastReadAt) &&
               (!prevMsg || new Date(prevMsg.createdAt) <= new Date(lastReadAt));
 
@@ -662,8 +774,12 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
                     isOwnMessage={isMine}
                     isHighlighted={false}
                     currentUserId={user?.id ?? ''}
-                    onAddReaction={() => {}}
-                    onRemoveReaction={() => {}}
+                    onAddReaction={(msgId: string, emoji: string) =>
+                      handleReactionClick(emoji, msgId)
+                    }
+                    onRemoveReaction={(msgId: string, reactionId: string, emoji: string) =>
+                      handleReactionClick(emoji, msgId)
+                    }
                     onOpenThread={() => {}}
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
@@ -719,17 +835,30 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
         <div className="px-4 pb-2 flex-shrink-0">
           <div className="flex items-center gap-3 bg-gray-200 dark:bg-gray-600 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 w-fit">
             {pendingFile.type.startsWith('image/') ? (
-              <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
+              <img
+                src={pendingFile.url}
+                alt={pendingFile.name}
+                className="h-20 w-auto object-contain rounded-md flex-shrink-0"
+              />
             ) : (
               <span className="text-xl flex-shrink-0">
-                {pendingFile.type.startsWith('video/') ? '🎬' : pendingFile.type.startsWith('audio/') ? '🎵' : '📎'}
+                {pendingFile.type.startsWith('video/')
+                  ? '🎬'
+                  : pendingFile.type.startsWith('audio/')
+                    ? '🎵'
+                    : '📎'}
               </span>
             )}
             <div className="flex flex-col min-w-0">
               <span className="truncate max-w-xs">{pendingFile.name}</span>
               <span className="text-gray-400 text-xs">{formatFileSize(pendingFile.size)}</span>
             </div>
-            <button onClick={() => setPendingFile(null)} className="text-gray-400 hover:text-red-400 ml-1 flex-shrink-0">✕</button>
+            <button
+              onClick={() => setPendingFile(null)}
+              className="text-gray-400 hover:text-red-400 ml-1 flex-shrink-0"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}
@@ -737,12 +866,7 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
       {/* Input */}
       <div className="px-4 pb-4 flex-shrink-0">
         <div className="flex items-center gap-2 bg-gray-200 dark:bg-gray-600 rounded-xl px-3 py-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileSelect}
-          />
+          <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingFile}
@@ -751,12 +875,30 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
           >
             {uploadingFile ? (
               <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                />
               </svg>
             )}
           </button>
@@ -775,7 +917,12 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
             aria-label="Send message"
             title="Send message"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-white"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
             </svg>
           </button>

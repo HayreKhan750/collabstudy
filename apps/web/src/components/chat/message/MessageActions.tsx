@@ -19,14 +19,19 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
   return (
     <div className="relative group/tip">
       {children}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-gray-800 dark:bg-gray-900 text-gray-100 text-xs rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 border border-white/10">
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-slate-800 dark:bg-slate-950 text-slate-100 text-xs rounded whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 border border-slate-700">
         {label}
       </div>
     </div>
   );
 }
 
-function ActionButton({ onClick, title, children, danger }: {
+function ActionButton({
+  onClick,
+  title,
+  children,
+  danger,
+}: {
   onClick: () => void;
   title: string;
   children: React.ReactNode;
@@ -35,12 +40,17 @@ function ActionButton({ onClick, title, children, danger }: {
   return (
     <Tooltip label={title}>
       <button
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
         className={`
           p-1.5 rounded-md transition-colors duration-150
-          ${danger
-            ? 'text-gray-400 hover:text-red-400 hover:bg-red-500/10'
-            : 'text-gray-400 hover:text-white hover:bg-white/10'}
+          ${
+            danger
+              ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
+              : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+          }
         `}
       >
         {children}
@@ -79,7 +89,7 @@ export function MessageActions({
       className="
         absolute -top-4 right-2 z-20
         flex items-center gap-0.5
-        bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg shadow-xl
+        bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl
         px-1 py-0.5
         opacity-0 group-hover/message:opacity-100
         transition-opacity duration-150
@@ -91,16 +101,30 @@ export function MessageActions({
       <div className="relative" ref={pickerRef}>
         <Tooltip label="Add Reaction">
           <button
-            onClick={(e) => { e.stopPropagation(); setShowEmojiPicker((v) => !v); }}
-            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors duration-150"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowEmojiPicker((v) => !v);
+            }}
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors duration-150"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </button>
         </Tooltip>
         {showEmojiPicker && (
-          <div className="absolute bottom-full right-0 mb-2 flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 shadow-xl z-30">
+          <div className="absolute bottom-full right-0 mb-2 flex gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-30">
             {QUICK_EMOJIS.map((emoji) => (
               <button
                 key={emoji}
@@ -121,8 +145,19 @@ export function MessageActions({
       {/* Reply */}
       {onReply && (
         <ActionButton onClick={onReply} title="Reply in Thread">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+            />
           </svg>
         </ActionButton>
       )}
@@ -130,8 +165,19 @@ export function MessageActions({
       {/* Thread */}
       {onThread && (
         <ActionButton onClick={onThread} title="Open Thread">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
         </ActionButton>
       )}
@@ -139,8 +185,19 @@ export function MessageActions({
       {/* Edit (own messages only) */}
       {isOwnMessage && onEdit && (
         <ActionButton onClick={onEdit} title="Edit Message">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
           </svg>
         </ActionButton>
       )}
@@ -148,8 +205,19 @@ export function MessageActions({
       {/* Delete (own messages only) */}
       {isOwnMessage && onDelete && (
         <ActionButton onClick={onDelete} title="Delete Message" danger>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
           </svg>
         </ActionButton>
       )}

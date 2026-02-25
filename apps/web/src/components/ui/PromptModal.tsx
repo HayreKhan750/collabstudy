@@ -73,15 +73,15 @@ export function PromptModal({
 
           {/* Dialog */}
           <motion.div
-            className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[var(--color-surface)] p-6 shadow-2xl"
+            className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl"
             initial={{ opacity: 0, scale: 0.92, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 8 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
           >
-            <h2 className="mb-4 text-base font-semibold text-[var(--color-fg)]">{title}</h2>
+            <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
 
-            <label className="mb-1.5 block text-xs font-medium text-[var(--color-fg-muted)]">
+            <label className="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">
               {label}
             </label>
             <input
@@ -90,20 +90,20 @@ export function PromptModal({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={placeholder}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-muted)] outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-all"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
             />
 
             <div className="mt-4 flex gap-3">
               <button
                 onClick={onCancel}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-[var(--color-fg-muted)] transition-all hover:bg-white/10 hover:text-[var(--color-fg)]"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={() => value.trim() && onConfirm(value.trim())}
                 disabled={!value.trim()}
-                className="flex-1 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {confirmLabel}
               </button>

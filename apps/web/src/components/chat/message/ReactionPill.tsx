@@ -53,9 +53,11 @@ export function ReactionPill({ reactions, currentUserId, onAdd, onRemove }: Reac
             className={`
               inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
               border transition-all duration-150 select-none
-              ${isMine
-                ? 'bg-blue-500/25 border-blue-400/60 text-blue-200 hover:bg-blue-500/35'
-                : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'}
+              ${
+                isMine
+                  ? 'bg-blue-500/20 dark:bg-blue-500/30 border-blue-400/40 dark:border-blue-400/60 text-blue-600 dark:text-blue-200 hover:bg-blue-500/30 dark:hover:bg-blue-500/40'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20'
+              }
             `}
             title={isMine ? `You reacted ${g.emoji}` : `React with ${g.emoji}`}
           >

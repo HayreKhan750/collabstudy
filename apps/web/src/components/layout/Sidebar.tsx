@@ -43,7 +43,14 @@ interface SidebarProps {
 
 function ChevronLeftIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
     </svg>
   );
@@ -51,7 +58,14 @@ function ChevronLeftIcon() {
 
 function ChevronRightIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   );
@@ -90,18 +104,26 @@ export default function Sidebar({
 
   // ── Prompt / Confirm modal state ─────────────────────────────────────────
   const [promptModal, setPromptModal] = useState<{
-    title: string; message: string; defaultValue: string;
+    title: string;
+    message: string;
+    defaultValue: string;
     onConfirm: (val: string) => void;
   } | null>(null);
 
   const [confirmModal, setConfirmModal] = useState<{
-    title: string; message: string; danger: boolean;
+    title: string;
+    message: string;
+    danger: boolean;
     onConfirm: () => void;
   } | null>(null);
 
   // Reset loading state when channels prop updates
-  useEffect(() => { setLoadingChannels(false); }, [channels]);
-  useEffect(() => { if (selectedWorkspace) setLoadingChannels(true); }, [selectedWorkspace?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setLoadingChannels(false);
+  }, [channels]);
+  useEffect(() => {
+    if (selectedWorkspace) setLoadingChannels(true);
+  }, [selectedWorkspace?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChannelCreated = (channel: Channel) => {
     setShowCreateChannel(false);
@@ -191,14 +213,18 @@ export default function Sidebar({
   const sidebarContent = (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center h-14 border-b border-gray-200 dark:border-white/10 flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'justify-between px-3'}`}>
+      <div
+        className={`flex items-center h-14 border-b border-slate-200 dark:border-white/10 flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'justify-between px-3'}`}
+      >
         {!collapsed && (
-          <span className="text-gray-900 dark:text-white font-bold text-base tracking-tight">CollabStudy</span>
+          <span className="text-slate-900 dark:text-white font-bold text-base tracking-tight">
+            CollabStudy
+          </span>
         )}
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
@@ -256,7 +282,7 @@ export default function Sidebar({
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 transition-all duration-300 ease-in-out flex-shrink-0 z-20
+        className={`hidden md:flex flex-col h-full bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-white/10 transition-all duration-300 ease-in-out flex-shrink-0 z-20
           ${collapsed ? 'w-[60px]' : 'w-60'}`}
         style={{ minWidth: collapsed ? 60 : 240 }}
       >
@@ -284,7 +310,7 @@ export default function Sidebar({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-72 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 z-50 md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-72 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-white/10 z-50 md:hidden flex flex-col"
             >
               {sidebarContent}
             </motion.aside>

@@ -43,14 +43,14 @@ export default function CreateChannelModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Create Channel</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Create Channel</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
             aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,16 +59,16 @@ export default function CreateChannelModal({
           </button>
         </div>
 
-        <p className="text-sm text-gray-400 mb-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           Channels are where conversations happen. Use lowercase letters, numbers, and hyphens.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <label htmlFor="channelName" className="block text-sm font-medium text-gray-300 mb-1">
+          <label htmlFor="channelName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Channel Name
           </label>
-          <div className="flex items-center bg-gray-700 border border-gray-600 rounded px-3 py-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
-            <span className="text-gray-400 mr-1">#</span>
+          <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+            <span className="text-slate-400 mr-1">#</span>
             <input
               id="channelName"
               type="text"
@@ -78,12 +78,12 @@ export default function CreateChannelModal({
               maxLength={100}
               autoFocus
               required
-              className="flex-1 bg-transparent text-white placeholder-gray-500 focus:outline-none text-sm"
+              className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none text-sm"
             />
           </div>
 
           {error && (
-            <p className="mt-2 text-sm text-red-400">{error}</p>
+            <p className="mt-2 text-sm text-red-500 dark:text-red-400">{error}</p>
           )}
 
           <div className="mt-6 flex justify-end space-x-3">
@@ -91,14 +91,14 @@ export default function CreateChannelModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded hover:bg-gray-600 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !channelName.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Channel'}
             </button>

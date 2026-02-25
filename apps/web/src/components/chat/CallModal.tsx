@@ -6,10 +6,7 @@ import { io, Socket } from 'socket.io-client';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ],
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
 };
 
 export type CallState = 'idle' | 'calling' | 'incoming' | 'active' | 'ended';
@@ -70,7 +67,7 @@ export default function CallModal({
   const cleanup = useCallback(() => {
     peerRef.current?.close();
     peerRef.current = null;
-    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     if (durationTimerRef.current) clearInterval(durationTimerRef.current);
     durationTimerRef.current = null;
@@ -93,70 +90,76 @@ export default function CallModal({
 
   // ── Create RTCPeerConnection ───────────────────────────────────────────────
 
-  const createPeer = useCallback((stream: MediaStream): RTCPeerConnection => {
-    const peer = new RTCPeerConnection(ICE_SERVERS);
-    peerRef.current = peer;
+  const createPeer = useCallback(
+    (stream: MediaStream): RTCPeerConnection => {
+      const peer = new RTCPeerConnection(ICE_SERVERS);
+      peerRef.current = peer;
 
-    stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-    peer.onicecandidate = (e) => {
-      if (e.candidate && socket && remoteUserIdRef.current) {
-        socket.emit('ice_candidate', {
-          targetUserId: remoteUserIdRef.current,
-          candidate: e.candidate.toJSON(),
-        });
-      }
-    };
+      peer.onicecandidate = (e) => {
+        if (e.candidate && socket && remoteUserIdRef.current) {
+          socket.emit('ice_candidate', {
+            targetUserId: remoteUserIdRef.current,
+            candidate: e.candidate.toJSON(),
+          });
+        }
+      };
 
-    peer.ontrack = (e) => {
-      if (remoteVideoRef.current && e.streams[0]) {
-        remoteVideoRef.current.srcObject = e.streams[0];
-      }
-    };
+      peer.ontrack = (e) => {
+        if (remoteVideoRef.current && e.streams[0]) {
+          remoteVideoRef.current.srcObject = e.streams[0];
+        }
+      };
 
-    peer.onconnectionstatechange = () => {
-      if (peer.connectionState === 'connected') {
-        setCallState('active');
-        onStopRingtone?.(); // stop outgoing ringtone — call is now live
-        durationTimerRef.current = setInterval(() => setCallDuration(d => d + 1), 1000);
-      }
-      if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
-        endCall(false);
-      }
-    };
+      peer.onconnectionstatechange = () => {
+        if (peer.connectionState === 'connected') {
+          setCallState('active');
+          onStopRingtone?.(); // stop outgoing ringtone — call is now live
+          durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
+        }
+        if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
+          endCall(false);
+        }
+      };
 
-    return peer;
-  }, [socket]);
+      return peer;
+    },
+    [socket]
+  );
 
   // ── Initiate an outgoing call ──────────────────────────────────────────────
 
-  const startCall = useCallback(async (targetUserId: string, targetName: string, roomId: string) => {
-    if (!socket) return;
-    remoteUserIdRef.current = targetUserId;
-    roomIdRef.current = roomId;
-    setRemoteName(targetName);
-    setCallState('calling');
+  const startCall = useCallback(
+    async (targetUserId: string, targetName: string, roomId: string) => {
+      if (!socket) return;
+      remoteUserIdRef.current = targetUserId;
+      roomIdRef.current = roomId;
+      setRemoteName(targetName);
+      setCallState('calling');
 
-    try {
-      const stream = await getMedia();
-      const peer = createPeer(stream);
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
+      try {
+        const stream = await getMedia();
+        const peer = createPeer(stream);
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
 
-      socket.emit('call_offer', {
-        targetUserId,
-        sdp: offer,
-        callType: 'dm',
-        roomId,
-        callerId: userId,
-        callerName: username,
-      });
-    } catch (err) {
-      console.error('[Call] Failed to start call:', err);
-      cleanup();
-      setCallState('idle');
-    }
-  }, [socket, userId, username, getMedia, createPeer, cleanup]);
+        socket.emit('call_offer', {
+          targetUserId,
+          sdp: offer,
+          callType: 'dm',
+          roomId,
+          callerId: userId,
+          callerName: username,
+        });
+      } catch (err) {
+        console.error('[Call] Failed to start call:', err);
+        cleanup();
+        setCallState('idle');
+      }
+    },
+    [socket, userId, username, getMedia, createPeer, cleanup]
+  );
 
   // ── Accept an incoming call ────────────────────────────────────────────────
 
@@ -166,7 +169,7 @@ export default function CallModal({
     roomIdRef.current = incomingCall.roomId;
     setRemoteName(incomingCall.callerName);
     setCallState('active');
-    onStopRingtone?.();   // stop incoming ringtone
+    onStopRingtone?.(); // stop incoming ringtone
     onIncomingCallHandled();
 
     try {
@@ -189,7 +192,7 @@ export default function CallModal({
         sdp: answer,
       });
 
-      durationTimerRef.current = setInterval(() => setCallDuration(d => d + 1), 1000);
+      durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
     } catch (err) {
       console.error('[Call] Failed to accept call:', err);
       cleanup();
@@ -199,18 +202,21 @@ export default function CallModal({
 
   // ── End / reject a call ────────────────────────────────────────────────────
 
-  const endCall = useCallback((notify = true) => {
-    if (notify && socket && remoteUserIdRef.current) {
-      socket.emit('call_end', {
-        targetUserId: remoteUserIdRef.current,
-        roomId: roomIdRef.current,
-      });
-    }
-    cleanup();
-    onStopRingtone?.(); // always stop ringtone on any call end/decline
-    setCallState('idle');
-    onIncomingCallHandled();
-  }, [socket, cleanup, onIncomingCallHandled, onStopRingtone]);
+  const endCall = useCallback(
+    (notify = true) => {
+      if (notify && socket && remoteUserIdRef.current) {
+        socket.emit('call_end', {
+          targetUserId: remoteUserIdRef.current,
+          roomId: roomIdRef.current,
+        });
+      }
+      cleanup();
+      onStopRingtone?.(); // always stop ringtone on any call end/decline
+      setCallState('idle');
+      onIncomingCallHandled();
+    },
+    [socket, cleanup, onIncomingCallHandled, onStopRingtone]
+  );
 
   // ── Handle incoming socket events ─────────────────────────────────────────
 
@@ -268,13 +274,17 @@ export default function CallModal({
   // ── Toggle mic / camera ───────────────────────────────────────────────────
 
   const toggleMute = () => {
-    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
-    setIsMuted(m => !m);
+    localStreamRef.current?.getAudioTracks().forEach((t) => {
+      t.enabled = !t.enabled;
+    });
+    setIsMuted((m) => !m);
   };
 
   const toggleCamera = () => {
-    localStreamRef.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled; });
-    setIsCameraOff(c => !c);
+    localStreamRef.current?.getVideoTracks().forEach((t) => {
+      t.enabled = !t.enabled;
+    });
+    setIsCameraOff((c) => !c);
   };
 
   const formatDuration = (s: number) =>
@@ -315,7 +325,7 @@ export default function CallModal({
         `}</style>
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="call-modal-enter bg-gray-800 rounded-2xl p-8 flex flex-col items-center gap-6 shadow-2xl w-80 border border-gray-700">
+          <div className="call-modal-enter bg-white dark:bg-slate-800 rounded-2xl p-8 flex flex-col items-center gap-6 shadow-2xl w-80 border border-slate-200 dark:border-slate-700">
             {/* Pulsing avatar ring */}
             <div className="relative flex items-center justify-center">
               {/* Outer glow ring */}
@@ -326,8 +336,8 @@ export default function CallModal({
             </div>
 
             <div className="text-center">
-              <p className="text-white text-xl font-semibold">{remoteName}</p>
-              <p className="text-gray-400 text-sm mt-1 flex items-center justify-center gap-1">
+              <p className="text-slate-900 dark:text-white text-xl font-semibold">{remoteName}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 flex items-center justify-center gap-1">
                 <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 Incoming video call…
               </p>
@@ -336,7 +346,11 @@ export default function CallModal({
             <div className="flex gap-6">
               {/* Decline */}
               <button
-                onClick={() => { cleanup(); setCallState('idle'); onIncomingCallHandled(); }}
+                onClick={() => {
+                  cleanup();
+                  setCallState('idle');
+                  onIncomingCallHandled();
+                }}
                 className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 flex items-center justify-center text-white text-2xl transition-all duration-150"
                 title="Decline"
               >
@@ -376,7 +390,7 @@ export default function CallModal({
         `}</style>
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="call-modal-enter bg-gray-800 rounded-2xl p-8 flex flex-col items-center gap-6 shadow-2xl w-80 border border-gray-700">
+          <div className="call-modal-enter bg-white dark:bg-slate-800 rounded-2xl p-8 flex flex-col items-center gap-6 shadow-2xl w-80 border border-slate-200 dark:border-slate-700">
             <div className="relative flex items-center justify-center">
               <div className="absolute w-24 h-24 rounded-full bg-purple-500/20 calling-ring" />
               <div className="w-20 h-20 rounded-full bg-purple-600 flex items-center justify-center text-3xl z-10">
@@ -385,8 +399,8 @@ export default function CallModal({
             </div>
 
             <div className="text-center">
-              <p className="text-white text-xl font-semibold">{remoteName}</p>
-              <p className="text-gray-400 text-sm mt-1">Calling…</p>
+              <p className="text-slate-900 dark:text-white text-xl font-semibold">{remoteName}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Calling…</p>
             </div>
 
             <button
@@ -414,7 +428,7 @@ export default function CallModal({
         .call-active-enter { animation: call-fade-in 0.3s ease both; }
       `}</style>
 
-      <div className="call-active-enter fixed inset-0 z-50 bg-gray-900 flex flex-col">
+      <div className="call-active-enter fixed inset-0 z-50 bg-slate-900 dark:bg-gray-900 flex flex-col">
         {/* Remote video (full screen) */}
         <video
           ref={remoteVideoRef}
@@ -441,7 +455,7 @@ export default function CallModal({
             autoPlay
             playsInline
             muted
-            className="absolute top-4 right-4 w-32 h-24 rounded-xl object-cover border-2 border-gray-600 shadow-lg"
+            className="absolute top-4 right-4 w-32 h-24 rounded-xl object-cover border-2 border-slate-600 dark:border-slate-600 shadow-lg"
           />
 
           <div className="flex-1" />
@@ -451,7 +465,9 @@ export default function CallModal({
             <button
               onClick={toggleMute}
               className={`w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all duration-150 active:scale-95 ${
-                isMuted ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-700/80 hover:bg-gray-600'
+                isMuted
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : 'bg-slate-700/80 dark:bg-gray-700/80 hover:bg-slate-600 dark:hover:bg-gray-600'
               }`}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
@@ -460,7 +476,9 @@ export default function CallModal({
             <button
               onClick={toggleCamera}
               className={`w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all duration-150 active:scale-95 ${
-                isCameraOff ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-700/80 hover:bg-gray-600'
+                isMuted
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : 'bg-slate-700/80 dark:bg-gray-700/80 hover:bg-slate-600 dark:hover:bg-gray-600'
               }`}
               title={isCameraOff ? 'Turn camera on' : 'Turn camera off'}
             >

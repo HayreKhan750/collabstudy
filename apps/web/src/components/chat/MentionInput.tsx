@@ -185,8 +185,8 @@ export default function MentionInput({
     <div className="relative" data-mention-popover>
       {/* Autocomplete popover */}
       {showPopover && filtered.length > 0 && (
-        <div className="absolute bottom-full left-0 mb-2 w-64 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden z-50">
-          <div className="px-2 py-1 text-xs text-gray-500 border-b border-gray-700">
+        <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl overflow-hidden z-50">
+          <div className="px-2 py-1 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
             Members — ↑↓ to navigate, Enter to select
           </div>
           <ul>
@@ -195,23 +195,22 @@ export default function MentionInput({
                 <button
                   type="button"
                   onMouseDown={(e) => {
-                    e.preventDefault(); // prevent blur before click registers
+                    e.preventDefault();
                     selectMember(member);
                   }}
                   className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm transition-colors ${
                     idx === highlightIndex
                       ? 'bg-blue-600 text-white'
-                      : 'text-gray-200 hover:bg-gray-700'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  {/* Avatar initial */}
                   <span className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                     {(member.fullName || member.username).charAt(0).toUpperCase()}
                   </span>
                   <span className="truncate">
                     <span className="font-medium">@{member.username}</span>
                     {member.fullName && (
-                      <span className="ml-1 text-gray-400 text-xs">{member.fullName}</span>
+                      <span className={`ml-1 text-xs ${idx === highlightIndex ? 'text-blue-200' : 'text-slate-400 dark:text-slate-400'}`}>{member.fullName}</span>
                     )}
                   </span>
                 </button>
@@ -231,7 +230,7 @@ export default function MentionInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 px-4 py-2 bg-gray-600 border border-gray-500 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50"
+          className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50"
           autoComplete="off"
         />
         <button
