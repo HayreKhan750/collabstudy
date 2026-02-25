@@ -646,6 +646,45 @@ class ApiClient {
     });
     if (!res.ok) console.warn('[api] markDmRead failed:', res.status);
   }
+
+  // ── User Profile ──────────────────────────────────────────────────────────
+
+  /** GET /users/me — fetch current user profile */
+  async getMe(token: string): Promise<{ id: string; email: string; username: string; fullName: string | null; avatar: string | null; status: string }> {
+    const res = await fetch(`${API_URL}/users/me`, {
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) throw new Error('Failed to fetch profile');
+    return res.json();
+  }
+
+  /** PATCH /users/me — update fullName, username, avatarUrl */
+  async updateProfile(token: string, data: { fullName?: string; username?: string; avatarUrl?: string }): Promise<{ id: string; email: string; username: string; fullName: string | null; avatar: string | null }> {
+    const res = await fetch(`${API_URL}/users/me`, {
+      method: 'PATCH',
+      headers: this.getHeaders(token),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update profile');
+    }
+    return res.json();
+  }
+
+  /** PATCH /users/me/password — change password */
+  async changePassword(token: string, data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
+    const res = await fetch(`${API_URL}/users/me/password`, {
+      method: 'PATCH',
+      headers: this.getHeaders(token),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to change password');
+    }
+    return res.json();
+  }
 }
 
 export const api = new ApiClient();

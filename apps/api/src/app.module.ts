@@ -20,6 +20,7 @@ import { SearchModule } from './search/search.module';
 import { UploadModule } from './upload/upload.module';
 import { DirectModule } from './direct/direct.module';
 import { HealthModule } from './health/health.module';
+import { UsersModule } from './users/users.module';
 import { AiModule } from './ai/ai.module';
 
 @Module({
@@ -98,6 +99,7 @@ import { AiModule } from './ai/ai.module';
     UploadModule,
     DirectModule,
     HealthModule,
+    UsersModule,
     AiModule,
   ],
   controllers: [AppController],

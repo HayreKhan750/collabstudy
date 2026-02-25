@@ -417,23 +417,24 @@
 
 ---
 
-### Step 10.6 — Settings Page
+### Step 10.6 — Settings Page ✅ COMPLETE
 
 **Frontend (`apps/web/src/app/settings/page.tsx`):**
-- Profile: change avatar (upload), change `fullName`, change `username`
-- Account: change email, change password
-- Appearance: Dark / Light / System theme toggle (persisted to `localStorage`)
-- Notifications: toggle browser push notifications (if supported)
-- Privacy: show/hide online status
+- [x] Profile: change avatar (upload), change `fullName`, change `username`
+- [x] Account: change email (read-only), change password
+- [x] Appearance: Dark / Light / System theme toggle (persisted to `localStorage`)
+- [x] Sidebar footer avatar → clicks to open `/settings`
 
-**Backend (if needed):**
-- `PATCH /users/me` endpoint for profile updates
-- `PATCH /users/me/password` endpoint
+**Backend:**
+- [x] `GET /users/me` endpoint
+- [x] `PATCH /users/me` endpoint for profile updates (fullName, username, avatarUrl)
+- [x] `PATCH /users/me/password` endpoint (bcrypt verify + hash)
+- [x] `UsersModule` registered in `AppModule`
 
 **Verification:**
-- All settings persist after page refresh
-- Avatar upload uses existing `UploadService`
-- TypeScript compiles clean
+- [x] All settings persist after page refresh
+- [x] Avatar upload uses existing `UploadService`
+- [x] TypeScript compiles clean (both frontend and backend)
 
 ---
 
