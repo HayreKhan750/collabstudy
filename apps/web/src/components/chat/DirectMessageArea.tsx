@@ -583,14 +583,17 @@ export default function DirectMessageArea({
 
   if (loading)
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-        <p className="text-slate-500 dark:text-slate-400">Loading…</p>
+      <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-[#0E1015]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 rounded-full animate-spin" />
+          <p className="text-sm text-slate-400 dark:text-slate-500">Loading…</p>
+        </div>
       </div>
     );
 
   return (
     <div
-      className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0E1015] overflow-hidden relative ${isDragging ? 'ring-2 ring-violet-500/60 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -614,7 +617,7 @@ export default function DirectMessageArea({
       />
 
       {/* ── Premium DM Header ───────────────────────────────────────────────── */}
-      <div className="h-16 w-full bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-14 w-full bg-white/90 dark:bg-[#141821]/90 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.06] flex items-center px-4 gap-3 flex-shrink-0 z-10 shadow-sm dark:shadow-none">
         {/* Back button (mobile) */}
         {onBack && (
           <button
