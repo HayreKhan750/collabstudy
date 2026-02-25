@@ -189,10 +189,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     }, 35_000);
 
     try {
-      console.log('🚀 SENDING SUMMARY REQUEST TO BACKEND... channel:', channelId);
       // POST to queue the job — result arrives via summary_generated WS event
       await api.requestChannelSummary(token, channelId);
-      console.log('✅ Summary request queued successfully. Waiting for summary_generated WS event...');
       // summaryLoading stays true until the WS event fires (or timeout above)
     } catch (err) {
       if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }

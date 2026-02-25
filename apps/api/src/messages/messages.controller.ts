@@ -65,8 +65,6 @@ export class MessagesController {
     @Request() req: any,
     @Param('channelId') channelId: string,
   ) {
-    console.log('🚦 [1] Route hit! Received channel summary request for channelId:', channelId);
-    console.log('🚦 [2] About to enqueue job to BullMQ / Redis...');
     const jobData: ChannelSummaryJobData = {
       type: 'channel',
       channelId,
@@ -76,7 +74,6 @@ export class MessagesController {
       attempts: 3,
       backoff: { type: 'exponential', delay: 2_000 },
     });
-    console.log('🚦 [3] Job enqueued! jobId:', job.id, '— Sending HTTP 202 response...');
     return {
       status: 'queued',
       jobId: job.id,
