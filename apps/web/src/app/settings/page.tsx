@@ -12,9 +12,9 @@ type Theme = 'dark' | 'light' | 'system';
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-gray-300">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
       {children}
-      {hint && <p className="text-xs text-gray-500">{hint}</p>}
+      {hint && <p className="text-xs text-slate-500 dark:text-slate-500">{hint}</p>}
     </div>
   );
 }
@@ -23,7 +23,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full bg-gray-900/60 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all ${props.className ?? ''}`}
+      className={`w-full bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all ${props.className ?? ''}`}
     />
   );
 }
@@ -107,15 +107,15 @@ function ProfileTab({ token }: { token: string }) {
     }
   };
 
-  if (loading) return <div className="text-gray-400 text-sm">Loading profile…</div>;
+  if (loading) return <div className="text-slate-500 dark:text-slate-400 text-sm">Loading profile…</div>;
 
   const initial = (fullName || username || 'U').charAt(0).toUpperCase();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Profile</h2>
-        <p className="text-sm text-gray-400">Update your name, username, and avatar.</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Profile</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Update your name, username, and avatar.</p>
       </div>
 
       {/* Avatar */}
@@ -202,8 +202,8 @@ function AccountTab({ token }: { token: string }) {
       {/* Email (read-only) */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-white mb-1">Account</h2>
-          <p className="text-sm text-gray-400">Manage your email and password.</p>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Account</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Manage your email and password.</p>
         </div>
         <Field label="Email address" hint="Contact support to change your email address.">
           <Input value={email} disabled className="opacity-50 cursor-not-allowed" />
@@ -212,9 +212,9 @@ function AccountTab({ token }: { token: string }) {
 
       {/* Password change */}
       <form onSubmit={handlePasswordSubmit} className="space-y-5">
-        <div className="border-t border-white/5 pt-8">
-          <h3 className="text-base font-semibold text-white mb-1">Change password</h3>
-          <p className="text-sm text-gray-400 mb-5">Choose a strong password of at least 8 characters.</p>
+        <div className="border-t border-slate-200 dark:border-white/5 pt-8">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Change password</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">Choose a strong password of at least 8 characters.</p>
         </div>
         <Field label="Current password">
           <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Enter current password" required />
@@ -265,8 +265,8 @@ function AppearanceTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Appearance</h2>
-        <p className="text-sm text-gray-400">Choose how CollabStudy looks for you.</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Appearance</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Choose how CollabStudy looks for you.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -316,19 +316,19 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
       {/* Top bar */}
-      <div className="h-14 flex-shrink-0 bg-gray-900/80 backdrop-blur-md border-b border-white/5 flex items-center px-6 gap-4">
+      <div className="h-14 flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-white/5 flex items-center px-6 gap-4">
         <button
           onClick={() => router.back()}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
           aria-label="Go back"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-base font-semibold text-white">Settings</h1>
+        <h1 className="text-base font-semibold text-slate-900 dark:text-white">Settings</h1>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10 flex gap-8">
@@ -340,8 +340,8 @@ export default function SettingsPage() {
               onClick={() => setTab(t.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                 tab === t.id
-                  ? 'bg-white/10 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
               }`}
             >
               <span>{t.icon}</span>
@@ -351,7 +351,7 @@ export default function SettingsPage() {
         </nav>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 bg-gray-800/40 border border-white/5 rounded-2xl p-8">
+        <div className="flex-1 min-w-0 bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 rounded-2xl p-8">
           {tab === 'profile' && <ProfileTab token={token} />}
           {tab === 'account' && <AccountTab token={token} />}
           {tab === 'appearance' && <AppearanceTab />}

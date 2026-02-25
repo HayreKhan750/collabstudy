@@ -428,7 +428,7 @@ export default function CallModal({
         .call-active-enter { animation: call-fade-in 0.3s ease both; }
       `}</style>
 
-      <div className="call-active-enter fixed inset-0 z-50 bg-slate-900 dark:bg-gray-900 flex flex-col">
+      <div className="call-active-enter fixed inset-0 z-50 bg-slate-900 flex flex-col">
         {/* Remote video (full screen) */}
         <video
           ref={remoteVideoRef}
@@ -467,7 +467,7 @@ export default function CallModal({
               className={`w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all duration-150 active:scale-95 ${
                 isMuted
                   ? 'bg-red-500 hover:bg-red-600'
-                  : 'bg-slate-700/80 dark:bg-gray-700/80 hover:bg-slate-600 dark:hover:bg-gray-600'
+                  : 'bg-slate-700/80 hover:bg-slate-600'
               }`}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
@@ -478,7 +478,7 @@ export default function CallModal({
               className={`w-14 h-14 rounded-full flex items-center justify-center text-xl transition-all duration-150 active:scale-95 ${
                 isMuted
                   ? 'bg-red-500 hover:bg-red-600'
-                  : 'bg-slate-700/80 dark:bg-gray-700/80 hover:bg-slate-600 dark:hover:bg-gray-600'
+                  : 'bg-slate-700/80 hover:bg-slate-600'
               }`}
               title={isCameraOff ? 'Turn camera on' : 'Turn camera off'}
             >

@@ -583,14 +583,14 @@ export default function DirectMessageArea({
 
   if (loading)
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-        <p className="text-gray-500 dark:text-gray-400">Loading…</p>
+      <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+        <p className="text-slate-500 dark:text-slate-400">Loading…</p>
       </div>
     );
 
   return (
     <div
-      className={`flex-1 flex flex-col h-full bg-gray-100 dark:bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -598,7 +598,7 @@ export default function DirectMessageArea({
       {/* Drag overlay */}
       {isDragging && (
         <div className="absolute inset-0 bg-blue-500/20 z-40 flex items-center justify-center pointer-events-none">
-          <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-500 dark:text-blue-300 text-lg font-semibold">
+          <div className="bg-white dark:bg-slate-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-500 dark:text-blue-300 text-lg font-semibold">
             Drop file to send
           </div>
         </div>
@@ -614,12 +614,12 @@ export default function DirectMessageArea({
       />
 
       {/* ── Premium DM Header ───────────────────────────────────────────────── */}
-      <div className="h-16 w-full bg-white/80 dark:bg-gray-900/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-16 w-full bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
         {/* Back button (mobile) */}
         {onBack && (
           <button
             onClick={onBack}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
             aria-label="Back"
           >
             <svg
@@ -659,10 +659,10 @@ export default function DirectMessageArea({
 
         {/* Name + status — takes remaining space, truncates gracefully */}
         <div className="min-w-0 flex-1">
-          <p className="text-gray-900 dark:text-white font-semibold text-sm leading-tight truncate">
+          <p className="text-slate-900 dark:text-white font-semibold text-sm leading-tight truncate">
             {displayName}
           </p>
-          <p className="text-gray-500 dark:text-gray-400 text-xs leading-tight truncate flex items-center gap-1">
+          <p className="text-slate-500 dark:text-slate-400 text-xs leading-tight truncate flex items-center gap-1">
             <span
               className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-gray-500'}`}
             />
@@ -674,7 +674,7 @@ export default function DirectMessageArea({
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => onStartCall?.(recipient.id, displayName)}
-            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
+            className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
             title="Start video call"
           >
             <svg
@@ -696,7 +696,7 @@ export default function DirectMessageArea({
           {messages.length > 0 && (
             <button
               onClick={handleSummarize}
-              className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
+              className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 whitespace-nowrap"
             >
               <span aria-hidden="true">✨</span>
               <span className="hidden sm:inline">Summarize</span>
@@ -713,7 +713,7 @@ export default function DirectMessageArea({
               <button
                 onClick={loadOlder}
                 disabled={loadingOlder}
-                className="px-4 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-full transition-all disabled:opacity-50"
+                className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-transparent hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded-full transition-all disabled:opacity-50"
               >
                 {loadingOlder ? 'Loading…' : '⬆ Load older'}
               </button>
@@ -833,7 +833,7 @@ export default function DirectMessageArea({
       {/* Pending file preview */}
       {pendingFile && (
         <div className="px-4 pb-2 flex-shrink-0">
-          <div className="flex items-center gap-3 bg-gray-200 dark:bg-gray-600 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 w-fit">
+          <div className="flex items-center gap-3 bg-slate-200 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 w-fit">
             {pendingFile.type.startsWith('image/') ? (
               <img
                 src={pendingFile.url}
@@ -865,12 +865,12 @@ export default function DirectMessageArea({
 
       {/* Input */}
       <div className="px-4 pb-4 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-gray-200 dark:bg-gray-600 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
           <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingFile}
-            className="text-gray-400 hover:text-white transition-colors disabled:opacity-50 flex-shrink-0"
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors disabled:opacity-50 flex-shrink-0"
             title="Attach file"
           >
             {uploadingFile ? (
@@ -908,7 +908,7 @@ export default function DirectMessageArea({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={`Message ${displayName}`}
-            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 text-sm focus:outline-none"
+            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none"
           />
           <button
             onClick={handleSend}

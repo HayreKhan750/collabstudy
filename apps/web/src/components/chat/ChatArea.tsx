@@ -991,8 +991,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-gray-500">Loading messages…</p>
+      <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+        <p className="text-slate-500 dark:text-slate-400">Loading messages…</p>
       </div>
     );
   }
@@ -1004,7 +1004,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       onClick={() => setSelectedImage(null)}
     >
       <button
-        className="absolute top-4 right-4 text-white bg-gray-800/60 hover:bg-gray-700 rounded-full p-2 transition-colors"
+        className="absolute top-4 right-4 text-white bg-slate-800/60 hover:bg-slate-700 rounded-full p-2 transition-colors"
         onClick={() => setSelectedImage(null)}
         aria-label="Close image"
       >
@@ -1083,7 +1083,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     // Shared card style for text & generic files — adapts to bubble colour
     const cardBg = isMine
       ? 'bg-blue-700 hover:bg-blue-800 border-blue-500 text-white'
-      : 'bg-gray-700 hover:bg-gray-600 border-gray-500 text-gray-100';
+      : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border-slate-300 dark:border-slate-500 text-slate-800 dark:text-slate-100';
 
     // Text file: open in new tab
     if (mime.startsWith('text/')) {
@@ -1142,7 +1142,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   return (
     <div
-      className={`flex-1 flex flex-col h-full bg-gray-100 dark:bg-gray-700 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -1150,14 +1150,14 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       {/* Drag overlay */}
       {isDragging && (
         <div className="absolute inset-0 bg-blue-500/20 z-40 flex items-center justify-center pointer-events-none">
-          <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-500 dark:text-blue-300 text-lg font-semibold">
+          <div className="bg-white dark:bg-slate-800 border-2 border-dashed border-blue-400 rounded-xl px-8 py-6 text-blue-500 dark:text-blue-300 text-lg font-semibold">
             Drop file to upload
           </div>
         </div>
       )}
       {ImageModal}
       {/* Header */}
-      <div className="h-16 w-full bg-white/80 dark:bg-gray-900/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-16 w-full bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
         {/* Mobile back button */}
         {onBack && (
           <button

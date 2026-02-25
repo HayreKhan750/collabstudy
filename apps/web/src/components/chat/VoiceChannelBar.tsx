@@ -214,14 +214,14 @@ export default function VoiceChannelBar({
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="border-t border-gray-700 mt-2">
+    <div className="border-t border-slate-200 dark:border-slate-700 mt-2">
       {/* Voice channel header row */}
       <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2 text-gray-400 text-xs font-semibold uppercase tracking-wide">
+        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide">
           <span>🔊</span>
           <span className="truncate">{channelName}</span>
           {participants.length > 0 && (
-            <span className="text-gray-500">· {participants.length}</span>
+            <span className="text-slate-400 dark:text-slate-500">· {participants.length}</span>
           )}
         </div>
         {!joined ? (
@@ -235,7 +235,7 @@ export default function VoiceChannelBar({
           <div className="flex items-center gap-1">
             <button
               onClick={toggleMute}
-              className={`text-xs px-2 py-1 rounded transition-colors ${isMuted ? 'bg-red-600 text-white' : 'bg-gray-600 hover:bg-gray-500 text-gray-200'}`}
+              className={`text-xs px-2 py-1 rounded transition-colors ${isMuted ? 'bg-red-600 text-white' : 'bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200'}`}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? '🔇' : '🎤'}
@@ -254,7 +254,7 @@ export default function VoiceChannelBar({
       {joined && participants.length > 0 && (
         <div className="px-4 pb-2 space-y-1">
           {participants.map((p, i) => (
-            <div key={p.userId ?? i} className="flex items-center gap-2 text-sm text-gray-300">
+            <div key={p.userId ?? i} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-xs text-white font-semibold">
                 {(p.username ?? '?')[0].toUpperCase()}
               </div>

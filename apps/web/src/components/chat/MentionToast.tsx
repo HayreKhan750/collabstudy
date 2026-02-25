@@ -47,7 +47,7 @@ export default function MentionToast({ notifications, onDismiss }: MentionToastP
         return (
           <div
             key={n.id}
-            className="pointer-events-auto flex items-start gap-3 w-80 bg-gray-800 border border-blue-500/60 rounded-xl shadow-2xl px-4 py-3 animate-in slide-in-from-right-4 fade-in duration-300"
+            className="pointer-events-auto flex items-start gap-3 w-80 bg-white dark:bg-slate-800 border border-blue-500/40 dark:border-blue-500/60 rounded-xl shadow-2xl px-4 py-3 animate-in slide-in-from-right-4 fade-in duration-300"
           >
             {/* Author avatar */}
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 mt-0.5">
@@ -56,19 +56,19 @@ export default function MentionToast({ notifications, onDismiss }: MentionToastP
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-semibold leading-tight">
-                <span className="text-blue-400">@{n.author.username}</span>
+              <p className="text-slate-900 dark:text-white text-sm font-semibold leading-tight">
+                <span className="text-blue-500 dark:text-blue-400">@{n.author.username}</span>
                 {' mentioned you'}
               </p>
-              <p className="text-gray-400 text-xs mt-0.5">
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                 in{' '}
-                <span className="text-gray-200 font-medium">
+                <span className="text-slate-700 dark:text-slate-200 font-medium">
                   #{n.channelName}
                 </span>
                 {' · '}
-                <span className="text-gray-500">{n.workspaceName}</span>
+                <span className="text-slate-400 dark:text-slate-500">{n.workspaceName}</span>
               </p>
-              <p className="text-gray-300 text-xs mt-1 italic truncate">
+              <p className="text-slate-600 dark:text-slate-300 text-xs mt-1 italic truncate">
                 "{preview(n.content)}"
               </p>
             </div>
@@ -76,7 +76,7 @@ export default function MentionToast({ notifications, onDismiss }: MentionToastP
             {/* Dismiss button */}
             <button
               onClick={() => onDismiss(n.id)}
-              className="flex-shrink-0 text-gray-500 hover:text-gray-300 transition-colors mt-0.5"
+              className="flex-shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors mt-0.5"
               aria-label="Dismiss notification"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

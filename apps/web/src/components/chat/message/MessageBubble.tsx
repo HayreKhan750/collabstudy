@@ -189,6 +189,21 @@ function FileAttachment({
     );
   })();
 
+  return (
+    <>
+      {preview}
+      {viewerOpen && (
+        <MediaViewer
+          url={url}
+          type={type}
+          name={name}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
 // ─── Thread reply badge ───────────────────────────────────────────────────────
 
 function ThreadBadge({ count, onClick }: { count: number; onClick: () => void }) {
@@ -196,7 +211,7 @@ function ThreadBadge({ count, onClick }: { count: number; onClick: () => void })
     <button
       onClick={onClick}
       className="
-        mt-1.5 flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300
+        mt-1.5 flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300
         bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40
         rounded-full px-2.5 py-0.5 transition-all duration-150
       "
