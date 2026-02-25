@@ -1162,7 +1162,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         {onBack && (
           <button
             onClick={onBack}
-            className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
             aria-label="Back to sidebar"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1176,7 +1176,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         {messages.length > 0 && (
           <button
             onClick={handleSummarize}
-            className="flex items-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 flex-shrink-0"
+            className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 flex-shrink-0"
           >
             <span>✨</span>
             <span className="hidden sm:inline">Summarize</span>
@@ -1188,7 +1188,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <div className="relative flex-1">
             {/* Search icon */}
             <svg
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 pointer-events-none"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -1202,11 +1202,11 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search messages…"
-              className="w-full bg-gray-700 text-gray-100 text-sm placeholder-gray-500 rounded-md pl-8 pr-3 py-1.5 border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 rounded-md pl-8 pr-3 py-1.5 border border-slate-200 dark:border-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
             />
             {/* Spinner while fetching */}
             {isSearching && (
-              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
@@ -1216,7 +1216,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           {isSearchActive && (
             <button
               onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchError(null); }}
-              className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
+              className="flex-shrink-0 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               title="Clear search"
               aria-label="Clear search"
             >
@@ -1239,7 +1239,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
             <div>
               <h3 className="text-white text-sm font-semibold">Search results</h3>
               {!isSearching && (
-                <p className="text-gray-400 text-xs mt-0.5">
+                <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                   {searchResults.length === 0
                     ? `No results for "${searchQuery}"`
                     : `${searchResults.length} result${searchResults.length !== 1 ? 's' : ''} for "${searchQuery}"`}
@@ -1248,7 +1248,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
             </div>
             <button
               onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchError(null); }}
-              className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-gray-700"
+              className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
               title="Close search"
               aria-label="Close search"
             >
@@ -1261,7 +1261,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           {/* Results list */}
           <div className="flex-1 overflow-y-auto">
             {isSearching ? (
-              <div className="flex items-center justify-center h-32 text-gray-400 text-sm gap-2">
+              <div className="flex items-center justify-center h-32 text-slate-400 dark:text-slate-500 text-sm gap-2">
                 <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -1273,15 +1273,15 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                 {searchError}
               </div>
             ) : searchResults.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm gap-2 px-4 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="flex flex-col items-center justify-center h-32 text-slate-400 dark:text-slate-500 text-sm gap-2 px-4 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
                 </svg>
                 No messages matched your search.
-                <span className="text-xs text-gray-500">Try a different keyword.</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">Try a different keyword.</span>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-700">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-700">
                 {searchResults.map((result) => {
                   const displayName = result.user.fullName || result.user.username;
                   const initial = displayName.charAt(0).toUpperCase();
