@@ -92,8 +92,10 @@ export default function DirectMessageArea({ conversationId, recipient, onBack, o
     }, 15_000);
 
     try {
+      console.log('🚀 SENDING SUMMARY REQUEST TO BACKEND... conversationId:', conversationId);
       // POST to queue the job — result arrives via summary_generated WS event
       await api.requestDmSummary(token, conversationId);
+      console.log('✅ DM Summary request queued successfully. Waiting for summary_generated WS event...');
       // summaryLoading stays true until the WS event fires (or timeout above)
     } catch (err) {
       if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }

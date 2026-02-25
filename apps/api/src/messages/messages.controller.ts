@@ -65,6 +65,7 @@ export class MessagesController {
     @Request() req: any,
     @Param('channelId') channelId: string,
   ) {
+    console.log('📥 API RECEIVED CHANNEL SUMMARY REQUEST, ADDING TO QUEUE... channelId:', channelId);
     const jobData: ChannelSummaryJobData = {
       type: 'channel',
       channelId,

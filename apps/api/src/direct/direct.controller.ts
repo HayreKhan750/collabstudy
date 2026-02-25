@@ -89,6 +89,7 @@ export class DirectController {
     @Request() req: any,
     @Param('id') conversationId: string,
   ) {
+    console.log('📥 API RECEIVED DM SUMMARY REQUEST, ADDING TO QUEUE... conversationId:', conversationId);
     const jobData: DmSummaryJobData = {
       type: 'dm',
       conversationId,
