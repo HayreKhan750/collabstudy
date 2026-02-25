@@ -14,7 +14,7 @@ function HashIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 text-gray-400 flex-shrink-0"
+      className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -29,7 +29,7 @@ function AtIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 text-gray-400 flex-shrink-0"
+      className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -88,13 +88,13 @@ export function TopBar({
   username,
 }: TopBarProps) {
   return (
-    <header className="h-14 flex-shrink-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-4 gap-4 z-10">
+    <header className="h-14 flex-shrink-0 bg-white/90 dark:bg-[#141821]/90 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.06] flex items-center justify-between px-4 gap-4 z-10 shadow-sm dark:shadow-none">
       {/* Left — hamburger (mobile) + breadcrumb */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Mobile hamburger */}
         <button
           onClick={onMobileMenuOpen}
-          className="md:hidden p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex-shrink-0"
+          className="md:hidden p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/8 transition-all duration-200 flex-shrink-0"
           aria-label="Open menu"
         >
           <HamburgerIcon />
@@ -145,7 +145,7 @@ export function TopBar({
         </span>
         <button
           onClick={onLogout}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-500/20 border border-transparent hover:border-red-200 dark:hover:border-red-500/30 transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-transparent hover:border-red-200 dark:hover:border-red-500/20 transition-all duration-200"
           title="Logout"
         >
           <LogoutIcon />
