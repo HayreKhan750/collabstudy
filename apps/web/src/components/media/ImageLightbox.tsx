@@ -125,7 +125,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
         </button>
         <button
           onClick={resetTransform}
-          className="text-xs text-gray-300 hover:text-white w-12 text-center tabular-nums transition-colors"
+          className="text-xs text-white/60 hover:text-white w-12 text-center tabular-nums transition-colors"
           aria-label="Reset zoom"
         >
           {Math.round(scale * 100)}%
@@ -189,7 +189,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
 
       {/* Image counter */}
       {images.length > 1 && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 text-xs text-gray-300 bg-black/50 rounded-full px-3 py-1">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 text-xs text-white/70 bg-black/50 rounded-full px-3 py-1">
           {index + 1} / {images.length}
         </div>
       )}

@@ -27,12 +27,12 @@ export function VideoPlayerModal({ src, name, onClose }: VideoPlayerModalProps) 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 dark:bg-black/95 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Header bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent z-10">
-        <span className="text-sm text-gray-200 font-medium truncate max-w-xs">{name || 'Video'}</span>
+        <span className="text-sm text-white font-medium truncate max-w-xs">{name || 'Video'}</span>
         <div className="flex items-center gap-2">
           {/* Download */}
           <a
@@ -72,9 +72,9 @@ export function VideoPlayerModal({ src, name, onClose }: VideoPlayerModalProps) 
       />
 
       {/* Keyboard hint */}
-      <p className="absolute bottom-4 text-xs text-gray-500 select-none">
-        Press <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 text-[10px]">Space</kbd> to pause ·{' '}
-        <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 text-[10px]">Esc</kbd> to close
+      <p className="absolute bottom-4 text-xs text-white/40 select-none">
+        Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/60 text-[10px]">Space</kbd> to pause ·{' '}
+        <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/60 text-[10px]">Esc</kbd> to close
       </p>
     </div>
   );

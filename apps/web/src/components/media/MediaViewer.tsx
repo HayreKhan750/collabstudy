@@ -75,7 +75,7 @@ function GenericFileViewer({ src, name, mimeType, onClose }: {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
@@ -84,14 +84,14 @@ function GenericFileViewer({ src, name, mimeType, onClose }: {
       >
         {/* File icon */}
         <div className="w-16 h-16 rounded-2xl bg-gray-700 border border-white/10 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
         </div>
 
         <div className="text-center">
           <p className="text-white font-semibold text-sm break-all">{name || 'File'}</p>
-          {mimeType && <p className="text-gray-400 text-xs mt-1">{mimeType}</p>}
+          {mimeType && <p className="text-white/40 text-xs mt-1">{mimeType}</p>}
         </div>
 
         <div className="flex gap-3 w-full">
@@ -109,7 +109,7 @@ function GenericFileViewer({ src, name, mimeType, onClose }: {
           </a>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-gray-200 rounded-xl text-sm font-medium transition-colors"
+            className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-xl text-sm font-medium transition-colors"
           >
             Close
           </button>

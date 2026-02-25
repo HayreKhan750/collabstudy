@@ -19,16 +19,16 @@ export function PDFPreviewModal({ src, name, onClose }: PDFPreviewModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col bg-black/80 dark:bg-black/95 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-white/10 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
-          <span className="text-sm text-gray-200 font-medium truncate">{name || 'Document'}</span>
+          <span className="text-sm text-white font-medium truncate">{name || 'Document'}</span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Open in new tab */}
