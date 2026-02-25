@@ -352,9 +352,9 @@ export default function LandingPage() {
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 flex flex-col items-center gap-6 max-w-4xl">
           {/* Badge */}
           <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-xs font-medium text-violet-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
-              Now with Gemini 2.5 Flash AI — Powered by WebRTC & Socket.io
+            <span className="inline-flex items-center gap-2 rounded-full border border-violet-100 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/10 px-4 py-1.5 text-xs font-medium text-violet-700 dark:text-violet-300 shadow-sm dark:shadow-none">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-500 dark:bg-violet-400 animate-pulse" />
+              ✨ Now with Gemini 2.5 Flash AI — Powered by WebRTC &amp; Socket.io
             </span>
           </motion.div>
 
@@ -517,26 +517,29 @@ export default function LandingPage() {
         <AnimatedSection className="mx-auto max-w-3xl">
           <motion.div
             variants={fadeUp}
-            className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-950/60 to-[#0f0f13] p-12 text-center shadow-[0_0_80px_-20px_rgba(124,58,237,0.4)]"
+            className="relative overflow-hidden rounded-3xl border border-violet-500/30 bg-gradient-to-br from-slate-900 via-violet-950/80 to-slate-900 p-12 text-center shadow-2xl shadow-violet-900/30 dark:shadow-[0_0_80px_-20px_rgba(124,58,237,0.5)]"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_120%,rgba(124,58,237,0.15),transparent)]" />
+            {/* Radial glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_120%,rgba(124,58,237,0.2),transparent)]" />
+            {/* Top shimmer line */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
             <div className="relative z-10">
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">
+              <h2 className="text-3xl font-bold text-white md:text-4xl">
                 Ready to build something great?
               </h2>
-              <p className="mt-4 text-base text-slate-500 dark:text-white/50">
+              <p className="mt-4 text-base text-white/60">
                 Join your team in minutes. No setup fees, no lock-in.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition-all duration-200 hover:scale-[1.02] hover:shadow-violet-900/60"
                 >
                   Create your workspace →
                 </Link>
                 <Link
                   href="/login"
-                  className="text-sm text-slate-400 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className="text-sm text-white/50 hover:text-white transition-colors hover:underline underline-offset-4"
                 >
                   Already have an account? Sign in
                 </Link>
