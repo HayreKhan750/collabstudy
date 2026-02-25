@@ -1,4 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+if (!API_URL) console.error('🚨 CRITICAL: API_URL is undefined! Check your .env file.');
 
 export interface RegisterData {
   email: string;
@@ -594,12 +595,23 @@ class ApiClient {
    * The actual summary is delivered via WebSocket event `summary_generated`.
    */
   async requestChannelSummary(token: string, channelId: string): Promise<{ status: string; jobId: string; message: string }> {
-    const res = await fetch(`${API_URL}/channels/${channelId}/messages/summary`, {
-      method: 'POST',
-      headers: this.getHeaders(token),
-    });
-    if (!res.ok) throw new Error('Failed to queue summary job');
-    return res.json();
+    try {
+      const res = await fetch(`${API_URL}/channels/${channelId}/messages/summary`, {
+        method: 'POST',
+        headers: this.getHeaders(token),
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`Server returned ${res.status}: ${body || 'Failed to queue summary job'}`);
+      }
+      return res.json();
+    } catch (err) {
+      if (err instanceof TypeError) {
+        console.error('🌐 Network error on requestChannelSummary:', err);
+        throw new Error('Cannot reach the backend server. Is it running, and is CORS configured?');
+      }
+      throw err;
+    }
   }
 
   /**
@@ -607,12 +619,23 @@ class ApiClient {
    * The actual summary is delivered via WebSocket event `summary_generated`.
    */
   async requestDmSummary(token: string, conversationId: string): Promise<{ status: string; jobId: string; message: string }> {
-    const res = await fetch(`${API_URL}/direct/${conversationId}/summary`, {
-      method: 'POST',
-      headers: this.getHeaders(token),
-    });
-    if (!res.ok) throw new Error('Failed to queue DM summary job');
-    return res.json();
+    try {
+      const res = await fetch(`${API_URL}/direct/${conversationId}/summary`, {
+        method: 'POST',
+        headers: this.getHeaders(token),
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`Server returned ${res.status}: ${body || 'Failed to queue DM summary job'}`);
+      }
+      return res.json();
+    } catch (err) {
+      if (err instanceof TypeError) {
+        console.error('🌐 Network error on requestDmSummary:', err);
+        throw new Error('Cannot reach the backend server. Is it running, and is CORS configured?');
+      }
+      throw err;
+    }
   }
 
   /** Mark a DM conversation as read for the current user (clears unread badge). */

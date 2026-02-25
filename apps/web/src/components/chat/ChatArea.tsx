@@ -197,7 +197,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     } catch (err) {
       if (summaryTimeoutRef.current) { clearTimeout(summaryTimeoutRef.current); summaryTimeoutRef.current = null; }
       console.error('Summary API Error:', err);
-      setSummaryText('⚠️ Failed to queue summary. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to queue summary. Please try again.';
+      setSummaryText(`⚠️ ${msg}`);
       setSummaryLoading(false);
     }
   };
