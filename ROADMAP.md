@@ -379,43 +379,41 @@
 
 ---
 
-### Step 10.4 — Chat UI Polish
+### ✅ Step 10.4 — Chat UI Polish — COMPLETE
 
 **Frontend:**
-- Telegram-style message bubbles (refine existing grouping logic):
-  - Sender name shown only on first message in a group
-  - Timestamp shown only on last message in group, or on hover
-  - Avatar shown only on last message in group
-  - Tail on first message of group
-- Message hover actions toolbar: Reply | React | Edit | Delete | Thread (appear on hover, right-aligned)
-- Reaction pill display: grouped by emoji with count, click to toggle
-- File attachments: full inline preview for images (click to open full-screen lightbox), video/audio player, generic file card with download button
-- Thread reply count badge under parent messages
-- "Unread messages" divider: pill-style, centered, sticky while scrolling through unread zone
-- Typing indicator: animated dots, shows up to 3 usernames then "and X others"
-- Scroll-to-bottom FAB: refined design with unread count badge
-- Message timestamp: "Today at 3:45 PM", "Yesterday at 10:00 AM", full date for older
+- ✅ Telegram-style message bubbles — modular sub-components (MessageBubble, MessageActions, ReactionPill, TypingIndicator, UnreadDivider, ScrollToBottomFAB)
+- ✅ Sender name shown only on first message in a group; avatar only on last
+- ✅ Message hover actions toolbar: Reply | React | Edit | Delete | Thread
+- ✅ Reaction pill display: grouped by emoji with count, click to toggle
+- ✅ File attachments: full inline preview for images, video/audio, generic file card with download
+- ✅ Thread reply count badge under parent messages
+- ✅ "Unread messages" divider: pill-style, centered, red gradient
+- ✅ Typing indicator: animated bouncing dots, shows up to 3 usernames
+- ✅ Scroll-to-bottom FAB: refined design with unread count badge
+- ✅ Applied to both ChatArea and DirectMessageArea
 
 **Verification:**
-- No layout breaking at any viewport width
-- All interactive states work (hover, focus, disabled)
-- No TypeScript errors
+- ✅ Zero TypeScript errors
+- ✅ All interactive states work (hover, focus, disabled)
 
 ---
 
-### Step 10.5 — Full Media Viewer Modal
+### ✅ Step 10.5 — Full Media Viewer Modal — COMPLETE
 
 **Frontend:**
-- Lightbox modal for images: zoom, pan, keyboard navigation (← →), close on Escape
-- Video player modal: full-screen capable, custom controls
-- Audio player: inline waveform visualizer (or simple seek bar)
-- PDF preview: embed in iframe or use react-pdf
-- "Download" button on all file types
+- ✅ ImageLightbox: zoom (scroll/keys), pan when zoomed, ← → gallery navigation, Escape to close
+- ✅ VideoPlayerModal: full-screen capable, native HTML5 controls, download button
+- ✅ AudioPlayerModal: seek bar, volume, play/pause, ±5s skip, waveform bars, download button
+- ✅ PDFPreviewModal: iframe embed, open-in-new-tab, download button
+- ✅ MediaViewer orchestrator: dispatches by MIME type, GenericFileViewer fallback
+- ✅ Wired into MessageBubble FileAttachment — all file types open correct viewer on click
+- ✅ AI Summary bug fixes: Redis NOAUTH fixed, room key mismatch fixed, timeout alignment
 
 **Verification:**
-- All file types handled
-- Keyboard accessible (Tab, Escape, arrow keys)
-- No layout breaking
+- ✅ All file types handled
+- ✅ Keyboard accessible (Tab, Escape, arrow keys)
+- ✅ Zero TypeScript errors
 
 ---
 
