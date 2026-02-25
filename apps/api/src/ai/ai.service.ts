@@ -22,7 +22,7 @@ export class AiService {
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const prompt = `You are a helpful assistant that summarises chat conversations.
 Analyse the following chat transcript and provide a concise, well-structured summary.
