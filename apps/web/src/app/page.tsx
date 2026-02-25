@@ -517,27 +517,31 @@ export default function LandingPage() {
         <AnimatedSection className="mx-auto max-w-3xl">
           <motion.div
             variants={fadeUp}
-            className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 dark:backdrop-blur-md p-12 text-center shadow-2xl shadow-slate-200/80 dark:shadow-none"
+            className="relative overflow-hidden rounded-3xl p-12 text-center
+              border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 shadow-2xl shadow-violet-100/80
+              dark:border-violet-500/20 dark:bg-gradient-to-br dark:from-violet-950/60 dark:to-[#0f0f13] dark:shadow-[0_0_80px_-20px_rgba(124,58,237,0.4)]"
           >
-            {/* Subtle top accent line */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-violet-400/50 dark:via-violet-500/40 to-transparent" />
+            {/* Light mode: soft geometric accent */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_120%,rgba(139,92,246,0.08),transparent)] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_120%,rgba(124,58,237,0.15),transparent)]" />
+            {/* Top shimmer line */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-violet-300 dark:via-violet-500/60 to-transparent" />
             <div className="relative z-10">
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">
                 Ready to build something great?
               </h2>
-              <p className="mt-4 text-base text-slate-600 dark:text-slate-400">
+              <p className="mt-4 text-base text-slate-500 dark:text-white/50">
                 Join your team in minutes. No setup fees, no lock-in.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-700 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 dark:shadow-none transition-all duration-200 hover:scale-[1.02]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 dark:shadow-none hover:opacity-90 transition-all duration-200 hover:scale-[1.02]"
                 >
                   Create your workspace →
                 </Link>
                 <Link
                   href="/login"
-                  className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors hover:underline underline-offset-4"
+                  className="text-sm text-slate-400 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-colors hover:underline underline-offset-4"
                 >
                   Already have an account? Sign in
                 </Link>
