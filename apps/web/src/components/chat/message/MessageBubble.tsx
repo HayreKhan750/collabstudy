@@ -194,8 +194,8 @@ function FileAttachment({
       {preview}
       {viewerOpen && (
         <MediaViewer
-          url={url}
-          type={type}
+          src={url}
+          mimeType={type}
           name={name}
           onClose={() => setViewerOpen(false)}
         />
@@ -271,7 +271,7 @@ export function MessageBubble({
 
   const bubbleColorClass = isOwnMessage
     ? 'bg-blue-600 text-white'
-    : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm';
+    : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-100 dark:border-white/[0.06]';
 
   const hasFileOnly = !!message.fileUrl && !message.content;
 
@@ -349,20 +349,20 @@ export function MessageBubble({
                   }
                   if (e.key === 'Escape') onEditCancel();
                 }}
-                className="w-full bg-gray-100 dark:bg-gray-700 border border-blue-500/60 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-blue-500/60 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
                 rows={2}
                 autoFocus
                 disabled={editSaving}
               />
               {editError && <p className="text-xs text-red-400">{editError}</p>}
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500 dark:text-gray-500">
+                <span className="text-slate-500 dark:text-slate-400">
                   Press{' '}
-                  <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
+                  <kbd className="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300">
                     Enter
                   </kbd>{' '}
                   to save,{' '}
-                  <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
+                  <kbd className="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300">
                     Esc
                   </kbd>{' '}
                   to cancel
@@ -370,13 +370,13 @@ export function MessageBubble({
                 <button
                   onClick={onEditSave}
                   disabled={editSaving}
-                  className="ml-auto px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-md disabled:opacity-50 transition-colors"
+                  className="ml-auto px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:opacity-50 transition-colors text-xs font-medium"
                 >
                   {editSaving ? 'Saving…' : 'Save'}
                 </button>
                 <button
                   onClick={onEditCancel}
-                  className="px-2.5 py-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition-colors"
+                  className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors text-xs font-medium"
                 >
                   Cancel
                 </button>
@@ -402,7 +402,7 @@ export function MessageBubble({
                   <span
                     className={`
                       block w-3 h-3 rounded-sm
-                      ${isOwnMessage ? 'bg-blue-600 -rotate-45 origin-bottom-left' : 'bg-white dark:bg-slate-700 rotate-45 origin-bottom-right'}
+                      ${isOwnMessage ? 'bg-blue-600 -rotate-45 origin-bottom-left' : 'bg-white dark:bg-slate-800 rotate-45 origin-bottom-right'}
                     `}
                   />
                 </span>

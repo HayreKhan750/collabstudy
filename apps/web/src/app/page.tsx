@@ -55,16 +55,16 @@ function FeatureCard({ icon, title, description, gradient }: FeatureCardProps) {
   return (
     <motion.div
       variants={fadeUp}
-      className="group relative rounded-2xl border border-white/5 bg-white/[0.03] p-6 backdrop-blur-sm hover:border-white/10 hover:bg-white/[0.06] transition-all duration-300"
+      className="group relative rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.03] p-6 backdrop-blur-sm hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.06] transition-all duration-300 shadow-sm dark:shadow-none"
     >
       {/* Gradient glow on hover */}
       <div className={cn('absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500', gradient)} />
       <div className="relative z-10">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 text-2xl border border-white/10">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 text-2xl border border-slate-200 dark:border-white/10">
           {icon}
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-white">{title}</h3>
-        <p className="text-sm leading-relaxed text-white/50">{description}</p>
+        <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
+        <p className="text-sm leading-relaxed text-slate-500 dark:text-white/50">{description}</p>
       </div>
     </motion.div>
   );
@@ -90,8 +90,8 @@ function PricingCard({ tier, price, description, features, highlight, badge, cta
       className={cn(
         'relative flex flex-col rounded-2xl border p-8 transition-all duration-300',
         highlight
-          ? 'border-violet-500/50 bg-violet-950/30 shadow-[0_0_60px_-10px_rgba(124,58,237,0.4)]'
-          : 'border-white/5 bg-white/[0.03] hover:border-white/10',
+          ? 'border-violet-500/50 bg-violet-50 dark:bg-violet-950/30 shadow-[0_0_60px_-10px_rgba(124,58,237,0.4)]'
+          : 'border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/10 shadow-sm dark:shadow-none',
       )}
     >
       {badge && (
@@ -102,17 +102,17 @@ function PricingCard({ tier, price, description, features, highlight, badge, cta
         </div>
       )}
       <div className="mb-6">
-        <p className="mb-1 text-sm font-medium uppercase tracking-widest text-white/40">{tier}</p>
+        <p className="mb-1 text-sm font-medium uppercase tracking-widest text-slate-400 dark:text-white/40">{tier}</p>
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold text-white">{price}</span>
-          {price !== 'Free' && <span className="text-white/40">/mo</span>}
+          <span className="text-4xl font-bold text-slate-900 dark:text-white">{price}</span>
+          {price !== 'Free' && <span className="text-slate-400 dark:text-white/40">/mo</span>}
         </div>
-        <p className="mt-2 text-sm text-white/50">{description}</p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-white/50">{description}</p>
       </div>
       <ul className="mb-8 flex flex-col gap-3 flex-1">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-sm text-white/70">
-            <span className="mt-0.5 text-violet-400 flex-shrink-0">✓</span>
+          <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-white/70">
+            <span className="mt-0.5 text-violet-500 dark:text-violet-400 flex-shrink-0">✓</span>
             {f}
           </li>
         ))}
@@ -123,7 +123,7 @@ function PricingCard({ tier, price, description, features, highlight, badge, cta
           'block w-full rounded-xl py-3 text-center text-sm font-semibold transition-all duration-200',
           highlight
             ? 'bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:opacity-90 shadow-lg'
-            : 'border border-white/10 text-white/80 hover:border-white/20 hover:text-white hover:bg-white/5',
+            : 'border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80 hover:border-violet-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5',
         )}
       >
         {ctaText}
@@ -143,13 +143,13 @@ function ChatPreview() {
   ];
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0f0f13]/80 backdrop-blur-xl overflow-hidden shadow-2xl">
+    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f0f13]/80 backdrop-blur-xl overflow-hidden shadow-2xl">
       {/* Window bar */}
-      <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/5 px-4 py-3">
         <div className="h-3 w-3 rounded-full bg-red-500/70" />
         <div className="h-3 w-3 rounded-full bg-yellow-500/70" />
         <div className="h-3 w-3 rounded-full bg-green-500/70" />
-        <div className="mx-auto flex items-center gap-2 text-xs text-white/30">
+        <div className="mx-auto flex items-center gap-2 text-xs text-slate-400 dark:text-white/30">
           <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
           #engineering · CollabStudy
         </div>
@@ -164,19 +164,19 @@ function ChatPreview() {
             transition={{ delay: 0.3 + i * 0.15, duration: 0.4, ease: 'easeOut' }}
             className={cn('flex items-start gap-3', m.self && 'flex-row-reverse')}
           >
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/5 text-sm border border-white/10">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-sm border border-slate-200 dark:border-white/10">
               {m.avatar}
             </div>
             <div className={cn('flex max-w-[75%] flex-col gap-1', m.self && 'items-end')}>
               <div className="flex items-center gap-2">
-                {!m.self && <span className="text-xs font-medium text-violet-400">{m.user}</span>}
-                <span className="text-[10px] text-white/20">{m.time}</span>
+                {!m.self && <span className="text-xs font-medium text-violet-600 dark:text-violet-400">{m.user}</span>}
+                <span className="text-[10px] text-slate-400 dark:text-white/20">{m.time}</span>
               </div>
               <div className={cn(
                 'rounded-2xl px-3 py-2 text-xs leading-relaxed',
                 m.self
                   ? 'rounded-tr-sm bg-violet-600/80 text-white'
-                  : 'rounded-tl-sm bg-white/5 text-white/80 border border-white/5',
+                  : 'rounded-tl-sm bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/80 border border-slate-200 dark:border-white/5',
               )}>
                 {m.text}
               </div>
@@ -188,12 +188,12 @@ function ChatPreview() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="flex items-center gap-2 text-xs text-white/30"
+          className="flex items-center gap-2 text-xs text-slate-400 dark:text-white/30"
         >
-          <div className="flex gap-1 px-3 py-2 rounded-2xl rounded-tl-sm bg-white/5 border border-white/5">
-            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/30 [animation-delay:0ms]" />
-            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/30 [animation-delay:150ms]" />
-            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/30 [animation-delay:300ms]" />
+          <div className="flex gap-1 px-3 py-2 rounded-2xl rounded-tl-sm bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 dark:bg-white/30 [animation-delay:0ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 dark:bg-white/30 [animation-delay:150ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 dark:bg-white/30 [animation-delay:300ms]" />
           </div>
           <span>Maya is typing…</span>
         </motion.div>
@@ -222,8 +222,8 @@ export default function LandingPage() {
   // While checking auth, show nothing (avoids flash)
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0f0f13]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-violet-500" />
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#0f0f13]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 dark:border-white/10 border-t-violet-500" />
       </div>
     );
   }
@@ -309,28 +309,28 @@ export default function LandingPage() {
   ];
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#0f0f13] text-white">
+    <main className="relative min-h-screen overflow-x-hidden bg-slate-50 dark:bg-[#0f0f13] text-slate-900 dark:text-white">
 
       {/* ── Fixed Nav ──────────────────────────────────────────────────────── */}
       <motion.nav
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b border-white/5 bg-[#0f0f13]/70"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#0f0f13]/70"
       >
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-cyan-600 text-sm font-bold">
             C
           </div>
-          <span className="text-base font-semibold tracking-tight">CollabStudy</span>
+          <span className="text-base font-semibold tracking-tight text-slate-900 dark:text-white">CollabStudy</span>
         </div>
-        <div className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
+        <div className="hidden items-center gap-8 text-sm text-slate-500 dark:text-white/60 md:flex">
+          <a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors">Features</a>
+          <a href="#pricing" className="hover:text-slate-900 dark:hover:text-white transition-colors">Pricing</a>
+          <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/login" className="text-sm text-white/70 hover:text-white transition-colors px-3 py-2">
+          <Link href="/login" className="text-sm text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-colors px-3 py-2">
             Log in
           </Link>
           <Link
@@ -378,7 +378,7 @@ export default function LandingPage() {
             initial="hidden"
             animate="show"
             transition={{ delay: 0.2 }}
-            className="max-w-2xl text-lg text-white/50 leading-relaxed"
+            className="max-w-2xl text-lg text-slate-500 dark:text-white/50 leading-relaxed"
           >
             CollabStudy brings your team together with real-time channels, AI-powered summaries, 
             crystal-clear video calls, and seamless file sharing — all in one beautiful workspace.
@@ -401,7 +401,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-8 py-3.5 text-sm font-semibold text-slate-700 dark:text-white/80 backdrop-blur-sm transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
             >
               Sign in to workspace
             </Link>
@@ -413,7 +413,7 @@ export default function LandingPage() {
             initial="hidden"
             animate="show"
             transition={{ delay: 0.5 }}
-            className="text-xs text-white/25"
+            className="text-xs text-slate-400 dark:text-white/25"
           >
             No credit card required · Free forever plan available
           </motion.p>
@@ -438,7 +438,7 @@ export default function LandingPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/20 text-xs"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-300 dark:text-white/20 text-xs"
         >
           <motion.div
             animate={{ y: [0, 6, 0] }}
@@ -458,10 +458,10 @@ export default function LandingPage() {
             <p className="mb-3 text-sm font-medium uppercase tracking-widest text-violet-400">
               Everything you need
             </p>
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-5xl">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl">
               Built for the way teams actually work
             </h2>
-            <p className="mt-4 text-base text-white/40 max-w-xl mx-auto">
+            <p className="mt-4 text-base text-slate-500 dark:text-white/40 max-w-xl mx-auto">
               Every feature was designed with one goal: reduce friction and let your team focus on what matters.
             </p>
           </motion.div>
@@ -474,7 +474,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Social Proof / Stats ───────────────────────────────────────────── */}
-      <section className="px-6 py-16 border-y border-white/5">
+      <section className="px-6 py-16 border-y border-slate-200 dark:border-white/5">
         <AnimatedSection className="mx-auto max-w-4xl">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {[
@@ -484,8 +484,8 @@ export default function LandingPage() {
               { value: '∞', label: 'Message history' },
             ].map(({ value, label }) => (
               <motion.div key={label} variants={fadeUp} className="text-center">
-                <p className="text-3xl font-bold text-white md:text-4xl">{value}</p>
-                <p className="mt-1 text-sm text-white/40">{label}</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">{value}</p>
+                <p className="mt-1 text-sm text-slate-400 dark:text-white/40">{label}</p>
               </motion.div>
             ))}
           </div>
@@ -497,10 +497,10 @@ export default function LandingPage() {
         <AnimatedSection className="mx-auto max-w-5xl">
           <motion.div variants={fadeUp} className="mb-16 text-center">
             <p className="mb-3 text-sm font-medium uppercase tracking-widest text-violet-400">Pricing</p>
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-5xl">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl">
               Simple, transparent pricing
             </h2>
-            <p className="mt-4 text-base text-white/40">
+            <p className="mt-4 text-base text-slate-500 dark:text-white/40">
               Start free. Upgrade when your team is ready. No surprises.
             </p>
           </motion.div>
@@ -521,10 +521,10 @@ export default function LandingPage() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_120%,rgba(124,58,237,0.15),transparent)]" />
             <div className="relative z-10">
-              <h2 className="text-3xl font-bold text-white md:text-4xl">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">
                 Ready to build something great?
               </h2>
-              <p className="mt-4 text-base text-white/50">
+              <p className="mt-4 text-base text-slate-500 dark:text-white/50">
                 Join your team in minutes. No setup fees, no lock-in.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -536,7 +536,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/login"
-                  className="text-sm text-white/50 hover:text-white transition-colors"
+                  className="text-sm text-slate-400 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Already have an account? Sign in
                 </Link>
@@ -547,20 +547,20 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 px-6 py-10">
+      <footer className="border-t border-slate-200 dark:border-white/5 px-6 py-10">
         <div className="mx-auto max-w-6xl flex flex-col items-center justify-between gap-6 md:flex-row">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-cyan-600 text-xs font-bold">
               C
             </div>
-            <span className="text-sm font-semibold text-white/60">CollabStudy</span>
+            <span className="text-sm font-semibold text-slate-500 dark:text-white/60">CollabStudy</span>
           </div>
-          <div className="flex items-center gap-6 text-xs text-white/30">
-            <Link href="/login" className="hover:text-white/60 transition-colors">Sign In</Link>
-            <Link href="/register" className="hover:text-white/60 transition-colors">Register</Link>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">GitHub</a>
+          <div className="flex items-center gap-6 text-xs text-slate-400 dark:text-white/30">
+            <Link href="/login" className="hover:text-slate-700 dark:hover:text-white/60 transition-colors">Sign In</Link>
+            <Link href="/register" className="hover:text-slate-700 dark:hover:text-white/60 transition-colors">Register</Link>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-slate-700 dark:hover:text-white/60 transition-colors">GitHub</a>
           </div>
-          <p className="text-xs text-white/20">
+          <p className="text-xs text-slate-300 dark:text-white/20">
             © {new Date().getFullYear()} CollabStudy. Built with ♥ and caffeine.
           </p>
         </div>
