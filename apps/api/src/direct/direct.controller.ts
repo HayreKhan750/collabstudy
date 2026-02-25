@@ -89,16 +89,18 @@ export class DirectController {
     @Request() req: any,
     @Param('id') conversationId: string,
   ) {
-    console.log('📥 API RECEIVED DM SUMMARY REQUEST, ADDING TO QUEUE... conversationId:', conversationId);
+    console.log('🚦 [1] Route hit! Received DM summary request for conversationId:', conversationId);
     const jobData: DmSummaryJobData = {
       type: 'dm',
       conversationId,
       userId: req.user.userId,
     };
+    console.log('🚦 [2] About to enqueue job to BullMQ / Redis...');
     const job = await this.summaryQueue.add('dm-summary', jobData, {
       attempts: 3,
       backoff: { type: 'exponential', delay: 2_000 },
     });
+    console.log('🚦 [3] Job enqueued! jobId:', job.id, '— Sending HTTP 202 response...');
     return {
       status: 'queued',
       jobId: job.id,
