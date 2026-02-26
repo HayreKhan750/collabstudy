@@ -396,6 +396,13 @@
 - [x] `.github/workflows/ci.yml` — triggers on PR + push to main; jobs: `lint-and-typecheck` (tsc --noEmit for API + Web, ESLint) → `build` (nest build + next build, uploads artifacts); concurrency cancel-in-progress
 - [x] `.github/workflows/cd.yml` — triggers on push to main + GitHub releases; jobs: `build-and-push-api` + `build-and-push-web` (Docker Buildx → GHCR with SHA + latest + semver tags, registry layer cache); `deploy-summary` job with GitHub Step Summary; build context set to repo root for monorepo workspace access; extensible deploy step with commented examples (Coolify, SSH)
 
+### ✅ Step 12.4 — Database Migration Strategy
+
+- [x] `package.json` (root + `apps/api`) — added `db:migrate:deploy`, `db:migrate:status`, `db:seed` scripts using `prisma migrate deploy` (production-safe, idempotent)
+- [x] `apps/api/docker-entrypoint.sh` — runs `prisma migrate deploy` before starting the NestJS server; exits non-zero on failure (prevents broken app from serving mismatched schema); uses `exec "$@"` for proper signal handling via dumb-init
+- [x] `apps/api/Dockerfile` — entrypoint updated to `dumb-init -- /app/docker-entrypoint.sh`; CMD passed as `$@` args
+- [x] `docs/MIGRATION_STRATEGY.md` — comprehensive docs covering: Expand & Contract pattern, zero-downtime column rename checklist, `CREATE INDEX CONCURRENTLY`, rollback strategy (roll-forward preferred, pg_restore nuclear option), emergency lock-release procedures, forbidden commands table (`prisma migrate dev`, `db push`, `migrate reset`)
+
 ---
 
 ### Step 12.2 — Docker & Docker Compose

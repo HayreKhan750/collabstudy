@@ -20,6 +20,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "dotenv -e .env.test -- jest --config ./test/jest-e2e.json --runInBand --forceExit",
     "test:e2e:migrate": "dotenv -e .env.test -- prisma migrate deploy --schema=../../packages/db/prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=../../packages/db/prisma/schema.prisma",
+    "db:migrate:status": "prisma migrate status --schema=../../packages/db/prisma/schema.prisma",
+    "db:seed": "prisma db seed --schema=../../packages/db/prisma/schema.prisma",
+    "start:prod": "node dist/main",
     "clean": "rm -rf dist"
   },
   "dependencies": {

@@ -75,6 +75,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/packages/db/prisma ./packages/db/
 # Local uploads directory (used as fallback when S3 is not configured)
 RUN mkdir -p /app/apps/api/uploads && chown nestjs:nodejs /app/apps/api/uploads
 
+# Copy and configure the entrypoint script that runs migrations then starts the app
+COPY --chown=nestjs:nodejs apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Switch to non-root user
 USER nestjs
 
@@ -84,8 +88,9 @@ WORKDIR /app/apps/api
 # Expose API port (must match PORT env var, default 4000)
 EXPOSE 4000
 
-# Use dumb-init to reap zombie processes and forward signals correctly
-ENTRYPOINT ["dumb-init", "--"]
+# Use dumb-init to reap zombie processes and forward signals correctly.
+# The entrypoint runs `prisma migrate deploy` then execs the CMD below.
+ENTRYPOINT ["dumb-init", "--", "/app/docker-entrypoint.sh"]
 
-# Start the compiled NestJS app
+# Start the compiled NestJS app (passed as $@ to entrypoint)
 CMD ["node", "dist/main"]
