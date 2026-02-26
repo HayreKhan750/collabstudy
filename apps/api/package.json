@@ -23,7 +23,6 @@
     "db:migrate:deploy": "prisma migrate deploy --schema=../../packages/db/prisma/schema.prisma",
     "db:migrate:status": "prisma migrate status --schema=../../packages/db/prisma/schema.prisma",
     "db:seed": "prisma db seed --schema=../../packages/db/prisma/schema.prisma",
-    "start:prod": "node dist/main",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -45,6 +44,9 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.0.1",
     "@prisma/client": "^5.8.1",
+    "@sentry/nestjs": "^10.40.0",
+    "@sentry/node": "^10.40.0",
+    "@sentry/profiling-node": "^10.40.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.70.1",

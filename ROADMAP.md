@@ -403,6 +403,19 @@
 - [x] `apps/api/Dockerfile` — entrypoint updated to `dumb-init -- /app/docker-entrypoint.sh`; CMD passed as `$@` args
 - [x] `docs/MIGRATION_STRATEGY.md` — comprehensive docs covering: Expand & Contract pattern, zero-downtime column rename checklist, `CREATE INDEX CONCURRENTLY`, rollback strategy (roll-forward preferred, pg_restore nuclear option), emergency lock-release procedures, forbidden commands table (`prisma migrate dev`, `db push`, `migrate reset`)
 
+### ✅ Step 12.5 — Monitoring & Observability (Sentry)
+
+- [x] `@sentry/nestjs` + `@sentry/node` + `@sentry/profiling-node` installed in `apps/api`
+- [x] `@sentry/nextjs` installed in `apps/web`
+- [x] `apps/api/src/config/sentry.instrument.ts` — Sentry.init with DSN-guard (graceful no-op when unset), tracesSampleRate 10% prod / 100% dev, CPU profiling via `nodeProfilingIntegration`, production warning when DSN missing
+- [x] `apps/api/src/main.ts` — `import './config/sentry.instrument'` as very first import for full OpenTelemetry instrumentation coverage
+- [x] `apps/web/sentry.client.config.ts` — browser Sentry with session replay (10% sessions, 100% on error), privacy-first mask/block
+- [x] `apps/web/sentry.server.config.ts` — Next.js server component error tracking
+- [x] `apps/web/sentry.edge.config.ts` — Edge runtime error tracking (5% sample rate)
+- [x] `apps/web/next.config.ts` — wrapped with `withSentryConfig` (source map upload, tunnel route `/monitoring`, React component annotation, logger tree-shaking)
+- [x] `apps/api/.env.example` + `apps/web/.env.example` — `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `GIT_SHA` documented
+- [x] `apps/api/src/config/env.validation.ts` — `SENTRY_DSN` added as optional var (warning-only, never fails startup)
+
 ---
 
 ### Step 12.2 — Docker & Docker Compose

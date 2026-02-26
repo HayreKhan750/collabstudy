@@ -91,6 +91,14 @@ const ENV_VARS: EnvVar[] = [
     required: false,
   },
 
+  // ── Sentry ────────────────────────────────────────────────────────────────
+  {
+    name: 'SENTRY_DSN',
+    description: 'Sentry DSN for error tracking and performance monitoring (optional but recommended in production)',
+    required: false,
+    // Warn (not error) in production if missing — app still runs without it
+  },
+
   // ── Server ────────────────────────────────────────────────────────────────
   {
     name: 'PORT',

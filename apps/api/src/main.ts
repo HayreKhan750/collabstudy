@@ -1,3 +1,7 @@
+// ⚠ Sentry MUST be imported first — before any other imports.
+// This ensures OpenTelemetry can instrument all subsequently loaded modules.
+import './config/sentry.instrument';
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
