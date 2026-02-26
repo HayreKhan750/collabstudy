@@ -1,5 +1,6 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
 import { SearchMessagesDto } from './dto/search-messages.dto';
 
 /**
@@ -19,7 +20,12 @@ import { SearchMessagesDto } from './dto/search-messages.dto';
  */
 @Injectable()
 export class SearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(SearchService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+  ) {}
 
   async searchMessages(userId: string, dto: SearchMessagesDto) {
     const { q, workspaceId, limit = 20, cursor } = dto;
@@ -199,6 +205,168 @@ export class SearchService {
       messages,
       nextCursor,
       total: messages.length,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // HYBRID SEARCH  (Phase 11.2)
+  // Formula: 0.6 × trigram_similarity + 0.4 × (1 - cosine_distance)
+  //
+  // • Trigram part   → word_similarity(q, content)  via pg_trgm GIN index
+  // • Semantic part  → 1 - (embedding <=> query_vec) via pgvector HNSW index
+  //   (<=> returns cosine DISTANCE, so we flip it to get similarity)
+  //
+  // Fallback: if Gemini embedding fails (no API key, timeout, etc.) we fall
+  // back silently to trigram-only search with the original similarity formula.
+  //
+  // All user-supplied values use Prisma.sql tagged templates — never string concat.
+  // ─────────────────────────────────────────────────────────────────────────────
+  async hybridSearchMessages(userId: string, dto: SearchMessagesDto) {
+    const { q, workspaceId, limit = 20 } = dto;
+
+    // ── 1. Membership gate (same as keyword search) ───────────────────────────
+    const membership = await this.prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId, workspaceId } },
+      select: { userId: true },
+    });
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this workspace');
+    }
+
+    // ── 2. Generate query embedding (graceful fallback on failure) ────────────
+    let queryVector: number[] | null = null;
+    try {
+      const vec = await this.aiService.generateEmbedding(q);
+      if (vec.length === 768) queryVector = vec;
+    } catch (err) {
+      this.logger.warn(
+        `Hybrid search: embedding generation failed — falling back to trigram-only. Error: ${err}`,
+      );
+    }
+
+    // ── 3. Build & execute raw SQL ────────────────────────────────────────────
+    //
+    // Shared response shape — identical to searchMessages() so the frontend
+    // can switch endpoints without any other changes.
+    type HybridRow = {
+      id: string;
+      content: string;
+      userId: string;
+      channelId: string;
+      parentId: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      hybrid_score: number;
+      username: string;
+      full_name: string | null;
+      avatar: string | null;
+      channel_name: string;
+    };
+
+    const takeLimit = limit + 1;
+    let rows: HybridRow[];
+
+    if (queryVector !== null) {
+      // ── Full hybrid: trigram + semantic ─────────────────────────────────────
+      // We format the vector as a Postgres literal string '[x,x,x,...]'
+      // and cast it inside the SQL expression — safe because the values come
+      // from Gemini (floats only), never from user input.
+      const vectorLiteral = `[${queryVector.join(',')}]`;
+
+      // Messages without an embedding yet (worker hasn't run) get a semantic
+      // contribution of 0.0, so they still appear via trigram similarity.
+      rows = await this.prisma.$queryRaw<HybridRow[]>`
+        SELECT
+          m.id,
+          m.content,
+          m."userId",
+          m."channelId",
+          m."parentId",
+          m."createdAt",
+          m."updatedAt",
+          (
+            0.6 * word_similarity(${q}, m.content)
+            + 0.4 * CASE
+                WHEN m.embedding IS NOT NULL
+                THEN 1.0 - (m.embedding <=> ${vectorLiteral}::vector)
+                ELSE 0.0
+              END
+          )                         AS hybrid_score,
+          u.username,
+          u."fullName"              AS full_name,
+          u.avatar,
+          c.name                    AS channel_name
+        FROM messages m
+        JOIN channels c   ON c.id  = m."channelId"
+        JOIN workspaces w ON w.id  = c."workspaceId"
+        JOIN users u      ON u.id  = m."userId"
+        WHERE
+          w.id = ${workspaceId}::uuid
+          AND (
+            word_similarity(${q}, m.content) > 0.1
+            OR (
+              m.embedding IS NOT NULL
+              AND (1.0 - (m.embedding <=> ${vectorLiteral}::vector)) > 0.5
+            )
+          )
+        ORDER BY hybrid_score DESC, m."createdAt" DESC, m.id ASC
+        LIMIT ${takeLimit}
+      `;
+    } else {
+      // ── Fallback: trigram-only (mirrors searchMessages behaviour) ────────────
+      rows = await this.prisma.$queryRaw<HybridRow[]>`
+        SELECT
+          m.id,
+          m.content,
+          m."userId",
+          m."channelId",
+          m."parentId",
+          m."createdAt",
+          m."updatedAt",
+          word_similarity(${q}, m.content) AS hybrid_score,
+          u.username,
+          u."fullName"              AS full_name,
+          u.avatar,
+          c.name                    AS channel_name
+        FROM messages m
+        JOIN channels c   ON c.id  = m."channelId"
+        JOIN workspaces w ON w.id  = c."workspaceId"
+        JOIN users u      ON u.id  = m."userId"
+        WHERE
+          w.id = ${workspaceId}::uuid
+          AND word_similarity(${q}, m.content) > 0.3
+        ORDER BY hybrid_score DESC, m."createdAt" DESC, m.id ASC
+        LIMIT ${takeLimit}
+      `;
+    }
+
+    // ── 4. Pagination (simple — hybrid search uses page-1 only for now) ───────
+    const hasNextPage = rows.length > limit;
+    if (hasNextPage) rows.pop();
+
+    // ── 5. Shape response — identical to searchMessages() ────────────────────
+    const messages = rows.map((row) => ({
+      id: row.id,
+      content: row.content,
+      channelId: row.channelId,
+      channelName: row.channel_name,
+      parentId: row.parentId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      similarity: Number(row.hybrid_score),
+      user: {
+        id: row.userId,
+        username: row.username,
+        fullName: row.full_name,
+        avatar: row.avatar,
+      },
+    }));
+
+    return {
+      messages,
+      nextCursor: null, // Phase 11.2: pagination for hybrid search is a future enhancement
+      total: messages.length,
+      searchMode: queryVector !== null ? 'hybrid' : 'trigram-fallback',
     };
   }
 }

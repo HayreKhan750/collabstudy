@@ -1,4 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException, ConflictException, Inject, forwardRef } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { AddReactionDto } from './dto/add-reaction.dto';
@@ -7,6 +9,7 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { Prisma } from '@prisma/client';
 import { AiService } from '../ai/ai.service';
 import { UploadService } from '../upload/upload.service';
+import { EMBEDDINGS_QUEUE, EmbeddingJobData } from '../ai/embeddings.queue';
 
 @Injectable()
 export class MessagesService {
@@ -17,6 +20,8 @@ export class MessagesService {
     private chatGateway: ChatGateway,
     private aiService: AiService,
     private uploadService: UploadService,
+    @InjectQueue(EMBEDDINGS_QUEUE)
+    private embeddingsQueue: Queue<EmbeddingJobData>,
   ) {}
 
   /**
@@ -78,6 +83,19 @@ export class MessagesService {
         _count: { select: { replies: true } },
       },
     });
+
+    // Phase 11.1: Enqueue async embedding generation (fire-and-forget).
+    // Only embed messages that have text content — file-only messages are skipped
+    // inside the worker, but we avoid the queue round-trip entirely here.
+    if (message.content?.trim()) {
+      await this.embeddingsQueue.add(
+        'generate',
+        { messageId: message.id, content: message.content },
+        // jobId deduplication: if the same message is somehow enqueued twice
+        // (e.g., on retry), the second add is a no-op.
+        { jobId: `embed:${message.id}` },
+      );
+    }
 
     // Broadcast the message via WebSocket AFTER successful persistence.
     // Swap the raw S3 key for a pre-signed URL so receivers get a usable link.

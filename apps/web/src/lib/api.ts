@@ -419,6 +419,21 @@ class ApiClient {
     }
   }
 
+  // Search messages via hybrid semantic + trigram similarity (Phase 11.2)
+  async hybridSearchMessages(
+    token: string,
+    params: { q: string; workspaceId: string; limit?: number },
+  ): Promise<{ messages: SearchResult[]; nextCursor: string | null; total: number; searchMode?: string }> {
+    const { q, workspaceId, limit = 30 } = params;
+    const url = `${API_URL}/search/hybrid?q=${encodeURIComponent(q)}&workspaceId=${encodeURIComponent(workspaceId)}&limit=${limit}`;
+    const response = await fetch(url, { headers: this.getHeaders(token) });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Hybrid search failed');
+    }
+    return response.json();
+  }
+
   // Search messages via pg_trgm similarity
   async searchMessages(
     token: string,

@@ -2,12 +2,14 @@
 // Focus: Foundational infrastructure with proper relational integrity
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 // ============================================================================
@@ -126,6 +128,10 @@ model Message {
   fileType     String?  // MIME type, e.g. 'image/jpeg', 'application/pdf'
   fileSize     Int?     // file size in bytes
   originalName String?  // original filename as uploaded
+
+  // Phase 11.1: pgvector embedding (text-embedding-004, 768 dimensions)
+  // Nullable: populated asynchronously by the EmbeddingsWorker after message creation
+  embedding    Unsupported("vector(768)")?
 
   // Relationships - Cascade delete when user or channel is deleted
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
