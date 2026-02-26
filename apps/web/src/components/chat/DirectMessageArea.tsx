@@ -140,6 +140,8 @@ export default function DirectMessageArea({
   // ── Unread divider & scroll FAB (Tasks 3 & 4) ───────────────────────────
   // Capture lastReadAt at mount time so new incoming messages don't shift the divider
   const lastReadAtRef = useRef<string | null>(null);
+  // Other participant's lastReadAt — used for "seen" double-tick on outbound messages
+  const [otherUserLastReadAt, setOtherUserLastReadAt] = useState<string | null>(null);
   const unreadDividerRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollFab, setShowScrollFab] = useState(false);
@@ -162,6 +164,10 @@ export default function DirectMessageArea({
       // Capture lastReadAt at mount time — used to place the unread divider
       if (lastReadAtRef.current === null && data.lastReadAt !== undefined) {
         lastReadAtRef.current = data.lastReadAt ?? null;
+      }
+      // Capture other participant's lastReadAt for "seen" ticks
+      if (data.otherParticipantLastReadAt) {
+        setOtherUserLastReadAt(data.otherParticipantLastReadAt);
       }
     } catch (e) {
       console.warn('[DM] fetch error:', e);
@@ -344,6 +350,13 @@ export default function DirectMessageArea({
       setMessages((prev) =>
         prev.map((m) => m.id === payload.messageId ? { ...m, reactions: payload.reactions } : m)
       );
+    });
+
+    // ── dm_read_receipt — fired when the other participant marks messages read ─
+    socket.on('dm_read_receipt', (payload: { conversationId: string; userId: string; lastReadAt: string }) => {
+      if (payload.conversationId === conversationId) {
+        setOtherUserLastReadAt(payload.lastReadAt);
+      }
     });
 
     // ── summary_generated (Phase 9.3) ────────────────────────────────────────
@@ -798,6 +811,13 @@ export default function DirectMessageArea({
                     isOwnMessage={isMine}
                     isHighlighted={false}
                     currentUserId={user?.id ?? ''}
+                    readReceipts={
+                      otherUserLastReadAt && isMine
+                        ? (new Date(msg.createdAt) <= new Date(otherUserLastReadAt)
+                            ? { other: msg.id }
+                            : {})
+                        : {}
+                    }
                     onAddReaction={(msgId: string, emoji: string) =>
                       handleReactionClick(emoji, msgId)
                     }

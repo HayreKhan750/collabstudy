@@ -34,6 +34,10 @@ export default function VoiceChannelBar({
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isMuted, setIsMuted] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -87,13 +91,29 @@ export default function VoiceChannelBar({
 
   const join = useCallback(async () => {
     if (!socket) return;
+    setIsConnecting(true);
+    setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream;
       socket.emit('join_voice_channel', { channelId });
       setJoined(true);
-    } catch {
-      alert('Could not access microphone. Please check browser permissions.');
+      // Start recording duration timer
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((s) => s + 1);
+      }, 1000);
+    } catch (err) {
+      const isDenied =
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
+      const msg = isDenied
+        ? '🎤 Microphone access denied. Please allow microphone permissions in your browser settings and try again.'
+        : '🎤 Could not access microphone. Please check that a microphone is connected and try again.';
+      console.error('[VoiceChannel] getUserMedia failed:', err);
+      setMicError(msg);
+    } finally {
+      setIsConnecting(false);
     }
   }, [socket, channelId]);
 
@@ -106,6 +126,12 @@ export default function VoiceChannelBar({
     localStreamRef.current = null;
     for (const [uid] of peersRef.current) cleanupPeer(uid);
     peersRef.current.clear();
+    // Stop recording timer
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    setRecordingSeconds(0);
     setJoined(false);
     setParticipants([]);
   }, [socket, channelId]);
@@ -215,6 +241,16 @@ export default function VoiceChannelBar({
 
   return (
     <div className="border-t border-slate-200 dark:border-slate-700 mt-2">
+      {/* Mic error toast */}
+      {micError && (
+        <div className="mx-3 mt-2 flex items-start gap-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 rounded-lg px-3 py-2 text-xs text-red-700 dark:text-red-300">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="flex-1">{micError}</span>
+          <button onClick={() => setMicError(null)} className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors">✕</button>
+        </div>
+      )}
       {/* Voice channel header row */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide">
@@ -227,12 +263,26 @@ export default function VoiceChannelBar({
         {!joined ? (
           <button
             onClick={join}
-            className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded transition-colors"
+            disabled={isConnecting}
+            className="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-wait text-white px-2 py-1 rounded transition-colors flex items-center gap-1"
           >
-            Join
+            {isConnecting ? (
+              <>
+                <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                Connecting…
+              </>
+            ) : 'Join'}
           </button>
         ) : (
           <div className="flex items-center gap-1">
+            {/* Recording duration timer */}
+            <span className="text-xs text-green-600 dark:text-green-400 font-mono flex items-center gap-1 mr-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"/>
+              {String(Math.floor(recordingSeconds / 60)).padStart(2,'0')}:{String(recordingSeconds % 60).padStart(2,'0')}
+            </span>
             <button
               onClick={toggleMute}
               className={`text-xs px-2 py-1 rounded transition-colors ${isMuted ? 'bg-red-600 text-white' : 'bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200'}`}

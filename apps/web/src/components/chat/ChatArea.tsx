@@ -1407,6 +1407,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   isOwnMessage={isMine}
                   isHighlighted={highlightedMessageId === message.id}
                   currentUserId={user?.id ?? ''}
+                  readReceipts={readReceipts}
                   onAddReaction={(msgId, emoji) => {
                     const msg = messages.find(m => m.id === msgId);
                     if (msg) handleReactionClick(msg, emoji);

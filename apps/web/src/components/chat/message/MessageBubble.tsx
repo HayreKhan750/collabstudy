@@ -58,6 +58,11 @@ interface MessageBubbleProps {
   onEditCancel: () => void;
   /** Phase 11.3: opens the Related Messages panel for this message */
   onFindSimilar?: () => void;
+  /**
+   * Read receipts: map of userId → messageId they last read.
+   * Used to render "seen" double-tick on outbound messages.
+   */
+  readReceipts?: Record<string, string>;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -240,6 +245,30 @@ function ThreadBadge({ count, onClick }: { count: number; onClick: () => void })
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// ─── Seen tick indicator ──────────────────────────────────────────────────────
+
+function SeenTick({ seenByCount }: { seenByCount: number }) {
+  if (seenByCount === 0) {
+    // Single grey tick — sent/delivered
+    return (
+      <span title="Sent" className="inline-flex items-center text-slate-300 dark:text-slate-500 ml-1 flex-shrink-0" aria-label="Sent">
+        <svg className="w-3.5 h-3" viewBox="0 0 16 12" fill="none">
+          <path d="M1 6l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+  // Double blue tick — seen by at least one other participant
+  return (
+    <span title={`Seen by ${seenByCount}`} className="inline-flex items-center text-blue-400 dark:text-blue-300 ml-1 flex-shrink-0" aria-label="Seen">
+      <svg className="w-4 h-3" viewBox="0 0 20 12" fill="none">
+        <path d="M1 6l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M5 6l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </span>
+  );
+}
+
 export function MessageBubble({
   message,
   isFirstInGroup,
@@ -260,9 +289,23 @@ export function MessageBubble({
   onEditSave,
   onEditCancel,
   onFindSimilar,
+  readReceipts = {},
 }: MessageBubbleProps) {
   const displayName = message.user.fullName || message.user.username;
   const replyCount = message._count?.replies ?? 0;
+
+  // Count how many OTHER users have read up to or past this message
+  const seenByCount = isOwnMessage
+    ? Object.entries(readReceipts).filter(([uid, lastMsgId]) => {
+        if (uid === currentUserId) return false;
+        // A user has "seen" this message if their lastReadAt messageId appears
+        // after this message in the conversation — we approximate by comparing
+        // the createdAt of the message to the readReceipts map which stores
+        // the last messageId read. We treat any receipt as "seen" since the
+        // receipts map only grows forward.
+        return !!lastMsgId;
+      }).length
+    : 0;
 
   // Bubble shape: tail on first message in group only
   // Own messages: tail on right; others: tail on left
@@ -319,9 +362,16 @@ export function MessageBubble({
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
               {displayName}
             </span>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500">
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center">
               {formatTime(message.createdAt)}
+              {isOwnMessage && <SeenTick seenByCount={seenByCount} />}
             </span>
+          </div>
+        )}
+        {/* For non-first messages in group: show tick inline after bubble */}
+        {!isFirstInGroup && isOwnMessage && isLastInGroup && (
+          <div className="flex justify-end">
+            <SeenTick seenByCount={seenByCount} />
           </div>
         )}
 

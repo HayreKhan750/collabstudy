@@ -15,7 +15,7 @@ interface MessageActionsProps {
   onFindSimilar?: () => void;
 }
 
-const QUICK_EMOJIS = ['👍', '❤️', '😂', '😢', '👀'];
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '👀', '😢', '🚀', '💯', '✨', '😮', '🙏'];
 
 function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
