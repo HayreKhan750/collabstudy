@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
@@ -22,6 +22,8 @@ import { DirectModule } from './direct/direct.module';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { AiModule } from './ai/ai.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { HttpMetricsInterceptor } from './metrics/http-metrics.interceptor';
 
 @Module({
   imports: [
@@ -101,6 +103,7 @@ import { AiModule } from './ai/ai.module';
     HealthModule,
     UsersModule,
     AiModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -110,6 +113,13 @@ import { AiModule } from './ai/ai.module';
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,
+    },
+    // ── Prometheus HTTP metrics interceptor (Phase 12.4) ──────────────────
+    // Records request duration + count for every HTTP request globally.
+    // Skips WebSocket events automatically (context.getType() check inside).
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpMetricsInterceptor,
     },
   ],
 })

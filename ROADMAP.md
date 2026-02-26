@@ -456,15 +456,16 @@
 
 ---
 
-### Step 12.4 — Observability
+### ✅ Step 12.4 — Observability & Prometheus Metrics
 
-- **Metrics:** Expose `GET /metrics` in Prometheus format (using `prom-client`)
-  - HTTP request count + duration histograms
-  - WebSocket connection count gauge
-  - Queue depth gauge (BullMQ)
-  - Active DB connection count
-- **Alerting:** Document alert thresholds (error rate > 1%, p99 latency > 500ms, queue depth > 1000)
-- **Distributed Tracing:** Add OpenTelemetry instrumentation (optional, document setup)
+- [x] `prom-client` installed in `apps/api`
+- [x] `apps/api/src/metrics/metrics.module.ts` — `MetricsModule` registered in `AppModule`; exports `MetricsService`
+- [x] `apps/api/src/metrics/metrics.service.ts` — central registry: `http_request_duration_seconds` histogram (10 buckets 10ms–10s), `http_requests_total` counter, `ws_connected_clients_total` gauge, `bullmq_queue_depth/active/failed_total` gauges, Node.js default metrics (`collectDefaultMetrics`)
+- [x] `apps/api/src/metrics/metrics.controller.ts` — `GET /metrics` Prometheus text format, `@SkipThrottle`, `Cache-Control: no-cache`
+- [x] `apps/api/src/metrics/http-metrics.interceptor.ts` — global `APP_INTERCEPTOR`; records duration + count per request with normalized route labels; skips WebSocket contexts
+- [x] `apps/api/src/metrics/queue-metrics.service.ts` — polls `SUMMARY_QUEUE` + `EMBEDDINGS_QUEUE` every 30s via `setInterval`; updates depth/active/failed gauges; graceful Redis error handling
+- [x] `apps/api/src/chat/chat.gateway.ts` — `ws_connected_clients_total` inc on `handleConnection`, dec on `handleDisconnect`; `@Optional()` injection (no hard dependency)
+- [x] `docs/OBSERVABILITY.md` — alerting thresholds (error rate >1%, p99 >500ms, queue depth >1000), PromQL queries, Grafana panel setup, OTel future step, Loki log aggregation guide
 
 ---
 

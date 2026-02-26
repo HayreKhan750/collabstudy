@@ -9,13 +9,14 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UnauthorizedException, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, forwardRef, Inject, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChannelsService } from '../channels/channels.service';
 import { Channel } from '@prisma/client';
 import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
+import { MetricsService } from '../metrics/metrics.service';
 
 // ─── Shared event payload types ──────────────────────────────────────────────
 
@@ -169,6 +170,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => ChannelsService))
     private readonly channelsService: ChannelsService,
+    @Optional() private readonly metricsService?: MetricsService,
   ) {}
 
   // ─── Connection lifecycle ──────────────────────────────────────────────────
@@ -214,6 +216,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         .map(([userId]) => userId);
       client.emit('presence_sync', onlineUserIds);
 
+      // ── Prometheus: increment connected clients gauge ──────────────────────
+      this.metricsService?.wsConnectedClients.inc();
+
       // ── Join personal notification room ───────────────────────────────────
       // Every socket joins a private room named `user_<userId>` so the server
       // can send direct events (e.g. mention notifications) to a specific user.
@@ -254,6 +259,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     // Clean up WS rate limit state
     this.cleanWsRateLimit(client.id);
+
+    // ── Prometheus: decrement connected clients gauge ────────────────────────
+    this.metricsService?.wsConnectedClients.dec();
 
     if (userId) {
       this.unregisterSocket(userId, client.id);
