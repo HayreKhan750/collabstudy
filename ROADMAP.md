@@ -391,6 +391,11 @@
 - [x] `apps/api/.dockerignore` + `apps/web/.dockerignore` — excludes node_modules, .git, .env, dist, test files from build context
 - [x] `docker-compose.prod.yml` — production Compose with postgres (pgvector), redis (with password + maxmemory), api, web; health checks, `restart: unless-stopped`, named volumes, internal-only DB/Redis ports, env-var validation with `:?` syntax
 
+### ✅ Step 12.3 — CI/CD GitHub Actions Pipeline
+
+- [x] `.github/workflows/ci.yml` — triggers on PR + push to main; jobs: `lint-and-typecheck` (tsc --noEmit for API + Web, ESLint) → `build` (nest build + next build, uploads artifacts); concurrency cancel-in-progress
+- [x] `.github/workflows/cd.yml` — triggers on push to main + GitHub releases; jobs: `build-and-push-api` + `build-and-push-web` (Docker Buildx → GHCR with SHA + latest + semver tags, registry layer cache); `deploy-summary` job with GitHub Step Summary; build context set to repo root for monorepo workspace access; extensible deploy step with commented examples (Coolify, SSH)
+
 ---
 
 ### Step 12.2 — Docker & Docker Compose

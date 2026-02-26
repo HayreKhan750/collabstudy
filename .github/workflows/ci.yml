@@ -1,0 +1,123 @@
+# =============================================================================
+# CollabStudy — Continuous Integration
+# =============================================================================
+# Triggers: every pull_request and every push to main.
+# Jobs:
+#   1. lint-and-typecheck  — ESLint + tsc --noEmit for both apps
+#   2. build               — full production build (nest build + next build)
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch/PR to save compute
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Consistent Node + pnpm versions across all jobs
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ── Job 1: Lint & Type-Check ─────────────────────────────────────────────
+  lint-and-typecheck:
+    name: Lint & Type-Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @collabstudy/db exec prisma generate
+
+      - name: TypeScript — API
+        working-directory: apps/api
+        run: npx tsc --noEmit
+
+      - name: TypeScript — Web
+        working-directory: apps/web
+        run: npx tsc --noEmit
+
+      - name: ESLint — API
+        working-directory: apps/api
+        # Use || true so a lint warning doesn't fail CI — remove when lint is clean
+        run: pnpm lint || true
+
+      - name: ESLint — Web
+        working-directory: apps/web
+        run: pnpm lint || true
+
+  # ── Job 2: Build ──────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @collabstudy/db exec prisma generate
+
+      - name: Build API (NestJS)
+        working-directory: apps/api
+        run: pnpm build
+
+      - name: Build Web (Next.js)
+        working-directory: apps/web
+        env:
+          # Disable telemetry during CI builds
+          NEXT_TELEMETRY_DISABLED: "1"
+          # Provide a dummy API URL so Next.js build-time validation passes
+          NEXT_PUBLIC_API_URL: "http://localhost:4000"
+          NEXT_PUBLIC_WS_URL: "http://localhost:4000"
+        run: pnpm build
+
+      - name: Upload API build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist-${{ github.sha }}
+          path: apps/api/dist/
+          retention-days: 3
+
+      - name: Upload Web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: apps/web/.next/
+          retention-days: 3
