@@ -467,6 +467,16 @@
 - [x] `apps/api/src/chat/chat.gateway.ts` — `ws_connected_clients_total` inc on `handleConnection`, dec on `handleDisconnect`; `@Optional()` injection (no hard dependency)
 - [x] `docs/OBSERVABILITY.md` — alerting thresholds (error rate >1%, p99 >500ms, queue depth >1000), PromQL queries, Grafana panel setup, OTel future step, Loki log aggregation guide
 
+### ✅ Step 12.5 — Final Security Audit
+
+- [x] **Dependency audit** — `pnpm audit` run; 4 HIGH advisories identified (all `tar` via `bcrypt → @mapbox/node-pre-gyp` and `minimatch` via `eslint`); all are dev/build-only, unactionable, zero runtime risk — documented and tracked
+- [x] **OWASP A01 (Broken Access Control)** — `verifyChannelAccess()` verified on all message/reaction/summary endpoints; cross-workspace isolation confirmed; RBAC enforced via `RolesGuard`
+- [x] **OWASP A02 (Cryptographic Failures)** — `passwordHash` excluded from all API responses; bcrypt saltRounds 10; JWT `ignoreExpiration: false`; Pino redacts sensitive fields
+- [x] **OWASP A03 (Injection)** — all DB queries use Prisma typed builder or `Prisma.sql` parameterized templates; `sanitize.util.ts` strips XSS; global `ValidationPipe` with whitelist
+- [x] **OWASP A07 (Auth Failures)** — brute-force rate limits on login (10/min) and register (5/min); stateless JWT limitation documented with recommended Redis blacklist improvement
+- [x] **Console.log cleanup** — final stray `console.log` in `messages.service.ts` (leaked message IDs) removed
+- [x] **`docs/SECURITY_AUDIT.md`** — full OWASP Top 10 verification table, dependency audit findings, pentest plan with 35+ test cases across 7 categories (auth, IDOR, injection, WebSocket, rate limiting, data exposure, infrastructure)
+
 ---
 
 ### Step 12.5 — Final Security Audit

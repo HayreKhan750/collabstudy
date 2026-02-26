@@ -101,7 +101,6 @@ export class MessagesService {
 
     // Broadcast the message via WebSocket AFTER successful persistence.
     // Swap the raw S3 key for a pre-signed URL so receivers get a usable link.
-    console.log(`[DB] ✅ Message persisted: id=${message.id} channel=${channelId} user=${userId} parentId=${message.parentId ?? 'none'}`);
     const messageForWs = message.fileUrl
       ? { ...message, fileUrl: await this.uploadService.getPresignedUrl(message.fileUrl) }
       : message;
