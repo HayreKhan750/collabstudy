@@ -150,7 +150,7 @@ export function DirectMessageList({
             const other = conv.participants.find((p) => p.userId !== userId)?.user;
             if (!other) return null;
             const displayName = other.fullName || other.username;
-            const lastMsg = conv.messages[0];
+            const lastMsg = conv.messages?.[0] ?? null;
             const isSelected = selectedConversationId === conv.id;
             const isOnline = onlineUserIds.has(other.id);
 

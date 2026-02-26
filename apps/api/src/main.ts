@@ -19,6 +19,12 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
+  // ─── Body Size Limits (Phase 12.6 post-launch fix) ───────────────────────
+  // Increase JSON and URL-encoded body limits to 50MB to support file upload
+  // metadata and base64-encoded payloads. Default NestJS limit is 100KB.
+  app.use(require('express').json({ limit: '50mb' }));
+  app.use(require('express').urlencoded({ limit: '50mb', extended: true }));
+
   // Use Pino as the global NestJS logger (replaces default console logger)
   app.useLogger(app.get(Logger));
 
