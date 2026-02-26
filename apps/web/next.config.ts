@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Required for optimized Docker builds — copies only the necessary files
+  // into a self-contained .next/standalone directory.
+  output: "standalone",
 };
 
 export default nextConfig;

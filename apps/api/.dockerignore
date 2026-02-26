@@ -1,0 +1,56 @@
+# =============================================================================
+# apps/api/.dockerignore
+# Excludes files that should NOT be sent to the Docker build context.
+# Keeping the build context small speeds up builds significantly.
+# =============================================================================
+
+# Dependencies (will be installed fresh inside the container)
+node_modules
+**/node_modules
+
+# Build artifacts
+dist
+.next
+coverage
+
+# Test files
+test
+**/*.spec.ts
+**/*.e2e-spec.ts
+
+# Development / local config
+.env
+.env.*
+!.env.example
+
+# IDE and OS files
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Turbo cache
+.turbo
+
+# Docker files (no need to copy into themselves)
+Dockerfile*
+.dockerignore
+
+# Local uploaded files (S3 should be used in production)
+uploads/*
+!uploads/.gitkeep
+
+# TypeScript incremental build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo

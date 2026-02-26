@@ -383,6 +383,14 @@
 - [x] Validation called in `main.ts` before app bootstrap
 - [x] Production: `CORS_ORIGIN` and `GEMINI_API_KEY` enforced; JWT_SECRET minimum 32-char check
 
+### ✅ Step 12.2 — Multi-Stage Production Dockerization
+
+- [x] `apps/api/Dockerfile` — 2-stage build: Alpine builder (pnpm + Prisma generate + nest build), minimal production runner (non-root `nestjs` user, `dumb-init`, only dist + prod deps)
+- [x] `apps/web/Dockerfile` — 3-stage build: deps → builder (Next.js standalone) → runner (non-root `nextjs` user, `dumb-init`)
+- [x] `apps/web/next.config.ts` — `output: 'standalone'` enabled for optimized Docker bundle
+- [x] `apps/api/.dockerignore` + `apps/web/.dockerignore` — excludes node_modules, .git, .env, dist, test files from build context
+- [x] `docker-compose.prod.yml` — production Compose with postgres (pgvector), redis (with password + maxmemory), api, web; health checks, `restart: unless-stopped`, named volumes, internal-only DB/Redis ports, env-var validation with `:?` syntax
+
 ---
 
 ### Step 12.2 — Docker & Docker Compose

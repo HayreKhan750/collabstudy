@@ -1,0 +1,53 @@
+# =============================================================================
+# apps/web/.dockerignore
+# Excludes files that should NOT be sent to the Docker build context.
+# =============================================================================
+
+# Dependencies (installed fresh in the deps stage)
+node_modules
+**/node_modules
+
+# Next.js build output (will be generated inside the container)
+.next
+out
+
+# Development / local config
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and OS files
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Turbo cache
+.turbo
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# TypeScript incremental build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Test / storybook
+coverage
+storybook-static
