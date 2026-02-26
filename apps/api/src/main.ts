@@ -3,8 +3,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import { validateEnv } from './config/env.validation';
 
 async function bootstrap() {
+  // ── Environment Validation (Phase 12.1) ──────────────────────────────────
+  // Fail fast if required env vars are missing or invalid.
+  // Must run before anything else so misconfiguration is caught at boot time.
+  validateEnv();
   const app = await NestFactory.create(AppModule, {
     // Buffer logs until Pino logger is attached
     bufferLogs: true,
