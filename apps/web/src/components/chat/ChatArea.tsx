@@ -12,6 +12,7 @@ import { MessageBubble, MessageData } from './message/MessageBubble';
 import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
+import { RelatedMessagesPanel } from './RelatedMessagesPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +173,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   // ── Delete confirm modal state ───────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
+
+  // ── Phase 11.3: Related Messages panel state ─────────────────────────────
+  const [relatedSource, setRelatedSource] = useState<Message | null>(null);
 
   // ── AI Summary modal state ───────────────────────────────────────────────
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -1152,6 +1156,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   };
 
   return (
+  <div className="flex h-full flex-1 overflow-hidden">
     <div
       className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
@@ -1421,6 +1426,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   onEditChange={setEditContent}
                   onEditSave={() => handleSaveEdit(message.id)}
                   onEditCancel={handleCancelEdit}
+                  onFindSimilar={message.content ? () => setRelatedSource(message) : undefined}
                 />
               </div>
             );
@@ -1556,5 +1562,29 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         onCancel={() => setDeleteConfirm(null)}
       />
     </div>
+
+    {/* Phase 11.3: Related Messages side panel — slides in from the right */}
+    {relatedSource && token && (
+      <RelatedMessagesPanel
+        sourceMessage={relatedSource}
+        workspaceId={workspaceId}
+        token={token}
+        onClose={() => setRelatedSource(null)}
+        onSelectResult={(targetChannelId, targetMessageId) => {
+          // If the result is in this channel, jump directly
+          if (targetChannelId === channelId) {
+            jumpToMessage(targetMessageId);
+          } else {
+            // Cross-channel: close the panel and let the parent handle navigation
+            // by highlighting the message once the channel switches
+            setHighlightedMessageId(targetMessageId);
+            // The parent (dashboard) handles channel switching via onOpenThread pattern
+            // For now we just close the panel — cross-channel jump is a future enhancement
+            setRelatedSource(null);
+          }
+        }}
+      />
+    )}
+  </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SearchMessagesDto } from './dto/search-messages.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -37,5 +37,35 @@ export class SearchController {
   @Get('hybrid')
   hybridSearch(@Request() req: any, @Query() dto: SearchMessagesDto) {
     return this.searchService.hybridSearchMessages(req.user.userId, dto);
+  }
+
+  /**
+   * GET /search/related/:messageId?workspaceId=...&limit=...
+   *
+   * Phase 11.3: AI Smart Suggestions — find messages that are semantically
+   * similar to the given message using pgvector cosine distance.
+   *
+   * Returns up to 8 results (configurable via `limit`) ordered by
+   * descending similarity. Returns an empty array if the source message
+   * has no embedding yet (worker still pending).
+   *
+   * Query params:
+   *   workspaceId - UUID of the workspace (required, used for membership gate)
+   *   limit       - Max results to return (1–20, default 8)
+   */
+  @Get('related/:messageId')
+  findRelated(
+    @Request() req: any,
+    @Param('messageId') messageId: string,
+    @Query('workspaceId') workspaceId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const parsedLimit = limit ? Math.min(parseInt(limit, 10), 20) : 8;
+    return this.searchService.findRelatedMessages(
+      req.user.userId,
+      messageId,
+      workspaceId,
+      parsedLimit,
+    );
   }
 }

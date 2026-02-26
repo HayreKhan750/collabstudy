@@ -369,4 +369,121 @@ export class SearchService {
       searchMode: queryVector !== null ? 'hybrid' : 'trigram-fallback',
     };
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RELATED MESSAGES  (Phase 11.3)
+  //
+  // Given a messageId, finds the top-N most semantically similar messages in
+  // the same workspace using pgvector cosine distance (<=>).
+  //
+  // Algorithm:
+  //   1. Look up the embedding of the requested message.
+  //   2. If no embedding exists (worker hasn't run yet), return empty array.
+  //   3. Run a KNN query ordered by cosine distance, with a similarity threshold
+  //      of 0.5 (cosine distance ≤ 0.5 → similarity ≥ 0.5) to filter noise.
+  //   4. Exclude the source message and its own thread replies.
+  //   5. Return max 8 results in the same response shape as searchMessages().
+  //
+  // Security: workspaceId is validated via membership gate. messageId is
+  //   passed as a Prisma.sql parameter — never via string concatenation.
+  // ─────────────────────────────────────────────────────────────────────────────
+  async findRelatedMessages(
+    userId: string,
+    messageId: string,
+    workspaceId: string,
+    limit = 8,
+  ) {
+    // ── 1. Membership gate ────────────────────────────────────────────────────
+    const membership = await this.prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId, workspaceId } },
+      select: { userId: true },
+    });
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this workspace');
+    }
+
+    // ── 2. Fetch the source message's embedding ───────────────────────────────
+    // We use $queryRaw because the `embedding` column is Unsupported in Prisma.
+    type EmbeddingRow = { embedding: string | null };
+    const [sourceRow] = await this.prisma.$queryRaw<EmbeddingRow[]>`
+      SELECT embedding::text FROM messages WHERE id = ${messageId}::uuid LIMIT 1
+    `;
+
+    if (!sourceRow?.embedding) {
+      this.logger.log(
+        `findRelatedMessages: message ${messageId} has no embedding yet — returning empty`,
+      );
+      return { messages: [], total: 0 };
+    }
+
+    // embedding is returned as a Postgres vector literal '[x,y,z,...]'
+    // We pass it directly back into the KNN query as a ::vector cast.
+    const embeddingLiteral = sourceRow.embedding;
+
+    // ── 3. KNN similarity search ──────────────────────────────────────────────
+    // Distance threshold: <=> ≤ 0.5 means cosine similarity ≥ 0.5 — confident
+    // enough to surface as a "related" result. Anything lower is coincidental.
+    type RelatedRow = {
+      id: string;
+      content: string;
+      userId: string;
+      channelId: string;
+      parentId: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      cosine_distance: number;
+      username: string;
+      full_name: string | null;
+      avatar: string | null;
+      channel_name: string;
+    };
+
+    const rows = await this.prisma.$queryRaw<RelatedRow[]>`
+      SELECT
+        m.id,
+        m.content,
+        m."userId",
+        m."channelId",
+        m."parentId",
+        m."createdAt",
+        m."updatedAt",
+        (m.embedding <=> ${embeddingLiteral}::vector)  AS cosine_distance,
+        u.username,
+        u."fullName"                                    AS full_name,
+        u.avatar,
+        c.name                                          AS channel_name
+      FROM messages m
+      JOIN channels c   ON c.id = m."channelId"
+      JOIN workspaces w ON w.id = c."workspaceId"
+      JOIN users u      ON u.id = m."userId"
+      WHERE
+        w.id              = ${workspaceId}::uuid
+        AND m.embedding   IS NOT NULL
+        AND m.id         != ${messageId}::uuid
+        AND (m.embedding <=> ${embeddingLiteral}::vector) <= 0.5
+      ORDER BY cosine_distance ASC
+      LIMIT ${limit}
+    `;
+
+    // ── 4. Shape response — same as searchMessages() ──────────────────────────
+    const messages = rows.map((row) => ({
+      id: row.id,
+      content: row.content,
+      channelId: row.channelId,
+      channelName: row.channel_name,
+      parentId: row.parentId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      // Convert distance → similarity for UI consistency
+      similarity: Number((1 - Number(row.cosine_distance)).toFixed(4)),
+      user: {
+        id: row.userId,
+        username: row.username,
+        fullName: row.full_name,
+        avatar: row.avatar,
+      },
+    }));
+
+    return { messages, total: messages.length };
+  }
 }

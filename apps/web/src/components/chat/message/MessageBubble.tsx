@@ -56,6 +56,8 @@ interface MessageBubbleProps {
   onEditChange: (value: string) => void;
   onEditSave: () => void;
   onEditCancel: () => void;
+  /** Phase 11.3: opens the Related Messages panel for this message */
+  onFindSimilar?: () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -257,6 +259,7 @@ export function MessageBubble({
   onEditChange,
   onEditSave,
   onEditCancel,
+  onFindSimilar,
 }: MessageBubbleProps) {
   const displayName = message.user.fullName || message.user.username;
   const replyCount = message._count?.replies ?? 0;
@@ -334,6 +337,7 @@ export function MessageBubble({
             onEdit={onStartEdit}
             onDelete={onDeleteRequest}
             onThread={onOpenThread}
+            onFindSimilar={onFindSimilar}
           />
 
           {/* Inline edit mode */}

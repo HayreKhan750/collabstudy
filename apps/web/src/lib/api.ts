@@ -419,6 +419,21 @@ class ApiClient {
     }
   }
 
+  // Phase 11.3: Find semantically related messages for a given message
+  async getRelatedMessages(
+    token: string,
+    params: { messageId: string; workspaceId: string; limit?: number },
+  ): Promise<{ messages: SearchResult[]; total: number }> {
+    const { messageId, workspaceId, limit = 8 } = params;
+    const url = `${API_URL}/search/related/${encodeURIComponent(messageId)}?workspaceId=${encodeURIComponent(workspaceId)}&limit=${limit}`;
+    const response = await fetch(url, { headers: this.getHeaders(token) });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to fetch related messages');
+    }
+    return response.json();
+  }
+
   // Search messages via hybrid semantic + trigram similarity (Phase 11.2)
   async hybridSearchMessages(
     token: string,
