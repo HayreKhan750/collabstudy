@@ -14,9 +14,82 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.collabstudy.com";
+
 export const metadata: Metadata = {
-  title: "CollabStudy - AI-Powered Academic Collaboration",
-  description: "Real-time academic collaboration platform with AI assistance",
+  metadataBase: new URL(APP_URL),
+
+  title: {
+    default: "CollabStudy — AI-Powered Academic Collaboration",
+    template: "%s | CollabStudy",
+  },
+  description:
+    "Real-time academic collaboration platform with AI-powered chat summaries, semantic search, smart notifications, and voice/video calls. Study smarter, together.",
+
+  keywords: [
+    "academic collaboration",
+    "study platform",
+    "AI study assistant",
+    "real-time chat",
+    "student workspace",
+    "collaborative learning",
+  ],
+
+  authors: [{ name: "CollabStudy" }],
+  creator: "CollabStudy",
+
+  // Canonical URL
+  alternates: {
+    canonical: "/",
+  },
+
+  // OpenGraph
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: APP_URL,
+    siteName: "CollabStudy",
+    title: "CollabStudy — AI-Powered Academic Collaboration",
+    description:
+      "Real-time academic collaboration platform with AI-powered chat summaries, semantic search, and smart notifications.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "CollabStudy — AI-Powered Academic Collaboration",
+      },
+    ],
+  },
+
+  // Twitter / X card
+  twitter: {
+    card: "summary_large_image",
+    title: "CollabStudy — AI-Powered Academic Collaboration",
+    description:
+      "Real-time academic collaboration platform with AI-powered chat summaries, semantic search, and smart notifications.",
+    images: ["/og-image.png"],
+    creator: "@collabstudy",
+  },
+
+  // Robots — noindex private app routes via per-page metadata; default to index
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  // App icons
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

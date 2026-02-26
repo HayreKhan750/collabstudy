@@ -416,6 +416,15 @@
 - [x] `apps/api/.env.example` + `apps/web/.env.example` — `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `GIT_SHA` documented
 - [x] `apps/api/src/config/env.validation.ts` — `SENTRY_DSN` added as optional var (warning-only, never fails startup)
 
+### ✅ Step 12.6 — Final Production Checklist
+
+- [x] **CORS hardening** — `main.ts`: production mode allows ONLY `CORS_ORIGIN` (no wildcards, no localhost); rejects origin-less requests in production; exposes `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Reset` headers to clients
+- [x] **Rate limiting verified** — `app.module.ts` already has named throttlers: `default` 60 req/min, `strict` 10 req/min (auth), `upload` 10 req/min; auth controller applies `@Throttle({ strict: ... })` with 5 req/min on register, 10 req/min on login
+- [x] **`robots.txt`** — `apps/web/public/robots.txt` created; allows `/`, `/login`, `/register`, `/signup`; disallows `/dashboard`, `/settings`, `/api/`, `/monitoring`
+- [x] **SEO Metadata** — `apps/web/src/app/layout.tsx` updated with full OpenGraph (1200×630 og-image), Twitter/X card, keywords, `metadataBase`, canonical URL, `robots` policy, `title.template`; private routes (`/dashboard`, `/settings`) get `noindex` via per-page metadata files
+- [x] **Console.log cleanup** — 12 stray `console.log` statements removed from `ChatArea.tsx` (WS connect/reconnect, read receipts, pagination) and `DirectMessageArea.tsx` (DM WS connect/reconnect); replaced with comments
+- [x] **NODE_ENV=production verified** — confirmed in `apps/web/Dockerfile` (line 64) and `docker-compose.prod.yml` (api + web services)
+
 ---
 
 ### Step 12.2 — Docker & Docker Compose

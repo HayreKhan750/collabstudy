@@ -1,0 +1,18 @@
+User-agent: *
+
+# Allow crawling of public marketing and auth pages
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /signup
+
+# Disallow all private application routes
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /settings
+Disallow: /settings/
+Disallow: /api/
+Disallow: /monitoring
+
+# Sitemap (uncomment and update when sitemap is generated)
+# Sitemap: https://app.collabstudy.com/sitemap.xml

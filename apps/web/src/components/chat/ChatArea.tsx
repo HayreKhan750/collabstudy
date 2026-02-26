@@ -380,7 +380,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       const initialReceipts: Record<string, string> = {};
       for (const r of receipts) initialReceipts[r.userId] = r.messageId;
       setReadReceipts(initialReceipts);
-      console.log('[ReadReceipts] Receipts loaded:', initialReceipts);
+      // receipts loaded — no logging in production
     } catch (error) {
       console.warn('[WS] ⚠️ Error fetching channel data:', error);
     } finally {
@@ -396,7 +396,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     if (!token || !channelId || !nextCursor) return;
     setLoadingOlder(true);
 
-    console.log('[Pagination] Fetching with cursor:', nextCursor);
+      // fetching older messages — no logging in production
 
     // Save the ID of the current top message so we can scroll back to it
     // after prepending (the "Slack way" — much more reliable than pixel math).
@@ -411,7 +411,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       const data = await response.json();
       const older: Message[] = data.messages ?? [];
 
-      console.log('[Pagination] New messages received:', older.length);
+      // older messages appended — no logging in production
 
       // Prepend, deduplicating by id — fixes the "same key" React warning
       setMessages((prev) => {
@@ -553,8 +553,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     // ── Connection lifecycle ────────────────────────────────────────────────
 
     socket.on('connect', () => {
-      console.log(`%c[WS] ✅ Connected  socket=${socket.id}  channel=${channelId}`, 'color: #4ade80; font-weight: bold');
-      console.log(`JOINING CHANNEL ROOM: ${channelId}`);
+      // WS connected — no logging in production
       socket.emit('join_channel', { channelId });
     });
 
@@ -569,15 +568,15 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     });
 
     socket.on('reconnect_attempt', (attempt: number) => {
-      console.log(`[WS] 🔄 Reconnect attempt #${attempt} for channel=${channelId}`);
+      // WS reconnect attempt — no logging in production
     });
 
     socket.on('reconnect', (attempt: number) => {
-      console.log(`%c[WS] ✅ Reconnected after ${attempt} attempt(s) — rejoining channel room`, 'color: #4ade80');
+      // WS reconnected — no logging in production
       // Re-join the channel room first, then catch up on any messages
       // missed during the disconnect window (Socket.IO doesn't buffer).
       socket.emit('join_channel', { channelId });
-      console.log('[WS] 🔄 Catch-up fetch triggered after reconnect');
+      // catch-up fetch after reconnect — no logging in production
       fetchChannelData();
     });
 
@@ -591,7 +590,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     //   The reply itself is rendered by ThreadPanel, not here.
 
     socket.on('new_message', (message: Message) => {
-      console.log(`RECEIVED MESSAGE VIA WS: ${message.id} parentId=${message.parentId ?? 'null'} channel=${channelId}`);
+      // message received via WS — no logging in production
       if (!message.parentId) {
         // Top-level message — add to main list, deduplicate by id
         setMessages((prev) => {
@@ -693,7 +692,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     // ── read_receipt_updated ─────────────────────────────────────────────────
 
     socket.on('read_receipt_updated', ({ userId, messageId }: ReadReceiptPayload) => {
-      console.log('[ReadReceipts] Real-time update:', userId, '->', messageId);
+      // read receipt update — no logging in production
       setReadReceipts((prev) => ({ ...prev, [userId]: messageId }));
     });
 
@@ -740,7 +739,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     // ── Cleanup ─────────────────────────────────────────────────────────────
 
     return () => {
-      console.log('[WS] Cleaning up socket for channel', channelId);
+      // WS cleanup — no logging in production
       // Cancel the deferred connect FIRST — this is the critical step that
       // prevents the Strict Mode race. If cleanup fires within the 50 ms
       // window, the timer is cancelled before socket.connect() is ever called.

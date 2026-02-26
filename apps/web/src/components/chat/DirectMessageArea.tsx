@@ -267,7 +267,7 @@ export default function DirectMessageArea({
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
     socket.on('connect', () => {
-      console.log(`[DM WS] ✅ Connected socket=${socket.id} conv=${conversationId}`);
+      // DM WS connected — no logging in production
       socket.emit('join_direct', { conversationId });
     });
 
@@ -280,7 +280,7 @@ export default function DirectMessageArea({
     });
 
     socket.on('reconnect', () => {
-      console.log('[DM WS] ✅ Reconnected — rejoining DM room');
+      // DM WS reconnected — no logging in production
       socket.emit('join_direct', { conversationId });
       // Catch up on any messages missed during the disconnect
       fetchMessages();

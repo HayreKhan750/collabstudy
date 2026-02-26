@@ -97,22 +97,35 @@ async function bootstrap() {
   );
 
   // ─── CORS ────────────────────────────────────────────────────────────────
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://10.4.105.219:3000',
-    process.env.CORS_ORIGIN,
-  ].filter(Boolean) as string[];
+  // In production: ONLY the explicit CORS_ORIGIN is allowed — no wildcards.
+  // In development: localhost:3000 and any LAN IPs are additionally allowed.
+  const isProduction = process.env.NODE_ENV === 'production';
+  const allowedOrigins: string[] = isProduction
+    ? // Production: only the configured origin — fail hard if it's missing
+      [process.env.CORS_ORIGIN!].filter(Boolean)
+    : // Development: localhost + any LAN address + optional CORS_ORIGIN
+      [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        process.env.CORS_ORIGIN,
+      ].filter(Boolean) as string[];
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin only in development (curl, Postman, mobile apps)
+      if (!origin) {
+        if (!isProduction) return callback(null, true);
+        // In production, reject origin-less requests for API security
+        return callback(new Error('CORS: requests without an Origin header are not allowed in production'));
+      }
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin "${origin}" is not allowed`));
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    // Expose rate-limit headers so clients can back off gracefully
+    exposedHeaders: ['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Reset'],
   });
 
   // ─── Global Validation ───────────────────────────────────────────────────
