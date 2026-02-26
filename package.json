@@ -30,7 +30,11 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "clean": "turbo run clean && rm -rf node_modules",
-    "clean:full": "pnpm clean && rm -rf .turbo && find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +"
+    "clean:full": "pnpm clean && rm -rf .turbo && find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
+    "test:load:ws": "k6 run load-tests/ws-connections.js",
+    "test:load:messages": "k6 run load-tests/http-messages.js",
+    "test:load:uploads": "k6 run load-tests/file-uploads.js",
+    "test:load:all": "k6 run load-tests/ws-connections.js && k6 run load-tests/http-messages.js && k6 run load-tests/file-uploads.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

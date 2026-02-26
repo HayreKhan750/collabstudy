@@ -477,6 +477,14 @@
 - [x] **Console.log cleanup** — final stray `console.log` in `messages.service.ts` (leaked message IDs) removed
 - [x] **`docs/SECURITY_AUDIT.md`** — full OWASP Top 10 verification table, dependency audit findings, pentest plan with 35+ test cases across 7 categories (auth, IDOR, injection, WebSocket, rate limiting, data exposure, infrastructure)
 
+### ✅ Step 12.6 — Load Testing & Performance Benchmarks
+
+- [x] `load-tests/ws-connections.js` — k6 script ramping to 1,000 concurrent Socket.io connections; thresholds: ≥99% success rate, p95 connect time <500ms, <1% error rate; `handleSummary` outputs results to `load-tests/results/`
+- [x] `load-tests/http-messages.js` — k6 `constant-arrival-rate` executor at 100 req/s for 90s; thresholds: ≥95% success, p50 <100ms, p99 <500ms; SharedArray of realistic message content; backs off on 429
+- [x] `load-tests/file-uploads.js` — k6 ramping to 50 concurrent uploads with 1–10MB payloads (PNG/JPEG/PDF); thresholds: ≥95% success, p95 <5s, p99 <10s, zero 5xx errors
+- [x] `package.json` — `test:load:ws`, `test:load:messages`, `test:load:uploads`, `test:load:all` scripts added
+- [x] `docs/PERFORMANCE_BENCHMARKS.md` — k6 install guide, CI integration, target metrics table, results placeholder table, bottleneck analysis (DB pool exhaustion, Redis pub/sub limits, BullMQ queue depth spike, upload memory pressure, event loop lag), horizontal scaling checklist
+
 ---
 
 ### Step 12.5 — Final Security Audit
