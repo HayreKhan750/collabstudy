@@ -5,9 +5,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ChatModule } from '../chat/chat.module';
 import { AiModule } from '../ai/ai.module';
 import { UploadModule } from '../upload/upload.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => ChatModule), AiModule, UploadModule],
+  imports: [PrismaModule, forwardRef(() => ChatModule), AiModule, UploadModule, UsersModule],
   controllers: [DirectController],
   providers: [DirectService],
   exports: [DirectService],

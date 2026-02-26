@@ -6,9 +6,10 @@ import { ChannelsModule } from '../channels/channels.module';
 import { ChatModule } from '../chat/chat.module';
 import { AiModule } from '../ai/ai.module';
 import { UploadModule } from '../upload/upload.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [PrismaModule, ChannelsModule, forwardRef(() => ChatModule), AiModule, UploadModule],
+  imports: [PrismaModule, ChannelsModule, forwardRef(() => ChatModule), AiModule, UploadModule, UsersModule],
   providers: [MessagesService],
   controllers: [MessagesController],
   exports: [MessagesService],

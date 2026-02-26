@@ -12,6 +12,7 @@ import { StartConversationDto } from './dto/start-conversation.dto';
 import { SendDirectMessageDto } from './dto/send-direct-message.dto';
 import { AiService } from '../ai/ai.service';
 import { UploadService } from '../upload/upload.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class DirectService {
@@ -21,6 +22,7 @@ export class DirectService {
     private readonly chatGateway: ChatGateway,
     private readonly aiService: AiService,
     private readonly uploadService: UploadService,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -278,6 +280,11 @@ export class DirectService {
 
     // Broadcast to DM room + personal unread notifications for recipients
     this.chatGateway.emitDirectMessage(conversationId, messageForWs, participantIds, senderId);
+
+    // ── Invalidate digest cache for all recipients (excluding sender) ─────
+    // Their unread DM count is now stale — clear so next fetch regenerates.
+    const recipientIds = participantIds.filter((id) => id !== senderId);
+    Promise.all(recipientIds.map((id) => this.usersService.invalidateDigestCache(id))).catch(() => {});
 
     return messageForWs;
   }

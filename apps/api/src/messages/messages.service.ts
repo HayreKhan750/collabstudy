@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client';
 import { AiService } from '../ai/ai.service';
 import { UploadService } from '../upload/upload.service';
 import { EMBEDDINGS_QUEUE, EmbeddingJobData } from '../ai/embeddings.queue';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class MessagesService {
@@ -22,6 +23,7 @@ export class MessagesService {
     private uploadService: UploadService,
     @InjectQueue(EMBEDDINGS_QUEUE)
     private embeddingsQueue: Queue<EmbeddingJobData>,
+    private usersService: UsersService,
   ) {}
 
   /**
@@ -160,7 +162,27 @@ export class MessagesService {
               fullName: message.user.fullName ?? null,
             },
           });
+
+          // ── Invalidate digest cache for mentioned users ────────────────
+          // Mentioned users' digests are now stale — clear so next fetch regenerates.
+          await Promise.all(
+            otherMentionIds.map((id) => this.usersService.invalidateDigestCache(id)),
+          );
         }
+      }
+    }
+
+    // ── Invalidate digest cache for all channel members (excluding sender) ──
+    // Any top-level message makes their unread count stale. Fire-and-forget.
+    if (!parentId) {
+      const channel = await this.prisma.channel.findUnique({
+        where: { id: channelId },
+        select: { workspace: { select: { members: { select: { userId: true } } } } },
+      });
+      if (channel) {
+        const memberIds = channel.workspace.members.map((m) => m.userId).filter((id) => id !== userId);
+        // Run invalidations in parallel, non-blocking
+        Promise.all(memberIds.map((id) => this.usersService.invalidateDigestCache(id))).catch(() => {});
       }
     }
 
