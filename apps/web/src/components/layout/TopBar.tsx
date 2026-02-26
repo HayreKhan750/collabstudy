@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
+import NotificationPanel from '@/components/chat/NotificationPanel';
 
 interface TopBarProps {
   workspaceName: string | null;
@@ -12,6 +13,9 @@ interface TopBarProps {
   username: string | undefined;
   onSearchOpen?: () => void;
   hasWorkspace?: boolean;
+  token?: string | null;
+  onSelectChannel?: (channelId: string) => void;
+  onSelectConversation?: (conversationId: string) => void;
 }
 
 function HashIcon() {
@@ -92,6 +96,9 @@ export function TopBar({
   username,
   onSearchOpen,
   hasWorkspace,
+  token,
+  onSelectChannel,
+  onSelectConversation,
 }: TopBarProps) {
   // Global Cmd+K / Ctrl+K shortcut
   const handleGlobalKey = useCallback((e: KeyboardEvent) => {
@@ -174,7 +181,7 @@ export function TopBar({
         </button>
       )}
 
-      {/* Right — user + logout */}
+      {/* Right — notifications + user + logout */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* Mobile search icon */}
         {hasWorkspace && onSearchOpen && (
@@ -188,6 +195,16 @@ export function TopBar({
             </svg>
           </button>
         )}
+
+        {/* Notification Bell / AI Digest Panel */}
+        {token && (
+          <NotificationPanel
+            token={token}
+            onSelectChannel={onSelectChannel}
+            onSelectConversation={onSelectConversation}
+          />
+        )}
+
         <span className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 font-medium">
           {username}
         </span>

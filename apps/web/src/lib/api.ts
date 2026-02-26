@@ -162,6 +162,29 @@ export interface MessagesResponse {
   nextCursor: string | null;
 }
 
+export interface DigestUnreadChannel {
+  channelId: string;
+  channelName: string;
+  messageCount: number;
+  mentionCount: number;
+}
+
+export interface DigestUnreadDm {
+  conversationId: string;
+  withUser: string;
+  messageCount: number;
+}
+
+export interface DigestResponse {
+  allCaughtUp: boolean;
+  aiSummary: string | null;
+  unreadChannels: DigestUnreadChannel[];
+  unreadDms: DigestUnreadDm[];
+  totalMentions: number;
+  totalUnread: number;
+  cachedAt: string;
+}
+
 class ApiClient {
   private getHeaders(token?: string): HeadersInit {
     const headers: HeadersInit = {
@@ -713,6 +736,37 @@ class ApiClient {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || 'Failed to change password');
     }
+    return res.json();
+  }
+
+  // ── AI Notification Digest (Phase 11.4) ──────────────────────────────────
+
+  /**
+   * GET /users/me/digest
+   * Returns an AI-generated summary of the current user's unread activity.
+   * Cached server-side in Redis for 5 minutes.
+   */
+  async getDigest(token: string): Promise<DigestResponse> {
+    const res = await fetch(`${API_URL}/users/me/digest`, {
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to fetch digest');
+    }
+    return res.json();
+  }
+
+  /**
+   * POST /users/me/digest/invalidate
+   * Clears the cached digest so the next GET regenerates fresh.
+   */
+  async invalidateDigest(token: string): Promise<{ invalidated: boolean }> {
+    const res = await fetch(`${API_URL}/users/me/digest/invalidate`, {
+      method: 'POST',
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) return { invalidated: false };
     return res.json();
   }
 }

@@ -460,6 +460,21 @@ export default function DashboardPage() {
           username={user?.username}
           hasWorkspace={!!selectedWorkspace}
           onSearchOpen={() => setSearchOpen(true)}
+          token={token}
+          onSelectChannel={(channelId) => {
+            const target = channels.find((c) => c.id === channelId);
+            if (target) {
+              setSelectedChannel(target);
+              setSelectedConversation(null);
+            }
+          }}
+          onSelectConversation={(conversationId) => {
+            const target = directConversations.find((c) => c.id === conversationId);
+            if (target) {
+              setSelectedConversation(target);
+              setSelectedChannel(null);
+            }
+          }}
         />
 
         {/* Content */}

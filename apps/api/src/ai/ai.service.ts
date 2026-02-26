@@ -54,6 +54,76 @@ export class AiService {
   }
 
   /**
+   * Generate a personalised notification digest for the given user's unread
+   * activity. Returns a concise, helpful plain-text summary string.
+   *
+   * Never throws — returns a fallback string on API failure so the digest
+   * endpoint always succeeds even if Gemini is unavailable.
+   */
+  async generateDigest(data: {
+    unreadChannels: {
+      channelName: string;
+      mentionCount: number;
+      messages: { author: string; content: string; createdAt: Date }[];
+    }[];
+    unreadDms: { withUser: string; messageCount: number }[];
+    totalMentions: number;
+  }): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      this.logger.warn('GEMINI_API_KEY not set — returning placeholder digest');
+      return 'AI digest is not configured. Please set the GEMINI_API_KEY environment variable.';
+    }
+
+    // Build a compact plain-text summary of the unread activity to feed Gemini
+    const lines: string[] = [];
+    for (const ch of data.unreadChannels) {
+      lines.push(`\n## #${ch.channelName} (${ch.messages.length} new message${ch.messages.length !== 1 ? 's' : ''}${ch.mentionCount > 0 ? `, ${ch.mentionCount} mention${ch.mentionCount !== 1 ? 's' : ''}` : ''})`);
+      for (const m of ch.messages.slice(0, 10)) {
+        lines.push(`  [${m.author}]: ${m.content.slice(0, 200)}`);
+      }
+      if (ch.messages.length > 10) lines.push(`  … and ${ch.messages.length - 10} more`);
+    }
+    for (const dm of data.unreadDms) {
+      lines.push(`\n## DM from ${dm.withUser}: ${dm.messageCount} unread message${dm.messageCount !== 1 ? 's' : ''}`);
+    }
+
+    const activityText = lines.join('\n');
+
+    const prompt = `You are a helpful assistant generating a smart notification digest for a team chat application.
+
+The user has the following unread activity:
+${activityText}
+
+Write a concise, friendly digest (3-6 sentences max) that:
+1. Highlights the most important channels and topics
+2. Calls out any @mentions specifically (total: ${data.totalMentions})
+3. Mentions any unread DMs
+4. Uses a warm, helpful tone — like a smart assistant briefing them before they start work
+
+Do NOT use markdown headers or bullet lists. Write in flowing, natural sentences.
+Do NOT repeat counts verbatim — summarise meaningfully.`;
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Gemini digest API timed out after ${GEMINI_TIMEOUT_MS}ms`)),
+          GEMINI_TIMEOUT_MS,
+        ),
+      );
+
+      const result = await Promise.race([model.generateContent(prompt), timeoutPromise]);
+      return result.response.text().trim();
+    } catch (err) {
+      this.logger.error('Gemini digest generation failed:', err);
+      return 'Could not generate AI digest right now. Check your unread channels below.';
+    }
+  }
+
+  /**
    * Summarise a plain-text chat transcript using Google Gemini.
    * Throws InternalServerErrorException (HTTP 500) on failure so BullMQ
    * can retry the job correctly instead of silently hanging.

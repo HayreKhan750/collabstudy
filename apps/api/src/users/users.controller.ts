@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Body,
   Request,
@@ -35,5 +36,26 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async changePassword(@Request() req: any, @Body() dto: ChangePasswordDto) {
     return this.usersService.changePassword(req.user.userId, dto);
+  }
+
+  /**
+   * GET /users/me/digest
+   * Returns an AI-generated summary of the current user's unread activity
+   * (mentions, channel messages, DMs). Cached in Redis for 5 minutes.
+   */
+  @Get('me/digest')
+  async getDigest(@Request() req: any) {
+    return this.usersService.getDigest(req.user.userId);
+  }
+
+  /**
+   * POST /users/me/digest/invalidate
+   * Explicitly clears the cached digest for the current user so the next
+   * GET /users/me/digest regenerates fresh from the DB + Gemini.
+   */
+  @Post('me/digest/invalidate')
+  @HttpCode(HttpStatus.OK)
+  async invalidateDigest(@Request() req: any) {
+    return this.usersService.invalidateDigestCache(req.user.userId);
   }
 }
