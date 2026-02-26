@@ -158,6 +158,35 @@ export class ChannelsService {
   }
 
   /**
+   * POST /channels/:channelId/leave
+   * Remove the calling user from a channel's member tracking (hides it from their sidebar).
+   * Any workspace member can leave a channel they don't own.
+   */
+  async leaveChannel(userId: string, channelId: string) {
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: channelId },
+      include: { workspace: true },
+    });
+    if (!channel) throw new NotFoundException('Channel not found');
+
+    const membership = await this.prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId, workspaceId: channel.workspaceId } },
+    });
+    if (!membership) throw new ForbiddenException('You are not a member of this workspace');
+    if (membership.role === 'OWNER') {
+      throw new ForbiddenException('Workspace owner cannot leave a channel. Delete it instead.');
+    }
+
+    // Remove ChannelMember row (tracks last-read). This effectively "hides" the channel.
+    // We use deleteMany to avoid errors if the row doesn't exist yet.
+    await this.prisma.channelMember.deleteMany({
+      where: { userId, channelId },
+    });
+
+    return { success: true, channelId };
+  }
+
+  /**
    * Rename a channel (OWNER or ADMIN only)
    */
   async renameChannel(userId: string, channelId: string, name: string) {

@@ -119,6 +119,19 @@ export class DirectController {
   }
 
   /**
+   * POST /direct/:id/hide
+   * Hide a DM conversation from the current user's sidebar.
+   */
+  @Post(':id/hide')
+  @HttpCode(HttpStatus.OK)
+  hideDm(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+  ) {
+    return this.directService.hideConversation(req.user.userId, conversationId);
+  }
+
+  /**
    * GET /direct/workspace/:workspaceId/users
    * Get all workspace members (for picking DM recipients).
    */

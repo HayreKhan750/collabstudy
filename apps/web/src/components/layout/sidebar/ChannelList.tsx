@@ -11,6 +11,7 @@ interface ChannelListProps {
   onCreateChannel: () => void;
   onRenameChannel: (channel: Channel) => void;
   onDeleteChannel: (channel: Channel) => void;
+  onLeaveChannel?: (channel: Channel) => void;
   userRole: WorkspaceRole;
   hasWorkspace: boolean;
   loading: boolean;
@@ -176,12 +177,14 @@ export function ChannelList({
   onCreateChannel,
   onRenameChannel,
   onDeleteChannel,
+  onLeaveChannel,
   userRole,
   hasWorkspace,
   loading,
   collapsed,
 }: ChannelListProps) {
   const canManage = userRole === 'OWNER' || userRole === 'ADMIN';
+  const canLeave = userRole !== 'OWNER';
 
   // ── Collapsed mode: icon-only channel list ───────────────────────────────
   if (collapsed) {
@@ -284,29 +287,47 @@ export function ChannelList({
                 </AnimatePresence>
               </button>
 
-              {/* Hover action buttons — rename / delete */}
-              {canManage && (
+              {/* Hover action buttons — rename / delete / leave */}
+              {(canManage || (canLeave && onLeaveChannel)) && (
                 <div className="absolute right-1 opacity-0 group-hover/ch:opacity-100 flex items-center gap-0.5 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRenameChannel(channel);
-                    }}
-                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                    title="Rename"
-                  >
-                    <PencilIcon />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteChannel(channel);
-                    }}
-                    className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/20 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                    title="Delete"
-                  >
-                    <TrashIcon />
-                  </button>
+                  {canManage && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRenameChannel(channel);
+                        }}
+                        className="p-1 rounded hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                        title="Rename"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteChannel(channel);
+                        }}
+                        className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/20 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </>
+                  )}
+                  {canLeave && onLeaveChannel && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLeaveChannel(channel);
+                      }}
+                      className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/20 text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                      title="Leave channel"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

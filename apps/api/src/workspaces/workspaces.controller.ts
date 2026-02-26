@@ -76,4 +76,14 @@ export class WorkspacesController {
   deleteWorkspace(@Request() req: any, @Param('id') id: string) {
     return this.workspacesService.deleteWorkspace(req.user.userId, id);
   }
+
+  /**
+   * POST /workspaces/:id/leave
+   * Leave a workspace (non-OWNERs only)
+   */
+  @Post(':id/leave')
+  @HttpCode(HttpStatus.OK)
+  leaveWorkspace(@Request() req: any, @Param('id') id: string) {
+    return this.workspacesService.leaveWorkspace(req.user.userId, id);
+  }
 }

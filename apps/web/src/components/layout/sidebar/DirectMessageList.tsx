@@ -9,6 +9,7 @@ interface DirectMessageListProps {
   selectedConversationId: string | null | undefined;
   onConversationSelect: (conv: DirectConversation) => void;
   onNewDM: () => void;
+  onHideDM?: (conv: DirectConversation) => void;
   onlineUserIds: Set<string>;
   userId: string | undefined;
   collapsed: boolean;
@@ -48,6 +49,7 @@ export function DirectMessageList({
   selectedConversationId,
   onConversationSelect,
   onNewDM,
+  onHideDM,
   onlineUserIds,
   userId,
   collapsed,
@@ -155,41 +157,58 @@ export function DirectMessageList({
             const isOnline = onlineUserIds.has(other.id);
 
             return (
-              <button
-                key={conv.id}
-                onClick={() => onConversationSelect(conv)}
-                className={`w-full text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
-                  ${isSelected ? 'bg-purple-500/20 dark:bg-purple-500/30 text-purple-600 dark:text-purple-200' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
-              >
-                {/* Avatar with online dot */}
-                <div className="relative flex-shrink-0">
-                  <div className="w-7 h-7 rounded-full bg-purple-500/80 flex items-center justify-center text-white text-xs font-semibold">
-                    {displayName.charAt(0).toUpperCase()}
+              <div key={conv.id} className="relative group/dm flex items-center">
+                <button
+                  onClick={() => onConversationSelect(conv)}
+                  className={`flex-1 min-w-0 text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
+                    ${isSelected ? 'bg-purple-500/20 dark:bg-purple-500/30 text-purple-600 dark:text-purple-200' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+                >
+                  {/* Avatar with online dot */}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-purple-500/80 flex items-center justify-center text-white text-xs font-semibold">
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <span
+                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${isOnline ? 'bg-green-400' : 'bg-slate-400'}`}
+                    />
                   </div>
-                  <span
-                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${isOnline ? 'bg-green-400' : 'bg-slate-400'}`}
-                  />
-                </div>
 
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-xs truncate ${conv.unreadCount && conv.unreadCount > 0 ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium'}`}
-                  >
-                    {displayName}
-                  </p>
-                  {lastMsg?.content && (
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                      {lastMsg.content}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-xs truncate ${conv.unreadCount && conv.unreadCount > 0 ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium'}`}
+                    >
+                      {displayName}
                     </p>
-                  )}
-                </div>
+                    {lastMsg?.content && (
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                        {lastMsg.content}
+                      </p>
+                    )}
+                  </div>
 
-                <AnimatePresence>
-                  {conv.unreadCount && conv.unreadCount > 0 ? (
-                    <UnreadBadge count={conv.unreadCount} />
-                  ) : null}
-                </AnimatePresence>
-              </button>
+                  <AnimatePresence>
+                    {conv.unreadCount && conv.unreadCount > 0 ? (
+                      <UnreadBadge count={conv.unreadCount} />
+                    ) : null}
+                  </AnimatePresence>
+                </button>
+
+                {/* Close/hide button — appears on hover */}
+                {onHideDM && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onHideDM(conv);
+                    }}
+                    className="absolute right-1 opacity-0 group-hover/dm:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all"
+                    title="Close conversation"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>

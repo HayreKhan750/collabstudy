@@ -11,6 +11,7 @@ interface WorkspaceSwitcherProps {
   onDiscoverWorkspaces: () => void;
   onRenameWorkspace: () => void;
   onDeleteWorkspace: () => void;
+  onLeaveWorkspace?: () => void;
   collapsed: boolean;
   isOwner: boolean;
 }
@@ -99,6 +100,7 @@ export function WorkspaceSwitcher({
   onDiscoverWorkspaces,
   onRenameWorkspace,
   onDeleteWorkspace,
+  onLeaveWorkspace,
   collapsed,
   isOwner,
 }: WorkspaceSwitcherProps) {
@@ -199,21 +201,36 @@ export function WorkspaceSwitcher({
         </div>
       </div>
 
-      {/* Owner actions */}
-      {isOwner && selectedWorkspace && (
-        <div className="flex items-center gap-1 mt-2">
-          <button
-            onClick={onRenameWorkspace}
-            className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-          >
-            <PencilIcon /> Rename
-          </button>
-          <button
-            onClick={onDeleteWorkspace}
-            className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-          >
-            <TrashIcon /> Delete
-          </button>
+      {/* Workspace actions */}
+      {selectedWorkspace && (isOwner || onLeaveWorkspace) && (
+        <div className="flex items-center gap-1 mt-2 flex-wrap">
+          {isOwner && (
+            <>
+              <button
+                onClick={onRenameWorkspace}
+                className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+              >
+                <PencilIcon /> Rename
+              </button>
+              <button
+                onClick={onDeleteWorkspace}
+                className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              >
+                <TrashIcon /> Delete
+              </button>
+            </>
+          )}
+          {!isOwner && onLeaveWorkspace && (
+            <button
+              onClick={onLeaveWorkspace}
+              className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 px-2 py-1 rounded-md hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Leave
+            </button>
+          )}
         </div>
       )}
     </div>

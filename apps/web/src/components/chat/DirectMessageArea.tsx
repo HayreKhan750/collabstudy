@@ -21,6 +21,13 @@ interface DMUser {
   status?: string;
 }
 
+interface DMReaction {
+  id: string;
+  emoji: string;
+  userId: string;
+  user?: { id: string; username: string; fullName?: string | null; avatar?: string | null };
+}
+
 interface DirectMessage {
   id: string;
   content: string | null;
@@ -34,6 +41,7 @@ interface DirectMessage {
   updatedAt: string;
   isEdited: boolean;
   sender: DMUser;
+  reactions?: DMReaction[];
 }
 
 interface DirectMessageAreaProps {
@@ -320,7 +328,7 @@ export default function DirectMessageArea({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === updated.id
-            ? { ...m, content: updated.content, isEdited: true, updatedAt: updated.updatedAt }
+            ? { ...m, content: updated.content, isEdited: true, updatedAt: updated.updatedAt, reactions: updated.reactions ?? m.reactions }
             : m
         )
       );
@@ -329,6 +337,13 @@ export default function DirectMessageArea({
     // ── dm_message_deleted ───────────────────────────────────────────────────
     socket.on('dm_message_deleted', ({ messageId }: { messageId: string }) => {
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    });
+
+    // ── dm_reaction_updated — fired after any reaction add/remove ────────────
+    socket.on('dm_reaction_updated', (payload: { messageId: string; reactions: DMReaction[] }) => {
+      setMessages((prev) =>
+        prev.map((m) => m.id === payload.messageId ? { ...m, reactions: payload.reactions } : m)
+      );
     });
 
     // ── summary_generated (Phase 9.3) ────────────────────────────────────────
@@ -756,7 +771,16 @@ export default function DirectMessageArea({
                 fullName: msg.sender.fullName || msg.sender.username,
                 avatar: msg.sender.avatar,
               },
-              reactions: [],
+              reactions: (msg.reactions ?? []).map((r) => ({
+                id: r.id,
+                emoji: r.emoji,
+                userId: r.userId,
+                messageId: msg.id,
+                createdAt: '',
+                user: r.user
+                  ? { ...r.user, fullName: r.user.fullName ?? undefined, avatar: r.user.avatar ?? undefined }
+                  : undefined,
+              })),
               fileUrl: msg.fileUrl,
               fileType: msg.fileType,
               fileSize: msg.fileSize,

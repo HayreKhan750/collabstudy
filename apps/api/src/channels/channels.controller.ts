@@ -118,4 +118,17 @@ export class ChannelManagementController {
   ) {
     return this.channelsService.deleteChannel(req.user.userId, channelId);
   }
+
+  /**
+   * POST /channels/:channelId/leave
+   * Leave a channel (any non-OWNER member)
+   */
+  @Post(':channelId/leave')
+  @HttpCode(HttpStatus.OK)
+  leaveChannel(
+    @Request() req: any,
+    @Param('channelId') channelId: string,
+  ) {
+    return this.channelsService.leaveChannel(req.user.userId, channelId);
+  }
 }

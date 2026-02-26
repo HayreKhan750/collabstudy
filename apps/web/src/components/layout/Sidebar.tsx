@@ -26,6 +26,8 @@ interface SidebarProps {
   onWorkspaceDeleted: (workspaceId: string) => void;
   onChannelRenamed: (channel: Channel) => void;
   onChannelDeleted: (channelId: string) => void;
+  onChannelLeft?: (channelId: string) => void;
+  onWorkspaceLeft?: (workspaceId: string) => void;
   token: string | null;
   userRole?: WorkspaceRole;
   username?: string;
@@ -34,6 +36,7 @@ interface SidebarProps {
   selectedConversationId?: string | null;
   onConversationSelect?: (conv: DirectConversation) => void;
   onNewDM?: () => void;
+  onHideDM?: (conv: DirectConversation) => void;
   onlineUserIds?: Set<string>;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -85,6 +88,8 @@ export default function Sidebar({
   onWorkspaceDeleted,
   onChannelRenamed,
   onChannelDeleted,
+  onChannelLeft,
+  onWorkspaceLeft,
   token,
   userRole = 'MEMBER' as WorkspaceRole,
   username,
@@ -93,6 +98,7 @@ export default function Sidebar({
   selectedConversationId,
   onConversationSelect,
   onNewDM,
+  onHideDM,
   onlineUserIds = new Set(),
   collapsed = false,
   onToggleCollapse,
@@ -168,6 +174,24 @@ export default function Sidebar({
     });
   };
 
+  const handleLeaveWorkspace = () => {
+    if (!selectedWorkspace || !token) return;
+    setConfirmModal({
+      title: 'Leave Workspace',
+      message: `Are you sure you want to leave "${selectedWorkspace.name}"? You can rejoin if it is public.`,
+      danger: false,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          await api.leaveWorkspace(token, selectedWorkspace.id);
+          onWorkspaceLeft?.(selectedWorkspace.id);
+        } catch (err) {
+          alert(err instanceof Error ? err.message : 'Failed to leave workspace');
+        }
+      },
+    });
+  };
+
   // ── Channel actions ───────────────────────────────────────────────────────
   const handleRenameChannel = (channel: Channel) => {
     if (!token) return;
@@ -201,6 +225,24 @@ export default function Sidebar({
           onChannelDeleted(channel.id);
         } catch (err) {
           alert(err instanceof Error ? err.message : 'Failed to delete channel');
+        }
+      },
+    });
+  };
+
+  const handleLeaveChannel = (channel: Channel) => {
+    if (!token) return;
+    setConfirmModal({
+      title: 'Leave Channel',
+      message: `Are you sure you want to leave #${channel.name}?`,
+      danger: false,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          await api.leaveChannel(token, channel.id);
+          onChannelLeft?.(channel.id);
+        } catch (err) {
+          alert(err instanceof Error ? err.message : 'Failed to leave channel');
         }
       },
     });
@@ -243,6 +285,7 @@ export default function Sidebar({
           onDiscoverWorkspaces={onDiscoverWorkspaces}
           onRenameWorkspace={handleRenameWorkspace}
           onDeleteWorkspace={handleDeleteWorkspace}
+          onLeaveWorkspace={!isOwner ? handleLeaveWorkspace : undefined}
           collapsed={collapsed}
           isOwner={isOwner}
         />
@@ -255,6 +298,7 @@ export default function Sidebar({
           onCreateChannel={() => setShowCreateChannel(true)}
           onRenameChannel={handleRenameChannel}
           onDeleteChannel={handleDeleteChannel}
+          onLeaveChannel={!isOwner ? handleLeaveChannel : undefined}
           userRole={userRole}
           hasWorkspace={!!selectedWorkspace}
           loading={loadingChannels}
@@ -267,6 +311,7 @@ export default function Sidebar({
           selectedConversationId={selectedConversationId}
           onConversationSelect={onConversationSelect ?? (() => {})}
           onNewDM={onNewDM ?? (() => {})}
+          onHideDM={onHideDM}
           onlineUserIds={onlineUserIds}
           userId={userId}
           collapsed={collapsed}

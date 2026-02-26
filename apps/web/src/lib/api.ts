@@ -769,6 +769,38 @@ class ApiClient {
     if (!res.ok) return { invalidated: false };
     return res.json();
   }
+
+  // ── Leave / Hide ──────────────────────────────────────────────────────────
+
+  /** POST /workspaces/:id/leave — leave a workspace (non-owners only) */
+  async leaveWorkspace(token: string, workspaceId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_URL}/workspaces/${workspaceId}/leave`, {
+      method: 'POST',
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to leave workspace');
+    return res.json();
+  }
+
+  /** POST /channels/:id/leave — leave a channel (non-owners only) */
+  async leaveChannel(token: string, channelId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_URL}/channels/${channelId}/leave`, {
+      method: 'POST',
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to leave channel');
+    return res.json();
+  }
+
+  /** POST /direct/:id/hide — hide a DM conversation from sidebar */
+  async hideDmConversation(token: string, conversationId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_URL}/direct/${conversationId}/hide`, {
+      method: 'POST',
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to hide conversation');
+    return res.json();
+  }
 }
 
 export const api = new ApiClient();

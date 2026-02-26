@@ -337,6 +337,36 @@ export default function DashboardPage() {
     });
   };
 
+  const handleWorkspaceLeft = (workspaceId: string) => {
+    setWorkspaces(prev => {
+      const remaining = prev.filter(w => w.id !== workspaceId);
+      setSelectedWorkspace(cur => {
+        if (cur?.id === workspaceId) { setChannels([]); setSelectedChannel(null); return remaining[0] ?? null; }
+        return cur;
+      });
+      return remaining;
+    });
+  };
+
+  const handleChannelLeft = (channelId: string) => {
+    setChannels(prev => {
+      const remaining = prev.filter(c => c.id !== channelId);
+      setSelectedChannel(cur => cur?.id === channelId ? (remaining[0] ?? null) : cur);
+      return remaining;
+    });
+  };
+
+  const handleHideDM = async (conv: DirectConversation) => {
+    if (!token) return;
+    try {
+      await api.hideDmConversation(token, conv.id);
+    } catch (e) {
+      console.warn('[DM] hide error', e);
+    }
+    setDirectConversations(prev => prev.filter(c => c.id !== conv.id));
+    setSelectedConversation(cur => cur?.id === conv.id ? null : cur);
+  };
+
   const handleChannelRenamed = (updated: Channel) => {
     setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
     setSelectedChannel(cur => cur?.id === updated.id ? updated : cur);
@@ -422,8 +452,10 @@ export default function DashboardPage() {
         onDiscoverWorkspaces={() => setShowDiscoverModal(true)}
         onWorkspaceRenamed={handleWorkspaceRenamed}
         onWorkspaceDeleted={handleWorkspaceDeleted}
+        onWorkspaceLeft={handleWorkspaceLeft}
         onChannelRenamed={handleChannelRenamed}
         onChannelDeleted={handleChannelDeleted}
+        onChannelLeft={handleChannelLeft}
         token={token}
         userRole={userRole}
         username={user?.username}
@@ -440,6 +472,7 @@ export default function DashboardPage() {
           }
         }}
         onNewDM={() => setShowNewDMModal(true)}
+        onHideDM={handleHideDM}
         onlineUserIds={onlineUserIds}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
@@ -594,7 +627,10 @@ export default function DashboardPage() {
                         setShowNewDMModal(false);
                         if (!token) return;
                         try {
-                          const conv = await api.startDirectConversation(token, u.id);
+                          const rawConv = await api.startDirectConversation(token, u.id);
+                          // Normalize: ensure `messages` array always exists so DirectMessageList
+                          // can safely access conv.messages?.[0] without crashing
+                          const conv = { ...rawConv, messages: rawConv.messages ?? [] };
                           setDirectConversations(prev => prev.some(c => c.id === conv.id) ? prev : [conv, ...prev]);
                           setSelectedConversation(conv);
                           setSelectedChannel(null);

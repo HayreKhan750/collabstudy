@@ -170,6 +170,25 @@ export class WorkspacesService {
   }
 
   /**
+   * POST /workspaces/:id/leave
+   * Removes the calling user from the workspace (non-OWNERs only).
+   * OWNERs must transfer ownership or delete the workspace instead.
+   */
+  async leaveWorkspace(userId: string, workspaceId: string) {
+    const membership = await this.prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId, workspaceId } },
+    });
+    if (!membership) throw new ForbiddenException('You are not a member of this workspace');
+    if (membership.role === 'OWNER') {
+      throw new ForbiddenException('The owner cannot leave the workspace. Transfer ownership or delete it instead.');
+    }
+    await this.prisma.workspaceMember.delete({
+      where: { userId_workspaceId: { userId, workspaceId } },
+    });
+    return { success: true, workspaceId };
+  }
+
+  /**
    * POST /workspaces/:id/join
    * Adds the calling user as a MEMBER of the workspace
    */
