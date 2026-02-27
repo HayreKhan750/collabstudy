@@ -30,12 +30,19 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function getInitial(msg: Message) {
-  return (msg.user.fullName || msg.user.username).charAt(0).toUpperCase();
+function resolveUser(msg: any): { fullName?: string | null; username: string } {
+  // DM messages returned from /direct/:id/messages use `sender`, not `user`
+  return msg.user ?? msg.sender ?? { username: '?' };
 }
 
-function getDisplayName(msg: Message) {
-  return msg.user.fullName || msg.user.username;
+function getInitial(msg: any) {
+  const u = resolveUser(msg);
+  return (u.fullName || u.username || '?').charAt(0).toUpperCase();
+}
+
+function getDisplayName(msg: any) {
+  const u = resolveUser(msg);
+  return u.fullName || u.username || 'Unknown';
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -289,7 +296,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
                   <span className="text-slate-400 dark:text-slate-500 text-xs">{formatTime(reply.createdAt)}</span>
                 </div>
                 <p className="text-slate-700 dark:text-slate-300 text-sm break-words">
-                  {renderMessageContent(reply.content, reply.mentions ?? [])}
+                  {renderMessageContent(reply.content ?? '', (reply as any).mentions ?? [])}
                 </p>
 
                 {/* Reactions on replies */}
