@@ -553,18 +553,34 @@ export default function DirectMessageArea({
   const handleReactionClick = useCallback(
     async (emoji: string, messageId: string) => {
       if (!token || !user) return;
-      // Optimistic toggle: add or remove the reaction immediately in local state
+
+      // Snapshot for rollback
+      const previousMessages = messages.map((m) => ({ ...m }));
+
+      // Optimistic update: one reaction per user — remove ALL of user's reactions
+      // then add the new one (unless toggling off the same emoji)
       setMessages((prev) =>
         prev.map((m) => {
           if (m.id !== messageId) return m;
           const reactions = m.reactions ?? [];
-          const alreadyReacted = reactions.some((r) => r.emoji === emoji && r.userId === user.id);
-          const updated = alreadyReacted
-            ? reactions.filter((r) => !(r.emoji === emoji && r.userId === user.id))
-            : [...reactions, { id: `optimistic-${Date.now()}`, emoji, userId: user.id, user: { id: user.id, username: user.username ?? '' } }];
-          return { ...m, reactions: updated };
+          const sameEmoji = reactions.find((r) => r.emoji === emoji && r.userId === user.id);
+          // Strip all reactions by this user
+          const withoutMine = reactions.filter((r) => r.userId !== user.id);
+          if (sameEmoji) {
+            // Toggle-off: just remove
+            return { ...m, reactions: withoutMine };
+          }
+          // Replace or new: add optimistic placeholder
+          return {
+            ...m,
+            reactions: [
+              ...withoutMine,
+              { id: `optimistic-${Date.now()}`, emoji, userId: user.id, user: { id: user.id, username: user.username ?? '' } },
+            ],
+          };
         })
       );
+
       try {
         const res = await fetch(
           `${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`,
@@ -578,16 +594,18 @@ export default function DirectMessageArea({
           const updated = await res.json();
           // Reconcile with server truth (removes optimistic placeholder)
           setMessages((prev) =>
-            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions || [] } : m))
+            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions ?? [] } : m))
           );
+        } else {
+          // Server rejected — revert
+          setMessages(previousMessages);
         }
       } catch (err) {
         console.warn('[DM] reaction error:', err);
-        // Re-fetch to restore correct state on failure
-        fetchMessages();
+        setMessages(previousMessages);
       }
     },
-    [conversationId, token, user, fetchMessages]
+    [conversationId, token, user, messages]
   );
 
   // ── Delete handlers ──────────────────────────────────────────────────────

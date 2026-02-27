@@ -621,18 +621,17 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       setMessages((prev) =>
         prev.map((m) => {
           if (m.id !== reaction.messageId) return m;
-          // Remove any optimistic placeholder for this user+emoji, then add the
-          // real reaction (with the permanent server ID). This handles the case
-          // where the current user added the reaction optimistically.
-          const withoutOptimistic = m.reactions.filter(
-            (r) =>
-              !(r.userId === reaction.userId && r.emoji === reaction.emoji),
+          // One reaction per user: strip ALL existing reactions by this user
+          // (including optimistic placeholders and any previous emoji) before
+          // adding the confirmed server reaction.
+          const withoutThisUser = m.reactions.filter(
+            (r) => r.userId !== reaction.userId,
           );
-          // Also guard against duplicates from other sources
-          if (withoutOptimistic.some((r) => r.id === reaction.id)) {
-            return { ...m, reactions: withoutOptimistic };
+          // Guard against duplicates from other sources
+          if (withoutThisUser.some((r) => r.id === reaction.id)) {
+            return { ...m, reactions: withoutThisUser };
           }
-          return { ...m, reactions: [...withoutOptimistic, reaction] };
+          return { ...m, reactions: [...withoutThisUser, reaction] };
         }),
       );
     });
@@ -868,58 +867,55 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       setOpenPickerFor(null);
 
-      const existing = message.reactions.find(
+      // Find if this user already reacted with THIS emoji (toggle-off case)
+      const sameEmojiReaction = message.reactions.find(
         (r) => r.emoji === emoji && r.userId === user.id,
+      );
+      // Find if this user already reacted with ANY OTHER emoji (replace case)
+      const anyOtherReaction = message.reactions.find(
+        (r) => r.userId === user.id && r.emoji !== emoji,
       );
 
       // 1. Snapshot current state for rollback
-      const previousMessages = [...message.reactions];
+      const previousReactions = [...message.reactions];
 
-      // 2. Apply optimistic update immediately (synchronous, before any await)
-      if (existing) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === message.id
-              ? { ...m, reactions: m.reactions.filter((r) => r.id !== existing.id) }
-              : m,
-          ),
-        );
-      } else {
-        const optimisticReaction: Reaction = {
-          id: `optimistic-${Date.now()}`,
-          emoji,
-          userId: user.id,
-          messageId: message.id,
-          createdAt: new Date().toISOString(),
-        };
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === message.id
-              ? { ...m, reactions: [...m.reactions, optimisticReaction] }
-              : m,
-          ),
-        );
-      }
+      // 2. Optimistic update: remove all of this user's reactions, then add new one
+      //    (unless toggling off the same emoji — then just remove)
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== message.id) return m;
+          // Strip all reactions by this user
+          const withoutMine = m.reactions.filter((r) => r.userId !== user.id);
+          if (sameEmojiReaction) {
+            // Toggle-off: just remove, don't add
+            return { ...m, reactions: withoutMine };
+          }
+          // Replace or new: add optimistic new reaction
+          const optimistic: Reaction = {
+            id: `optimistic-${Date.now()}`,
+            emoji,
+            userId: user.id,
+            messageId: message.id,
+            createdAt: new Date().toISOString(),
+          };
+          return { ...m, reactions: [...withoutMine, optimistic] };
+        }),
+      );
 
-      // 3. Fire API call — revert on failure
+      // 3. Fire API call — server enforces one-reaction-per-user
+      //    addReaction handles both replace and toggle-off server-side
       try {
-        if (existing) {
-          await api.removeReaction(channelId, message.id, existing.id, token);
-        } else {
-          await api.addReaction(channelId, message.id, emoji, token);
-          // The real reaction (with server ID) will arrive via socket reaction_added
-          // and replace the optimistic one via the deduplication logic in the listener.
-        }
+        await api.addReaction(channelId, message.id, emoji, token);
+        // Real reaction arrives via socket reaction_added / reaction_removed events
+        // which reconcile the optimistic state with the server truth.
       } catch (err) {
-        // 4. Revert to exact pre-click snapshot — handles 404, 403, 409, network errors
+        // 4. Revert to exact pre-click snapshot
         const errorMessage =
           err instanceof Error ? err.message : 'Could not update reaction. Please try again.';
         console.warn('[Reaction] ⚠️ error, reverting optimistic update:', errorMessage);
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === message.id
-              ? { ...m, reactions: previousMessages }
-              : m,
+            m.id === message.id ? { ...m, reactions: previousReactions } : m,
           ),
         );
         showReactionError(errorMessage);
