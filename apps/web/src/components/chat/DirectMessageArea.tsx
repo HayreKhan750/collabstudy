@@ -946,13 +946,25 @@ export default function DirectMessageArea({
               </svg>
             )}
           </button>
-          <input
-            type="text"
+          <textarea
+            rows={1}
             value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Auto-grow: reset then expand to scrollHeight
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (input.trim() || pendingFile) handleSend();
+              }
+              // Shift+Enter: browser inserts newline naturally — do nothing
+            }}
             placeholder={`Message ${displayName}`}
-            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none"
+            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none resize-none leading-relaxed"
+            style={{ minHeight: '24px', maxHeight: '120px', overflowY: 'auto' }}
           />
           <button
             onClick={handleSend}

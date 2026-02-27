@@ -45,7 +45,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   const [replyContent, setReplyContent] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const repliesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -163,7 +163,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-screen">
+    <div className="absolute inset-y-0 right-0 w-80 xl:w-96 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col z-20 shadow-2xl">
       {/* Header */}
       <div className="h-12 flex items-center justify-between px-4 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-2">
