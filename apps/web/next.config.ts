@@ -6,10 +6,10 @@ const nextConfig: NextConfig = {
   // into a self-contained .next/standalone directory.
   output: "standalone",
 
-  // Pin the Turbopack workspace root to this app's directory so it doesn't
-  // climb up and watch the entire monorepo (prevents EMFILE / too-many-watchers).
+  // Point Turbopack root to the monorepo root so it can resolve packages from
+  // the shared node_modules while avoiding climbing above the repo boundary.
   turbopack: {
-    root: __dirname,
+    root: require('path').resolve(__dirname, '../..'),
   },
 };
 
