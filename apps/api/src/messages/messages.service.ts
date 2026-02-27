@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException, ConflictException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ConflictException, BadRequestException, InternalServerErrorException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,6 +14,8 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class MessagesService {
+  private readonly logger = new Logger(MessagesService.name);
+
   constructor(
     private prisma: PrismaService,
     private channelsService: ChannelsService,
@@ -31,6 +33,7 @@ export class MessagesService {
    * Only workspace members can post.
    */
   async create(userId: string, channelId: string, createMessageDto: CreateMessageDto) {
+    try {
     // Verify user has access to the channel
     await this.channelsService.verifyChannelAccess(userId, channelId);
 
@@ -186,6 +189,36 @@ export class MessagesService {
     }
 
     return message;
+    } catch (error: unknown) {
+      // ── Structured error logging ─────────────────────────────────────────
+      // Log every detail so the actual root cause is visible in NestJS logs
+      // instead of a generic "Internal Server Error".
+      this.logger.error('🚨 CRITICAL MESSAGE SEND ERROR 🚨', {
+        userId,
+        channelId,
+        dto: createMessageDto,
+        error,
+      });
+
+      // Re-throw NestJS HTTP exceptions as-is so the client gets the correct
+      // status code (403, 404, etc.) rather than a 500.
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+
+      // For Prisma / unexpected errors: surface the real message to the client
+      // so it is visible in the browser console during debugging.
+      const message =
+        error instanceof Error ? error.message : 'Unknown error during message creation';
+      throw new InternalServerErrorException(
+        `Message creation failed: ${message}`,
+      );
+    }
   }
 
   /**

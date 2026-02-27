@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Patch, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { MessagesService } from './messages.service';
@@ -12,6 +12,8 @@ import { SUMMARY_QUEUE, ChannelSummaryJobData } from '../ai/summary.queue';
 @Controller('channels/:channelId/messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
+  private readonly logger = new Logger(MessagesController.name);
+
   constructor(
     private readonly messagesService: MessagesService,
     private readonly chatGateway: ChatGateway,
@@ -123,7 +125,12 @@ export class MessagesController {
   ) {
     const updated = await this.messagesService.editMessage(req.user.userId, channelId, messageId, editMessageDto);
     // Emit from the controller — no circular dependency risk here.
-    this.chatGateway.emitMessageUpdated(channelId, updated);
+    // Wrap in try/catch so a WS failure never crashes the HTTP response.
+    try {
+      this.chatGateway.emitMessageUpdated(channelId, updated);
+    } catch (err) {
+      this.logger.error('Failed to emit message_updated WS event', err);
+    }
     return updated;
   }
 
@@ -140,8 +147,12 @@ export class MessagesController {
     @Param('messageId') messageId: string,
   ) {
     const result = await this.messagesService.deleteMessage(req.user.userId, channelId, messageId);
-    // Emit from the controller — no circular dependency risk here.
-    this.chatGateway.emitMessageDeleted(channelId, { messageId, channelId });
+    // Wrap in try/catch so a WS failure never crashes the HTTP response.
+    try {
+      this.chatGateway.emitMessageDeleted(channelId, { messageId, channelId });
+    } catch (err) {
+      this.logger.error('Failed to emit message_deleted WS event', err);
+    }
     return result;
   }
 }
