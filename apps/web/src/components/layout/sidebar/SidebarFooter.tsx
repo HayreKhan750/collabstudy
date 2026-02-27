@@ -8,20 +8,29 @@ interface SidebarFooterProps {
   username: string | undefined;
   userRole: WorkspaceRole;
   collapsed: boolean;
+  avatar?: string | null;
 }
 
-export function SidebarFooter({ username, userRole, collapsed }: SidebarFooterProps) {
+export function SidebarFooter({ username, userRole, collapsed, avatar }: SidebarFooterProps) {
   const router = useRouter();
   const initial = username ? username.charAt(0).toUpperCase() : 'U';
+
+  // Reusable avatar element — shows profile picture if available, initials otherwise
+  const avatarEl = (size: 'sm' | 'md') => {
+    const cls = size === 'sm'
+      ? 'w-9 h-9 rounded-xl text-sm'
+      : 'w-8 h-8 rounded-xl text-sm';
+    return avatar
+      ? <img src={avatar} alt={username || 'User'} className={`${cls} object-cover shadow-lg`} />
+      : <div className={`${cls} bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold shadow-lg`}>{initial}</div>;
+  };
 
   if (collapsed) {
     return (
       <div className="border-t border-slate-200 dark:border-white/10 py-3 flex flex-col items-center">
         <SidebarTooltip label={username || 'User'}>
           <div className="relative mx-auto">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-              {initial}
-            </div>
+            {avatarEl('sm')}
             <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white dark:border-slate-900" />
           </div>
         </SidebarTooltip>
@@ -37,9 +46,7 @@ export function SidebarFooter({ username, userRole, collapsed }: SidebarFooterPr
         title="Settings"
       >
         <div className="relative flex-shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-            {initial}
-          </div>
+          {avatarEl('md')}
           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white dark:border-slate-900" aria-label="Online" />
         </div>
         <div className="flex-1 min-w-0">

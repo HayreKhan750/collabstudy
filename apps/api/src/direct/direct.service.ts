@@ -357,6 +357,66 @@ export class DirectService {
   }
 
   /**
+   * PATCH /direct/:id/messages/:messageId
+   * Edit a DM message (sender only).
+   */
+  async editDmMessage(userId: string, conversationId: string, messageId: string, content: string) {
+    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new NotFoundException('Message not found');
+    if (msg.senderId !== userId) throw new ForbiddenException('You can only edit your own messages');
+    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message does not belong to this conversation');
+    const updated = await this.prisma.directMessage.update({
+      where: { id: messageId },
+      data: { content, isEdited: true },
+      include: { sender: { select: { id: true, username: true, fullName: true, avatar: true } } },
+    });
+    return updated;
+  }
+
+  /**
+   * DELETE /direct/:id/messages/:messageId
+   * Delete a DM message (sender only).
+   */
+  async deleteDmMessage(userId: string, conversationId: string, messageId: string) {
+    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new NotFoundException('Message not found');
+    if (msg.senderId !== userId) throw new ForbiddenException('You can only delete your own messages');
+    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message does not belong to this conversation');
+    await this.prisma.directMessage.delete({ where: { id: messageId } });
+    return { success: true, messageId };
+  }
+
+  /**
+   * POST /direct/:id/messages/:messageId/reactions
+   * Toggle an emoji reaction on a DM message.
+   */
+  async toggleDmReaction(userId: string, conversationId: string, messageId: string, emoji: string) {
+    // Verify participant
+    const participant = await this.prisma.directParticipant.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!participant) throw new ForbiddenException('Not a participant of this conversation');
+
+    const existing = await this.prisma.directMessageReaction.findUnique({
+      where: { userId_messageId_emoji: { userId, messageId, emoji } },
+    });
+
+    if (existing) {
+      await this.prisma.directMessageReaction.delete({ where: { id: existing.id } });
+    } else {
+      await this.prisma.directMessageReaction.create({
+        data: { userId, messageId, emoji },
+      });
+    }
+
+    const reactions = await this.prisma.directMessageReaction.findMany({
+      where: { messageId },
+      include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
+    });
+    return { messageId, reactions };
+  }
+
+  /**
    * Get all workspace members visible to the user — used to pick DM recipients.
    */
   async getWorkspaceUsers(userId: string, workspaceId: string) {

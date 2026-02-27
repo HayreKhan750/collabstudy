@@ -173,7 +173,10 @@ export default function DashboardPage() {
       setSelectedConversation(cur => {
         if (cur?.id !== payload.conversationId) {
           setDirectConversations(prev =>
-            prev.map(c => c.id === payload.conversationId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c),
+            // Only increment unread count if the message was sent by someone else
+            payload.senderId !== user?.id
+              ? prev.map(c => c.id === payload.conversationId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c)
+              : prev,
           );
         }
         return cur;
@@ -196,7 +199,10 @@ export default function DashboardPage() {
       if (payload.messageId) processedMessageIds.current.add(payload.messageId);
       setSelectedChannel(cur => {
         if (cur?.id !== payload.channelId) {
-          setChannels(prev => prev.map(c => c.id === payload.channelId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c));
+          // Only increment unread if the message is from someone else
+          if (payload.senderId !== user?.id) {
+            setChannels(prev => prev.map(c => c.id === payload.channelId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c));
+          }
         }
         return cur;
       });
@@ -460,6 +466,7 @@ export default function DashboardPage() {
         userRole={userRole}
         username={user?.username}
         userId={user?.id}
+        userAvatar={user?.avatar}
         directConversations={directConversations}
         selectedConversationId={selectedConversation?.id}
         onConversationSelect={(conv) => {

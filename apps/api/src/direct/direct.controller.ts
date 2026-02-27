@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -129,6 +131,49 @@ export class DirectController {
     @Param('id') conversationId: string,
   ) {
     return this.directService.hideConversation(req.user.userId, conversationId);
+  }
+
+  /**
+   * PATCH /direct/:id/messages/:messageId
+   * Edit a DM message (sender only)
+   */
+  @Patch(':id/messages/:messageId')
+  editDmMessage(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+    @Body() body: { content: string },
+  ) {
+    return this.directService.editDmMessage(req.user.userId, conversationId, messageId, body.content);
+  }
+
+  /**
+   * DELETE /direct/:id/messages/:messageId
+   * Delete a DM message (sender only)
+   */
+  @Delete(':id/messages/:messageId')
+  @HttpCode(HttpStatus.OK)
+  deleteDmMessage(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.directService.deleteDmMessage(req.user.userId, conversationId, messageId);
+  }
+
+  /**
+   * POST /direct/:id/messages/:messageId/reactions
+   * Toggle an emoji reaction on a DM message
+   */
+  @Post(':id/messages/:messageId/reactions')
+  @HttpCode(HttpStatus.OK)
+  toggleDmReaction(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+    @Body() body: { emoji: string },
+  ) {
+    return this.directService.toggleDmReaction(req.user.userId, conversationId, messageId, body.emoji);
   }
 
   /**

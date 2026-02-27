@@ -209,8 +209,8 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
         </span>
       </div>
 
-      {/* Replies list */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      {/* Replies list — min-h-0 is required for flex-1 + overflow-y-auto to work correctly inside a flex column */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-3">
         {loading ? (
           <p className="text-slate-400 dark:text-slate-500 text-xs text-center">Loading replies…</p>
         ) : replies.length === 0 ? (
