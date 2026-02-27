@@ -118,6 +118,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   const { token, user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
+  // Always-current ref so callbacks (e.g. reaction handlers) never see stale state
+  const messagesRef = useRef<Message[]>([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -1417,11 +1420,11 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   currentUserId={user?.id ?? ''}
                   readReceipts={readReceipts}
                   onAddReaction={(msgId, emoji) => {
-                    const msg = messages.find(m => m.id === msgId);
+                    const msg = messagesRef.current.find(m => m.id === msgId);
                     if (msg) handleReactionClick(msg, emoji);
                   }}
                   onRemoveReaction={(msgId, reactionId, emoji) => {
-                    const msg = messages.find(m => m.id === msgId);
+                    const msg = messagesRef.current.find(m => m.id === msgId);
                     if (msg) handleReactionClick(msg, emoji);
                   }}
                   onOpenThread={() => onOpenThread?.(message as unknown as ApiMessage)}

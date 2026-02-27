@@ -149,8 +149,16 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     setReplyContent('');
 
     try {
-      await api.sendMessage(channelId, content, token, parentMessage.id, mentionIds);
-      // The real message arrives via the socket listener above
+      const sent = await api.sendMessage(channelId, content, token, parentMessage.id, mentionIds);
+      // Immediately add the reply to local state so it appears instantly
+      // (don't wait for socket which may not be in the room yet)
+      if (sent && sent.id) {
+        setReplies((prev) => {
+          // Avoid duplicates if socket also delivers it
+          if (prev.some((r) => r.id === sent.id)) return prev;
+          return [...prev, sent];
+        });
+      }
     } catch (err) {
       console.error('[Thread] Failed to send reply:', err);
       setSendError(err instanceof Error ? err.message : 'Failed to send reply. Please try again.');
