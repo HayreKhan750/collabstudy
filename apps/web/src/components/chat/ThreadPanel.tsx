@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
-import { api, Message, Reaction, MentionUser } from '@/lib/api';
+import { Message, MentionUser } from '@/lib/api';
 import MentionInput from './MentionInput';
 import { renderMessageContent } from '@/lib/renderMessageContent';
 
@@ -15,10 +15,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface ThreadPanelProps {
   parentMessage: Message;
+  /** The channel ID (for channel threads) OR the DM conversationId (for DM threads). */
   channelId: string;
   onClose: () => void;
   workspaceMembers?: MentionUser[];
   newReply?: Message | null;
+  /** When true, the thread is inside a DM conversation — use /direct endpoints. */
+  isDm?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -37,7 +40,7 @@ function getDisplayName(msg: Message) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ThreadPanel({ parentMessage, channelId, onClose, workspaceMembers = [], newReply }: ThreadPanelProps) {
+export default function ThreadPanel({ parentMessage, channelId, onClose, workspaceMembers = [], newReply, isDm = false }: ThreadPanelProps) {
   const { token, user } = useAuth();
 
   const [replies, setReplies] = useState<Message[]>([]);
@@ -45,7 +48,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   const [replyContent, setReplyContent] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const repliesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -56,14 +59,31 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     if (!token) return;
     setLoading(true);
     try {
-      const data = await api.getMessages(channelId, token, 100, undefined, parentMessage.id);
-      setReplies(data.messages);
+      if (isDm) {
+        // DM threads: fetch DM messages filtered by parentId
+        const res = await fetch(
+          `${API_URL}/direct/${channelId}/messages?limit=100&parentId=${parentMessage.id}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok) throw new Error('Failed to fetch DM thread replies');
+        const data = await res.json();
+        setReplies(data.messages ?? []);
+      } else {
+        // Channel threads: use the channel messages endpoint with parentId
+        const res = await fetch(
+          `${API_URL}/channels/${channelId}/messages?limit=100&parentId=${parentMessage.id}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok) throw new Error('Failed to fetch messages');
+        const data = await res.json();
+        setReplies(data.messages ?? []);
+      }
     } catch (err) {
       console.error('[Thread] Failed to fetch replies:', err);
     } finally {
       setLoading(false);
     }
-  }, [channelId, token, parentMessage.id]);
+  }, [channelId, token, parentMessage.id, isDm]);
 
   useEffect(() => {
     fetchReplies();
@@ -112,18 +132,42 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      socket.emit('join_channel', { channelId });
+      if (isDm) {
+        socket.emit('join_direct', { conversationId: channelId });
+      } else {
+        socket.emit('join_channel', { channelId });
+      }
     });
 
-    // Only capture messages that are replies to our parentMessage
+    // Channel thread: listen for new_message with parentId matching ours
     socket.on('new_message', (msg: Message) => {
       if (msg.parentId !== parentMessage.id) return;
       setReplies((prev) => {
         if (prev.some((r) => r.id === msg.id)) return prev;
         return [...prev, { ...msg, reactions: msg.reactions ?? [] }];
       });
-      // Also bump the reply count on the parent in ChatArea (handled by the
-      // parent component via re-fetch or socket — no action needed here).
+    });
+
+    // DM thread: listen for new_direct_message with parentId matching ours
+    socket.on('new_direct_message', (msg: any) => {
+      if (!isDm || msg.parentId !== parentMessage.id) return;
+      setReplies((prev) => {
+        if (prev.some((r) => r.id === msg.id)) return prev;
+        // Normalise DM message shape to Message shape
+        const normalised: Message = {
+          id: msg.id,
+          content: msg.content ?? '',
+          channelId: msg.conversationId ?? channelId,
+          userId: msg.senderId ?? msg.userId,
+          parentId: msg.parentId,
+          createdAt: msg.createdAt,
+          updatedAt: msg.updatedAt,
+          isEdited: msg.isEdited,
+          user: msg.sender ?? msg.user,
+          reactions: msg.reactions ?? [],
+        };
+        return [...prev, normalised];
+      });
     });
 
     connectTimer = setTimeout(() => {
@@ -136,7 +180,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [channelId, token, user?.id, parentMessage.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [channelId, token, user?.id, parentMessage.id, isDm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Send reply ───────────────────────────────────────────────────────────
 
@@ -145,11 +189,33 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
 
     setSending(true);
     setSendError(null);
-    const content = replyContent;
+    const content = replyContent.trim();
     setReplyContent('');
 
     try {
-      await api.sendMessage(channelId, content, token, parentMessage.id, mentionIds);
+      if (isDm) {
+        // Post a DM reply (with parentId so it threads properly)
+        const res = await fetch(`${API_URL}/direct/${channelId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ content, parentId: parentMessage.id }),
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err || 'Failed to send DM reply');
+        }
+      } else {
+        // Post a channel thread reply
+        const res = await fetch(`${API_URL}/channels/${channelId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ content, parentId: parentMessage.id, mentionIds }),
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err || 'Failed to send reply');
+        }
+      }
       // The real message arrives via the socket listener above
     } catch (err) {
       console.error('[Thread] Failed to send reply:', err);
@@ -163,54 +229,48 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-screen">
-      {/* Header */}
-      <div className="h-12 flex items-center justify-between px-4 border-b border-gray-700 flex-shrink-0">
+    <div className="w-80 xl:w-96 flex-shrink-0 bg-gray-900 border-l border-gray-700 flex flex-col h-full z-20">
+      {/* PINNED HEADER */}
+      <div className="flex-shrink-0 border-b border-gray-700 p-4 flex justify-between items-center bg-gray-900">
         <div className="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          <span className="text-white font-semibold text-sm">Thread</span>
+          <h3 className="font-bold text-white">Thread</h3>
+          {isDm && <span className="text-xs text-slate-400 ml-1">(DM)</span>}
         </div>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+          className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
           aria-label="Close thread"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
+          ✕
         </button>
       </div>
 
-      {/* Parent message */}
-      <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
-        <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">Original message</p>
-        <div className="flex items-start gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-            {getInitial(parentMessage)}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="text-white text-sm font-semibold">{getDisplayName(parentMessage)}</span>
-              <span className="text-slate-400 dark:text-slate-500 text-xs">{formatTime(parentMessage.createdAt)}</span>
+      {/* SCROLLABLE AREA: Parent message + replies */}
+      <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
+        {/* Parent Message */}
+        <div className="text-sm text-gray-300 bg-gray-800 p-3 rounded mb-2">
+          <div className="flex items-start gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+              {getInitial(parentMessage)}
             </div>
-            <p className="text-slate-700 dark:text-slate-300 text-sm break-words">
-              {renderMessageContent(parentMessage.content, parentMessage.mentions ?? [])}
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className="text-white text-sm font-semibold">{getDisplayName(parentMessage)}</span>
+                <span className="text-gray-400 text-xs">{formatTime(parentMessage.createdAt)}</span>
+              </div>
+              <p className="text-gray-300 text-sm break-words">
+                {renderMessageContent(parentMessage.content, parentMessage.mentions ?? [])}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Reply count summary */}
-      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-        <span className="text-xs text-slate-400 dark:text-slate-500">
+        <hr className="border-gray-700" />
+        <div className="text-xs text-gray-500 pb-1">
           {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
-        </span>
-      </div>
-
-      {/* Replies list */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        </div>
         {loading ? (
           <p className="text-slate-400 dark:text-slate-500 text-xs text-center">Loading replies…</p>
         ) : replies.length === 0 ? (
@@ -257,8 +317,8 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
         <div ref={repliesEndRef} />
       </div>
 
-      {/* Reply input */}
-      <div className="flex-shrink-0 px-4 pb-4 pt-2 border-t border-gray-700">
+      {/* PINNED INPUT */}
+      <div className="flex-shrink-0 border-t border-gray-700 p-4 bg-gray-900">
         {sendError && (
           <p className="text-red-400 text-xs mb-1">{sendError}</p>
         )}

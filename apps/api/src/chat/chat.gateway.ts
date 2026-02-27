@@ -628,7 +628,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   /**
-   * Broadcast an edited DM message to the conversation room.
+   * Broadcast an edited DM message to all participants in the conversation room.
    */
   emitDmMessageUpdated(conversationId: string, message: unknown): void {
     const room = `direct:${conversationId}`;
@@ -637,21 +637,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   /**
-   * Broadcast a deleted DM message to the conversation room.
+   * Broadcast a deleted DM message ID to all participants in the conversation room.
    */
   emitDmMessageDeleted(conversationId: string, messageId: string): void {
     const room = `direct:${conversationId}`;
     this.server.to(room).emit('dm_message_deleted', { messageId });
-    console.log(`[Socket] Emitted dm_message_deleted to ${room}`);
+    console.log(`[Socket] Emitted dm_message_deleted to ${room} (messageId: ${messageId})`);
   }
 
   /**
-   * Broadcast updated reactions on a DM message to the conversation room.
+   * Broadcast updated reactions for a DM message to all participants.
    */
-  emitDmReactionUpdated(conversationId: string, messageId: string, reactions: unknown[]): void {
+  emitDmReactionUpdated(conversationId: string, payload: { messageId: string; reactions: unknown[] }): void {
     const room = `direct:${conversationId}`;
-    this.server.to(room).emit('dm_reaction_updated', { messageId, reactions });
-    console.log(`[Socket] Emitted dm_reaction_updated to ${room}`);
+    this.server.to(room).emit('dm_reaction_updated', payload);
+    console.log(`[Socket] Emitted dm_reaction_updated to ${room} (messageId: ${payload.messageId})`);
   }
 
   /**

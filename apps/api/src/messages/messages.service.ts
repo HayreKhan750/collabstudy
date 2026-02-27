@@ -326,7 +326,33 @@ export class MessagesService {
     // Verify the user is a member of the workspace that owns this channel
     await this.channelsService.verifyChannelAccess(userId, message.channelId);
 
-    // Create the reaction (unique constraint on userId + messageId + emoji handles duplicates)
+    // ── One reaction per user per message ──────────────────────────────────
+    // If the user already reacted with ANY emoji on this message, remove it
+    // first so each user can only have one active reaction per message.
+    // If clicking the same emoji they already have → toggle it off (remove only).
+    const existingReaction = await this.prisma.reaction.findFirst({
+      where: { userId, messageId },
+    });
+
+    if (existingReaction) {
+      // Remove the existing reaction
+      await this.prisma.reaction.delete({ where: { id: existingReaction.id } });
+
+      // Broadcast removal
+      this.chatGateway.emitReactionRemoved(message.channelId, {
+        reactionId: existingReaction.id,
+        messageId,
+        userId,
+        emoji: existingReaction.emoji,
+      });
+
+      // If same emoji clicked again → it was a toggle-off, stop here
+      if (existingReaction.emoji === addReactionDto.emoji) {
+        return { success: true, removed: true, emoji: existingReaction.emoji };
+      }
+    }
+
+    // Add the new reaction
     try {
       const reaction = await this.prisma.reaction.create({
         data: {
@@ -349,7 +375,7 @@ export class MessagesService {
 
       return reaction;
     } catch (error: unknown) {
-      // Prisma unique constraint violation code
+      // Prisma unique constraint violation code — race condition guard
       if (
         typeof error === 'object' &&
         error !== null &&

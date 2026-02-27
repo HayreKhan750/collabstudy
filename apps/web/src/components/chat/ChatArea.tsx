@@ -79,8 +79,6 @@ interface ChatAreaProps {
   onOpenThread?: (message: ApiMessage) => void;
   workspaceMembers?: MentionUser[];
   onNewReply?: (msg: ApiMessage) => void;
-  /** Called when a new message arrives from another user (not the current user). */
-  onNewMessage?: (msg: Message) => void;
   onBack?: () => void;
   /** When set, ChatArea will jump to this message ID on next render */
   jumpToMessageId?: string;
@@ -116,7 +114,7 @@ const TYPING_STOP_MS = 3_000;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onNewMessage, onBack, jumpToMessageId, onJumpHandled }: ChatAreaProps) {
+export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onBack, jumpToMessageId, onJumpHandled }: ChatAreaProps) {
   const { token, user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -446,6 +444,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     setNextCursor(null);
     setHasMore(false);
     lastMessageIdRef.current = null; // reset scroll anchor on channel switch
+    lastReadAtCapturedRef.current = false; // reset so unread divider recalculates
     fetchChannelData();
   }, [channelId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -453,23 +452,23 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   // Only scroll when the LAST message ID changes. On initial load, if there's
   // an unread divider, scroll to it; otherwise scroll to bottom (Task 3).
 
+  // Auto-scroll to bottom when messages load or channel changes
   useEffect(() => {
+    if (messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
     const lastId = lastMessage?.id ?? null;
     if (lastId && lastId !== lastMessageIdRef.current) {
       lastMessageIdRef.current = lastId;
-      // Use a short delay so images/media have time to paint before we scroll,
-      // preventing the scroll from landing mid-way through an image load.
       const tid = setTimeout(() => {
         if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-          unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
         } else {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
         }
       }, 80);
       return () => clearTimeout(tid);
     }
-  }, [messages]);
+  }, [messages, channelId]);
 
   // ─── Scroll FAB visibility + auto mark-as-read on scroll-to-bottom ────────
   // A single scroll listener handles both concerns:
@@ -599,10 +598,6 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           if (prev.some((m) => m.id === message.id)) return prev;
           return [...prev, { ...message, reactions: message.reactions ?? [] }];
         });
-        // Only notify for messages sent by OTHER users (not our own echo)
-        if (message.user?.id !== user?.id) {
-          onNewMessage?.(message);
-        }
       } else {
         // Reply — find the parent and increment its reply count
         setMessages((prev) =>
@@ -813,6 +808,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   // ─── Send message ──────────────────────────────────────────────────────────
 
+  // ref to the MentionInput textarea — used to reset auto-grow height after send
+  const mentionInputRef = useRef<HTMLTextAreaElement>(null);
+
   const handleSendMessage = async (mentionIds: string[]) => {
     if (!newMessage.trim() && !pendingFile) return;
     if (!token) return;
@@ -826,6 +824,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     const fileToSend = pendingFile;
     setNewMessage('');
     setPendingFile(null);
+    // Reset textarea auto-grow height so it returns to one row after send
+    if (mentionInputRef.current) {
+      mentionInputRef.current.style.height = 'auto';
+    }
 
     try {
       await api.sendMessage(
@@ -1527,6 +1529,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           {/* Message input */}
           <div className="flex-1">
             <MentionInput
+                  inputRef={mentionInputRef}
               value={newMessage}
               onChange={setNewMessage}
               onSend={handleSendMessage}

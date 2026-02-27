@@ -137,7 +137,7 @@ export default function NotificationPanel({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="absolute left-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)] max-h-[80vh] flex flex-col z-50
+              className="absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-1rem)] max-h-[80vh] flex flex-col z-50
                          bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl
                          border border-slate-200 dark:border-white/10
                          rounded-2xl shadow-2xl overflow-hidden"

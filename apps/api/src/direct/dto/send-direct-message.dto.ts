@@ -25,4 +25,9 @@ export class SendDirectMessageDto {
   @IsOptional()
   @IsString()
   originalName?: string;
+
+  /** Optional parentId for DM thread replies (future use). */
+  @IsOptional()
+  @IsString()
+  parentId?: string;
 }

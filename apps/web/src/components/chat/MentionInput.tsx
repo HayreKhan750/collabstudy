@@ -11,7 +11,7 @@ interface MentionInputProps {
   members: MentionUser[];
   placeholder?: string;
   disabled?: boolean;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
+  inputRef?: React.RefObject<HTMLTextAreaElement | null>;
   /** When true, allows sending even if the text input is empty (e.g. file-only messages). */
   hasPendingFile?: boolean;
 }
@@ -39,8 +39,8 @@ export default function MentionInput({
   /** Index of the highlighted item in the popover. */
   const [highlightIndex, setHighlightIndex] = useState(0);
 
-  const internalRef = useRef<HTMLInputElement>(null);
-  const activeRef = (externalRef as React.RefObject<HTMLInputElement>) ?? internalRef;
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const activeRef = (externalRef as React.RefObject<HTMLTextAreaElement>) ?? internalRef;
 
   // ─── Derive filtered member list ─────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export default function MentionInput({
 
   // ─── Handle input change ──────────────────────────────────────────────────
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     onChange(val);
     onTyping?.();
@@ -133,7 +133,7 @@ export default function MentionInput({
 
   // ─── Keyboard navigation ──────────────────────────────────────────────────
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (showPopover && filtered.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -221,17 +221,23 @@ export default function MentionInput({
       )}
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
+        <textarea
           ref={activeRef}
-          type="text"
+          rows={1}
           value={value}
-          onChange={handleChange}
+          onChange={(e) => {
+            handleChange(e);
+            // Auto-grow up to 5 lines
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50"
+          className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50 resize-none leading-relaxed"
           autoComplete="off"
+          style={{ minHeight: '40px', maxHeight: '120px', overflowY: 'auto' }}
         />
         <button
           type="submit"

@@ -11,8 +11,6 @@ import {
   Request,
   HttpCode,
   HttpStatus,
-  ForbiddenException,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -83,49 +81,6 @@ export class DirectController {
   }
 
   /**
-   * PATCH /direct/:dmId/messages/:messageId
-   * Edit a DM message (sender only).
-   */
-  @Patch(':dmId/messages/:messageId')
-  editMessage(
-    @Request() req: any,
-    @Param('dmId') dmId: string,
-    @Param('messageId') messageId: string,
-    @Body('content') content: string,
-  ) {
-    return this.directService.editDmMessage(req.user.userId, dmId, messageId, content);
-  }
-
-  /**
-   * DELETE /direct/:dmId/messages/:messageId
-   * Delete a DM message (sender only).
-   */
-  @Delete(':dmId/messages/:messageId')
-  @HttpCode(HttpStatus.OK)
-  deleteMessage(
-    @Request() req: any,
-    @Param('dmId') dmId: string,
-    @Param('messageId') messageId: string,
-  ) {
-    return this.directService.deleteDmMessage(req.user.userId, dmId, messageId);
-  }
-
-  /**
-   * POST /direct/:dmId/messages/:messageId/reactions
-   * Toggle an emoji reaction on a DM message.
-   */
-  @Post(':dmId/messages/:messageId/reactions')
-  @HttpCode(HttpStatus.OK)
-  toggleReaction(
-    @Request() req: any,
-    @Param('dmId') dmId: string,
-    @Param('messageId') messageId: string,
-    @Body('emoji') emoji: string,
-  ) {
-    return this.directService.toggleDmReaction(req.user.userId, dmId, messageId, emoji);
-  }
-
-  /**
    * POST /direct/:id/summary
    * Enqueue an AI summary job and return 202 Accepted + jobId.
    * The result is delivered via WebSocket event `summary_generated`.
@@ -176,6 +131,49 @@ export class DirectController {
     @Param('id') conversationId: string,
   ) {
     return this.directService.hideConversation(req.user.userId, conversationId);
+  }
+
+  /**
+   * PATCH /direct/:id/messages/:messageId
+   * Edit a DM message (sender only)
+   */
+  @Patch(':id/messages/:messageId')
+  editDmMessage(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+    @Body() body: { content: string },
+  ) {
+    return this.directService.editDmMessage(req.user.userId, conversationId, messageId, body.content);
+  }
+
+  /**
+   * DELETE /direct/:id/messages/:messageId
+   * Delete a DM message (sender only)
+   */
+  @Delete(':id/messages/:messageId')
+  @HttpCode(HttpStatus.OK)
+  deleteDmMessage(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.directService.deleteDmMessage(req.user.userId, conversationId, messageId);
+  }
+
+  /**
+   * POST /direct/:id/messages/:messageId/reactions
+   * Toggle an emoji reaction on a DM message
+   */
+  @Post(':id/messages/:messageId/reactions')
+  @HttpCode(HttpStatus.OK)
+  toggleDmReaction(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+    @Body() body: { emoji: string },
+  ) {
+    return this.directService.toggleDmReaction(req.user.userId, conversationId, messageId, body.emoji);
   }
 
   /**
