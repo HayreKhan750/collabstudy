@@ -5,13 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
 import { api } from '@/lib/api';
 import SummaryModal from './SummaryModal';
-import ThreadPanel from './ThreadPanel';
 import { MessageBubble, MessageData } from './message/MessageBubble';
 import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import type { Message } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -104,10 +102,6 @@ export default function DirectMessageArea({
   // ── Delete confirm state ─────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
 
-  // ── Thread state ─────────────────────────────────────────────────────────
-  const [activeThread, setActiveThread] = useState<Message | null>(null);
-  const [pendingThreadReply, setPendingThreadReply] = useState<Message | null>(null);
-
   // ── AI Summary modal state ───────────────────────────────────────────────
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -186,7 +180,6 @@ export default function DirectMessageArea({
   useEffect(() => {
     setMessages([]);
     lastMsgIdRef.current = null;
-    setActiveThread(null); // clear thread when switching conversations
     fetchMessages();
   }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -655,7 +648,6 @@ export default function DirectMessageArea({
     );
 
   return (
-    <div className="flex flex-1 h-full min-h-0 overflow-hidden">
     <div
       className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
@@ -864,31 +856,8 @@ export default function DirectMessageArea({
                       handleReactionClick(emoji, msgId)
                     }
                     onOpenThread={() => {
-                      // Build a Message-compatible object from the DirectMessage
-                      const asMessage: Message = {
-                        id: msg.id,
-                        content: msg.content ?? '',
-                        userId: msg.senderId,
-                        channelId: conversationId,
-                        createdAt: msg.createdAt,
-                        updatedAt: msg.updatedAt,
-                        isEdited: msg.isEdited,
-                        user: {
-                          id: msg.sender.id,
-                          username: msg.sender.username,
-                          fullName: msg.sender.fullName ?? undefined,
-                          avatar: msg.sender.avatar ?? undefined,
-                        },
-                        reactions: (msg.reactions ?? []).map((r) => ({
-                          id: r.id,
-                          emoji: r.emoji,
-                          userId: r.userId,
-                          messageId: msg.id,
-                          createdAt: '',
-                          user: r.user ? { ...r.user, fullName: r.user.fullName ?? undefined, avatar: r.user.avatar ?? undefined } : undefined,
-                        })),
-                      };
-                      setActiveThread(asMessage);
+                      // DMs do not support threading (no parentId on DirectMessage schema)
+                      // — no-op to prevent 404s against /channels/:dmId/messages
                     }}
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
@@ -1050,18 +1019,6 @@ export default function DirectMessageArea({
           </button>
         </div>
       </div>
-    </div>
-
-      {/* ── Thread Panel ────────────────────────────────────────────────── */}
-      {activeThread && (
-        <ThreadPanel
-          parentMessage={activeThread}
-          channelId={conversationId}
-          onClose={() => setActiveThread(null)}
-          workspaceMembers={[]}
-          newReply={pendingThreadReply}
-        />
-      )}
     </div>
   );
 }
