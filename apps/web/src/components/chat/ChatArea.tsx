@@ -79,6 +79,8 @@ interface ChatAreaProps {
   onOpenThread?: (message: ApiMessage) => void;
   workspaceMembers?: MentionUser[];
   onNewReply?: (msg: ApiMessage) => void;
+  /** Called when a new message arrives from another user (not the current user). */
+  onNewMessage?: (msg: Message) => void;
   onBack?: () => void;
   /** When set, ChatArea will jump to this message ID on next render */
   jumpToMessageId?: string;
@@ -114,7 +116,7 @@ const TYPING_STOP_MS = 3_000;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onBack, jumpToMessageId, onJumpHandled }: ChatAreaProps) {
+export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onNewMessage, onBack, jumpToMessageId, onJumpHandled }: ChatAreaProps) {
   const { token, user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -597,6 +599,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           if (prev.some((m) => m.id === message.id)) return prev;
           return [...prev, { ...message, reactions: message.reactions ?? [] }];
         });
+        // Only notify for messages sent by OTHER users (not our own echo)
+        if (message.user?.id !== user?.id) {
+          onNewMessage?.(message);
+        }
       } else {
         // Reply — find the parent and increment its reply count
         setMessages((prev) =>

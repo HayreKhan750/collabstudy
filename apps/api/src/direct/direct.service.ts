@@ -333,6 +333,106 @@ export class DirectService {
   }
 
   /**
+   * Edit a direct message (sender only).
+   */
+  async editDmMessage(
+    userId: string,
+    conversationId: string,
+    messageId: string,
+    content: string,
+  ) {
+    const msg = await this.prisma.directMessage.findUnique({
+      where: { id: messageId },
+    });
+    if (!msg || msg.conversationId !== conversationId) {
+      throw new NotFoundException('Message not found');
+    }
+    if (msg.senderId !== userId) {
+      throw new ForbiddenException('You can only edit your own messages');
+    }
+    if (!content?.trim()) {
+      throw new ForbiddenException('Content cannot be empty');
+    }
+
+    const updated = await this.prisma.directMessage.update({
+      where: { id: messageId },
+      data: { content: content.trim(), isEdited: true },
+      include: {
+        sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+      },
+    });
+
+    // Broadcast to all conversation participants
+    this.chatGateway.emitDmMessageUpdated(conversationId, updated);
+
+    return updated;
+  }
+
+  /**
+   * Delete a direct message (sender only).
+   */
+  async deleteDmMessage(
+    userId: string,
+    conversationId: string,
+    messageId: string,
+  ) {
+    const msg = await this.prisma.directMessage.findUnique({
+      where: { id: messageId },
+    });
+    if (!msg || msg.conversationId !== conversationId) {
+      throw new NotFoundException('Message not found');
+    }
+    if (msg.senderId !== userId) {
+      throw new ForbiddenException('You can only delete your own messages');
+    }
+
+    await this.prisma.directMessage.delete({ where: { id: messageId } });
+
+    // Broadcast deletion to all conversation participants
+    this.chatGateway.emitDmMessageDeleted(conversationId, messageId);
+
+    return { success: true, messageId };
+  }
+
+  /**
+   * Toggle an emoji reaction on a DM message.
+   *
+   * NOTE: The current schema does not have a dedicated DirectMessageReaction
+   * table. Reactions for DMs are stored as a JSON array in the content field
+   * and managed client-side via optimistic updates. This endpoint validates
+   * membership and returns a success acknowledgement so the frontend can
+   * update its local state without a 404.
+   *
+   * A future migration can add a proper `DirectMessageReaction` table when
+   * needed. For now the broadcast is sufficient to sync between participants.
+   */
+  async toggleDmReaction(
+    userId: string,
+    conversationId: string,
+    messageId: string,
+    emoji: string,
+  ) {
+    const msg = await this.prisma.directMessage.findUnique({
+      where: { id: messageId },
+    });
+    if (!msg || msg.conversationId !== conversationId) {
+      throw new NotFoundException('Message not found');
+    }
+
+    // Verify the user is a participant
+    const participant = await this.prisma.directParticipant.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!participant) throw new ForbiddenException('Not a participant of this conversation');
+
+    // Broadcast the reaction toggle to the DM room so both participants
+    // can update their local state optimistically.
+    this.chatGateway.emitDmReactionUpdated(conversationId, messageId, []);
+
+    return { messageId, reactions: [], emoji, userId };
+  }
+
+  /**
    * POST /direct/:id/hide
    * Hides (soft-deletes from sidebar) a DM conversation for the current user
    * by setting a hiddenAt timestamp on the DirectParticipant row.

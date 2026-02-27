@@ -31,6 +31,7 @@ interface SidebarProps {
   token: string | null;
   userRole?: WorkspaceRole;
   username?: string;
+  avatarUrl?: string | null;
   userId?: string;
   directConversations?: DirectConversation[];
   selectedConversationId?: string | null;
@@ -93,6 +94,7 @@ export default function Sidebar({
   token,
   userRole = 'MEMBER' as WorkspaceRole,
   username,
+  avatarUrl,
   userId,
   directConversations = [],
   selectedConversationId,
@@ -319,7 +321,7 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <SidebarFooter username={username} userRole={userRole} collapsed={collapsed} />
+      <SidebarFooter username={username} avatarUrl={avatarUrl} userRole={userRole} collapsed={collapsed} />
     </div>
   );
 

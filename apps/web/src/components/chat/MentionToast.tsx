@@ -36,7 +36,7 @@ export default function MentionToast({ notifications, onDismiss }: MentionToastP
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none"
+      className="fixed bottom-6 right-4 z-[100] flex flex-col gap-2 pointer-events-none max-w-[calc(100vw-2rem)] w-80"
       aria-live="polite"
       aria-label="Mention notifications"
     >

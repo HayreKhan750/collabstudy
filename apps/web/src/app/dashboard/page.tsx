@@ -459,6 +459,7 @@ export default function DashboardPage() {
         token={token}
         userRole={userRole}
         username={user?.username}
+        avatarUrl={user?.avatar ?? null}
         userId={user?.id}
         directConversations={directConversations}
         selectedConversationId={selectedConversation?.id}

@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -9,6 +11,8 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -76,6 +80,49 @@ export class DirectController {
     @Body() dto: SendDirectMessageDto,
   ) {
     return this.directService.sendMessage(req.user.userId, conversationId, dto);
+  }
+
+  /**
+   * PATCH /direct/:dmId/messages/:messageId
+   * Edit a DM message (sender only).
+   */
+  @Patch(':dmId/messages/:messageId')
+  editMessage(
+    @Request() req: any,
+    @Param('dmId') dmId: string,
+    @Param('messageId') messageId: string,
+    @Body('content') content: string,
+  ) {
+    return this.directService.editDmMessage(req.user.userId, dmId, messageId, content);
+  }
+
+  /**
+   * DELETE /direct/:dmId/messages/:messageId
+   * Delete a DM message (sender only).
+   */
+  @Delete(':dmId/messages/:messageId')
+  @HttpCode(HttpStatus.OK)
+  deleteMessage(
+    @Request() req: any,
+    @Param('dmId') dmId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.directService.deleteDmMessage(req.user.userId, dmId, messageId);
+  }
+
+  /**
+   * POST /direct/:dmId/messages/:messageId/reactions
+   * Toggle an emoji reaction on a DM message.
+   */
+  @Post(':dmId/messages/:messageId/reactions')
+  @HttpCode(HttpStatus.OK)
+  toggleReaction(
+    @Request() req: any,
+    @Param('dmId') dmId: string,
+    @Param('messageId') messageId: string,
+    @Body('emoji') emoji: string,
+  ) {
+    return this.directService.toggleDmReaction(req.user.userId, dmId, messageId, emoji);
   }
 
   /**
