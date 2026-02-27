@@ -545,19 +545,7 @@ export default function DirectMessageArea({
   // ── Reaction handlers ──────────────────────────────────────────────────────
   const handleReactionClick = useCallback(
     async (emoji: string, messageId: string) => {
-      if (!token || !user) return;
-      // Optimistic toggle: add or remove the reaction immediately in local state
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== messageId) return m;
-          const reactions = m.reactions ?? [];
-          const alreadyReacted = reactions.some((r) => r.emoji === emoji && r.userId === user.id);
-          const updated = alreadyReacted
-            ? reactions.filter((r) => !(r.emoji === emoji && r.userId === user.id))
-            : [...reactions, { id: `optimistic-${Date.now()}`, emoji, userId: user.id, user: { id: user.id, username: user.username ?? '' } }];
-          return { ...m, reactions: updated };
-        })
-      );
+      if (!token) return;
       try {
         const res = await fetch(
           `${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`,
@@ -569,18 +557,18 @@ export default function DirectMessageArea({
         );
         if (res.ok) {
           const updated = await res.json();
-          // Reconcile with server truth (removes optimistic placeholder)
+          // Update local state with the authoritative server response
           setMessages((prev) =>
-            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions || [] } : m))
+            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions ?? [] } : m))
           );
+        } else {
+          console.warn('[DM] reaction failed:', res.status);
         }
       } catch (err) {
         console.warn('[DM] reaction error:', err);
-        // Re-fetch to restore correct state on failure
-        fetchMessages();
       }
     },
-    [conversationId, token, user, fetchMessages]
+    [conversationId, token]
   );
 
   // ── Delete handlers ──────────────────────────────────────────────────────

@@ -197,6 +197,9 @@ export class DirectService {
       take: limit + 1,
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+        reactions: {
+          include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
+        },
       },
     });
 
