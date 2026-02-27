@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   // Required for optimized Docker builds — copies only the necessary files
   // into a self-contained .next/standalone directory.
   output: "standalone",
+
+  // Pin the Turbopack workspace root to this app's directory so it doesn't
+  // climb up and watch the entire monorepo (prevents EMFILE / too-many-watchers).
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 // Wrap with Sentry's Next.js plugin for build-time source map upload
