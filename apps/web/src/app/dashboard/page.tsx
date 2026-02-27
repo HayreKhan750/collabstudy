@@ -522,11 +522,34 @@ export default function DashboardPage() {
           hasWorkspace={!!selectedWorkspace}
           onSearchOpen={() => setSearchOpen(true)}
           token={token}
-          onSelectChannel={(channelId) => {
-            const target = channels.find((c) => c.id === channelId);
+          onSelectChannel={async (channelId) => {
+            // First check current workspace's loaded channels
+            let target = channels.find((c) => c.id === channelId);
             if (target) {
               setSelectedChannel(target);
               setSelectedConversation(null);
+              setActiveThread(null);
+              return;
+            }
+            // Channel not in current workspace — search across all workspaces
+            if (!token) return;
+            for (const ws of workspaces) {
+              if (ws.id === selectedWorkspace?.id) continue;
+              try {
+                const wsChannels = await api.getChannels(ws.id, token);
+                target = wsChannels.find((c) => c.id === channelId);
+                if (target) {
+                  // Switch to that workspace first, then select channel
+                  setSelectedWorkspace(ws);
+                  setChannels(wsChannels);
+                  setSelectedChannel(target);
+                  setSelectedConversation(null);
+                  setActiveThread(null);
+                  return;
+                }
+              } catch {
+                // ignore fetch errors for other workspaces
+              }
             }
           }}
           onSelectConversation={(conversationId) => {
@@ -534,6 +557,7 @@ export default function DashboardPage() {
             if (target) {
               setSelectedConversation(target);
               setSelectedChannel(null);
+              setActiveThread(null);
             }
           }}
         />
