@@ -15,6 +15,7 @@ import { NoWorkspaceState, NoChannelState } from '@/components/chat/EmptyState';
 import { io, Socket } from 'socket.io-client';
 import CallModal, { IncomingCallPayload } from '@/components/chat/CallModal';
 import { SearchModal } from '@/components/chat/SearchModal';
+import SettingsPanel from '@/components/settings/SettingsPanel';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -507,7 +508,7 @@ export default function DashboardPage() {
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
-        onOpenSettings={() => router.push('/settings')}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
@@ -760,6 +761,21 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Settings slide-over panel (Telegram-style, chat stays mounted) ── */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowSettings(false)}
+          />
+          {/* Panel — slides in from the right */}
+          <div className="relative ml-auto w-full max-w-2xl h-full bg-slate-50 dark:bg-slate-900 shadow-2xl flex flex-col animate-slide-in-right">
+            <SettingsPanel onClose={() => setShowSettings(false)} />
           </div>
         </div>
       )}

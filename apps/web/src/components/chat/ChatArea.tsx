@@ -13,6 +13,7 @@ import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { RelatedMessagesPanel } from './RelatedMessagesPanel';
+import ForwardModal from './ForwardModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,10 @@ interface ChatAreaProps {
   workspaceMembers?: MentionUser[];
   onNewReply?: (msg: ApiMessage) => void;
   onBack?: () => void;
+  /** Called when a new message arrives from another user (not the current user). */
+  onNewMessage?: (msg: Message) => void;
+  /** All workspaces (for ForwardModal) */
+  workspaces?: { id: string; name: string }[];
   /** When set, ChatArea will jump to this message ID on next render */
   jumpToMessageId?: string;
   /** Called after the jump has been handled so parent can clear it */
@@ -114,7 +119,7 @@ const TYPING_STOP_MS = 3_000;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onBack, jumpToMessageId, onJumpHandled }: ChatAreaProps) {
+export default function ChatArea({ channelId, channelName, workspaceId, onOpenThread, workspaceMembers = [], onNewReply, onNewMessage, onBack, jumpToMessageId, onJumpHandled, workspaces = [] }: ChatAreaProps) {
   const { token, user } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -176,6 +181,38 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   // ── Phase 11.3: Related Messages panel state ─────────────────────────────
   const [relatedSource, setRelatedSource] = useState<Message | null>(null);
+
+  // ── Forward modal state ───────────────────────────────────────────────────
+  const [forwardMessage, setForwardMessage] = useState<Message | null>(null);
+
+  // ── Selected messages state ───────────────────────────────────────────────
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+
+  // ── Pinned messages ───────────────────────────────────────────────────────
+  const handlePinMessage = useCallback(async (messageId: string) => {
+    if (!token) return;
+    try {
+      await fetch(`${API_URL}/channels/${channelId}/messages/${messageId}/pin`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.warn('[Pin] Failed:', err);
+    }
+  }, [channelId, token]);
+
+  const handleCopyMessage = useCallback((content: string) => {
+    navigator.clipboard.writeText(content).catch(() => {});
+  }, []);
+
+  const handleSelectMessage = useCallback((messageId: string) => {
+    setSelectedMessageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(messageId)) next.delete(messageId);
+      else next.add(messageId);
+      return next;
+    });
+  }, []);
 
   // ── AI Summary modal state ───────────────────────────────────────────────
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -1431,6 +1468,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   onEditSave={() => handleSaveEdit(message.id)}
                   onEditCancel={handleCancelEdit}
                   onFindSimilar={message.content ? () => setRelatedSource(message) : undefined}
+                  onCopy={message.content ? () => handleCopyMessage(message.content!) : undefined}
+                  onForward={message.content ? () => setForwardMessage(message) : undefined}
+                  onPin={() => handlePinMessage(message.id)}
+                  onSelect={() => handleSelectMessage(message.id)}
                 />
               </div>
             );
@@ -1569,6 +1610,16 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     </div>
 
     {/* Phase 11.3: Related Messages side panel — slides in from the right */}
+    {/* Forward Modal */}
+    {forwardMessage && (
+      <ForwardModal
+        messageContent={forwardMessage.content ?? ''}
+        messageId={forwardMessage.id}
+        workspaces={workspaces}
+        onClose={() => setForwardMessage(null)}
+      />
+    )}
+
     {relatedSource && token && (
       <RelatedMessagesPanel
         sourceMessage={relatedSource}

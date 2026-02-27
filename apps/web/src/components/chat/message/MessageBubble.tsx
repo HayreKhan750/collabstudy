@@ -58,6 +58,14 @@ interface MessageBubbleProps {
   onEditCancel: () => void;
   /** Phase 11.3: opens the Related Messages panel for this message */
   onFindSimilar?: () => void;
+  /** Copy message text to clipboard */
+  onCopy?: () => void;
+  /** Forward message to another channel/DM */
+  onForward?: () => void;
+  /** Pin message in channel */
+  onPin?: () => void;
+  /** Toggle select mode for this message */
+  onSelect?: () => void;
   /**
    * Read receipts: map of userId → messageId they last read.
    * Used to render "seen" double-tick on outbound messages.
@@ -289,6 +297,10 @@ export function MessageBubble({
   onEditSave,
   onEditCancel,
   onFindSimilar,
+  onCopy,
+  onForward,
+  onPin,
+  onSelect,
   readReceipts = {},
 }: MessageBubbleProps) {
   const displayName = message.user.fullName || message.user.username;
@@ -388,6 +400,10 @@ export function MessageBubble({
             onDelete={onDeleteRequest}
             onThread={onOpenThread}
             onFindSimilar={onFindSimilar}
+            onCopy={onCopy}
+            onForward={onForward}
+            onPin={onPin}
+            onSelect={onSelect}
           />
 
           {/* Inline edit mode */}
