@@ -5,11 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
 import { api } from '@/lib/api';
 import SummaryModal from './SummaryModal';
+import ThreadPanel from './ThreadPanel';
 import { MessageBubble, MessageData } from './message/MessageBubble';
 import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import type { Message } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -102,6 +104,10 @@ export default function DirectMessageArea({
   // ── Delete confirm state ─────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
 
+  // ── Thread state ─────────────────────────────────────────────────────────
+  const [activeThread, setActiveThread] = useState<Message | null>(null);
+  const [pendingThreadReply, setPendingThreadReply] = useState<Message | null>(null);
+
   // ── AI Summary modal state ───────────────────────────────────────────────
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -180,8 +186,9 @@ export default function DirectMessageArea({
   useEffect(() => {
     setMessages([]);
     lastMsgIdRef.current = null;
+    setActiveThread(null); // clear thread when switching conversations
     fetchMessages();
-  }, [conversationId]);
+  }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-scroll & scroll-to-unread divider (Task 3) ─────────────────────
 
@@ -518,12 +525,19 @@ export default function DirectMessageArea({
       if (!token || !editContent.trim()) return;
       setEditSaving(true);
       setEditError(null);
+      const trimmed = editContent.trim();
       try {
         await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ content: editContent.trim() }),
+          body: JSON.stringify({ content: trimmed }),
         });
+        // Optimistically update local state immediately — don't wait for WS
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId ? { ...m, content: trimmed, isEdited: true } : m
+          )
+        );
         setEditingMessageId(null);
         setEditContent('');
       } catch (err) {
@@ -538,7 +552,19 @@ export default function DirectMessageArea({
   // ── Reaction handlers ──────────────────────────────────────────────────────
   const handleReactionClick = useCallback(
     async (emoji: string, messageId: string) => {
-      if (!token) return;
+      if (!token || !user) return;
+      // Optimistic toggle: add or remove the reaction immediately in local state
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          const reactions = m.reactions ?? [];
+          const alreadyReacted = reactions.some((r) => r.emoji === emoji && r.userId === user.id);
+          const updated = alreadyReacted
+            ? reactions.filter((r) => !(r.emoji === emoji && r.userId === user.id))
+            : [...reactions, { id: `optimistic-${Date.now()}`, emoji, userId: user.id, user: { id: user.id, username: user.username ?? '' } }];
+          return { ...m, reactions: updated };
+        })
+      );
       try {
         const res = await fetch(
           `${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`,
@@ -550,15 +576,18 @@ export default function DirectMessageArea({
         );
         if (res.ok) {
           const updated = await res.json();
+          // Reconcile with server truth (removes optimistic placeholder)
           setMessages((prev) =>
             prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions || [] } : m))
           );
         }
       } catch (err) {
         console.warn('[DM] reaction error:', err);
+        // Re-fetch to restore correct state on failure
+        fetchMessages();
       }
     },
-    [conversationId, token]
+    [conversationId, token, user, fetchMessages]
   );
 
   // ── Delete handlers ──────────────────────────────────────────────────────
@@ -571,6 +600,8 @@ export default function DirectMessageArea({
     if (!token || !deleteConfirm) return;
     const { messageId } = deleteConfirm;
     setDeleteConfirm(null);
+    // Optimistically remove from local state immediately — don't wait for WS
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
     try {
       await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
         method: 'DELETE',
@@ -578,8 +609,10 @@ export default function DirectMessageArea({
       });
     } catch (err) {
       console.warn('[DM] delete error:', err);
+      // Re-fetch on failure to restore the message
+      fetchMessages();
     }
-  }, [conversationId, token, deleteConfirm]);
+  }, [conversationId, token, deleteConfirm, fetchMessages]);
 
   // ── Load older messages ──────────────────────────────────────────────────
 
@@ -622,6 +655,7 @@ export default function DirectMessageArea({
     );
 
   return (
+    <div className="flex flex-1 h-full min-h-0 overflow-hidden">
     <div
       className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
@@ -829,7 +863,33 @@ export default function DirectMessageArea({
                     onRemoveReaction={(msgId: string, reactionId: string, emoji: string) =>
                       handleReactionClick(emoji, msgId)
                     }
-                    onOpenThread={() => {}}
+                    onOpenThread={() => {
+                      // Build a Message-compatible object from the DirectMessage
+                      const asMessage: Message = {
+                        id: msg.id,
+                        content: msg.content ?? '',
+                        userId: msg.senderId,
+                        channelId: conversationId,
+                        createdAt: msg.createdAt,
+                        updatedAt: msg.updatedAt,
+                        isEdited: msg.isEdited,
+                        user: {
+                          id: msg.sender.id,
+                          username: msg.sender.username,
+                          fullName: msg.sender.fullName ?? undefined,
+                          avatar: msg.sender.avatar ?? undefined,
+                        },
+                        reactions: (msg.reactions ?? []).map((r) => ({
+                          id: r.id,
+                          emoji: r.emoji,
+                          userId: r.userId,
+                          messageId: msg.id,
+                          createdAt: '',
+                          user: r.user ? { ...r.user, fullName: r.user.fullName ?? undefined, avatar: r.user.avatar ?? undefined } : undefined,
+                        })),
+                      };
+                      setActiveThread(asMessage);
+                    }}
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
                     isEditing={editingMessageId === msg.id}
@@ -990,6 +1050,18 @@ export default function DirectMessageArea({
           </button>
         </div>
       </div>
+    </div>
+
+      {/* ── Thread Panel ────────────────────────────────────────────────── */}
+      {activeThread && (
+        <ThreadPanel
+          parentMessage={activeThread}
+          channelId={conversationId}
+          onClose={() => setActiveThread(null)}
+          workspaceMembers={[]}
+          newReply={pendingThreadReply}
+        />
+      )}
     </div>
   );
 }
