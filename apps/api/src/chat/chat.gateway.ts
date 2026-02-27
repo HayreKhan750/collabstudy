@@ -648,10 +648,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   /**
    * Broadcast updated reactions for a DM message to all participants.
    */
-  emitDmReactionUpdated(conversationId: string, payload: { messageId: string; reactions: unknown[] }): void {
+  emitDmReactionUpdated(conversationId: string, messageId: string, reactions: unknown[]): void {
     const room = `direct:${conversationId}`;
-    this.server.to(room).emit('dm_reaction_updated', payload);
-    console.log(`[Socket] Emitted dm_reaction_updated to ${room} (messageId: ${payload.messageId})`);
+    this.server.to(room).emit('dm_reaction_updated', { messageId, reactions });
+    console.log(`[Socket] Emitted dm_reaction_updated to ${room} (messageId: ${messageId})`);
   }
 
   /**

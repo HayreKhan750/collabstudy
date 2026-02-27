@@ -43,6 +43,7 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  onOpenSettings?: () => void;
 }
 
 function ChevronLeftIcon() {
@@ -106,6 +107,7 @@ export default function Sidebar({
   onToggleCollapse,
   mobileOpen = false,
   onMobileClose,
+  onOpenSettings,
 }: SidebarProps) {
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [loadingChannels, setLoadingChannels] = useState(false);
@@ -321,7 +323,7 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <SidebarFooter username={username} userRole={userRole} collapsed={collapsed} avatar={userAvatar} />
+      <SidebarFooter username={username} userRole={userRole} collapsed={collapsed} avatar={userAvatar} onOpenSettings={onOpenSettings} />
     </div>
   );
 

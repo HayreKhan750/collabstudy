@@ -197,6 +197,11 @@ export class DirectService {
       take: limit + 1,
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+        reactions: {
+          include: {
+            user: { select: { id: true, username: true, fullName: true, avatar: true } },
+          },
+        },
       },
     });
 
@@ -401,36 +406,36 @@ export class DirectService {
     });
     if (!participant) throw new ForbiddenException('Not a participant of this conversation');
 
-    // Use findFirst (not findUnique on compound key) for resilience against
-    // any schema drift between environments
+    // One reaction per user per message: find ANY existing reaction by this user
+    // (regardless of emoji) so clicking a different emoji replaces the old one.
     const existing = await this.prisma.directMessageReaction.findFirst({
-      where: { userId, messageId, emoji },
+      where: { userId, messageId },
     });
 
-    try {
-      if (existing) {
-        await this.prisma.directMessageReaction.delete({ where: { id: existing.id } });
-      } else {
-        await this.prisma.directMessageReaction.create({
-          data: { userId, messageId, emoji },
+    if (existing) {
+      // Remove the previous reaction
+      await this.prisma.directMessageReaction.delete({ where: { id: existing.id } });
+      // Same emoji clicked again → toggle off, stop here
+      if (existing.emoji === emoji) {
+        const reactions = await this.prisma.directMessageReaction.findMany({
+          where: { messageId },
+          include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
         });
+        this.chatGateway.emitDmReactionUpdated(conversationId, messageId, reactions);
+        return { messageId, reactions };
       }
+    }
+
+    // Add the new reaction
+    try {
+      await this.prisma.directMessageReaction.create({
+        data: { userId, messageId, emoji },
+      });
     } catch (err: unknown) {
-      // Handle race-condition: another request created the same reaction between
-      // our findFirst and create calls. Treat as a successful toggle-off by
-      // attempting to delete the duplicate if it exists.
+      // Race-condition guard: duplicate unique constraint — ignore
       const isUniqueError =
         err instanceof Error && err.message.includes('Unique constraint');
-      if (isUniqueError) {
-        const dup = await this.prisma.directMessageReaction.findFirst({
-          where: { userId, messageId, emoji },
-        });
-        if (dup) {
-          await this.prisma.directMessageReaction.delete({ where: { id: dup.id } });
-        }
-      } else {
-        throw err;
-      }
+      if (!isUniqueError) throw err;
     }
 
     const reactions = await this.prisma.directMessageReaction.findMany({
@@ -439,7 +444,7 @@ export class DirectService {
     });
 
     // Broadcast updated reactions to all participants in real time
-    this.chatGateway.emitDmReactionUpdated(conversationId, { messageId, reactions });
+    this.chatGateway.emitDmReactionUpdated(conversationId, messageId, reactions);
     return { messageId, reactions };
   }
 

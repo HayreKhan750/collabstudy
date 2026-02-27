@@ -165,9 +165,17 @@ export function DirectMessageList({
                 >
                   {/* Avatar with online dot */}
                   <div className="relative flex-shrink-0">
-                    <div className="w-7 h-7 rounded-full bg-purple-500/80 flex items-center justify-center text-white text-xs font-semibold">
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
+                    {other?.avatar ? (
+                      <img
+                        src={other.avatar}
+                        alt={displayName}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-purple-500/80 flex items-center justify-center text-white text-xs font-semibold">
+                        {displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span
                       className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${isOnline ? 'bg-green-400' : 'bg-slate-400'}`}
                     />

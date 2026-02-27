@@ -34,6 +34,7 @@ export default function DashboardPage() {
   // ── Sidebar collapse / mobile drawer state ────────────────────────────────
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   /** The parent message whose thread is open in the right panel, or null. */
   const [activeThread, setActiveThread] = useState<Message | null>(null);
@@ -506,6 +507,7 @@ export default function DashboardPage() {
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
+        onOpenSettings={() => router.push('/settings')}
       />
 
       {/* ── Main content area ─────────────────────────────────────────────── */}

@@ -125,14 +125,16 @@ export function RelatedMessagesPanel({
       .then((res) => {
         if (cancelled) return;
         setResults(res.messages);
-        // If backend returned 0 results but message might just have no embedding,
-        // we don't know for sure — show the "still processing" state as a hint.
-        // (The API returns total:0 both when no similar msgs exist AND when no embedding.)
-        setHasEmbedding(res.total > 0);
+        // Always mark as having embedding so we show results (or "none found")
+        // rather than "still processing" — avoid infinite "processing" state.
+        setHasEmbedding(true);
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load related messages');
+        // Show a user-friendly error and stop — don't leave user on "processing" forever
+        const msg = err instanceof Error ? err.message : 'Failed to load related messages';
+        setError(`Could not find similar messages. ${msg}`);
+        setHasEmbedding(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
