@@ -391,22 +391,42 @@ export class DirectService {
    * Toggle an emoji reaction on a DM message.
    */
   async toggleDmReaction(userId: string, conversationId: string, messageId: string, emoji: string) {
-    // Verify participant
-    const participant = await this.prisma.directParticipant.findUnique({
-      where: { userId_conversationId: { userId, conversationId } },
+    // Verify participant — use findFirst to avoid compound-key schema issues
+    const participant = await this.prisma.directParticipant.findFirst({
+      where: { userId, conversationId },
     });
     if (!participant) throw new ForbiddenException('Not a participant of this conversation');
 
-    const existing = await this.prisma.directMessageReaction.findUnique({
-      where: { userId_messageId_emoji: { userId, messageId, emoji } },
+    // Use findFirst (not findUnique on compound key) for resilience against
+    // any schema drift between environments
+    const existing = await this.prisma.directMessageReaction.findFirst({
+      where: { userId, messageId, emoji },
     });
 
-    if (existing) {
-      await this.prisma.directMessageReaction.delete({ where: { id: existing.id } });
-    } else {
-      await this.prisma.directMessageReaction.create({
-        data: { userId, messageId, emoji },
-      });
+    try {
+      if (existing) {
+        await this.prisma.directMessageReaction.delete({ where: { id: existing.id } });
+      } else {
+        await this.prisma.directMessageReaction.create({
+          data: { userId, messageId, emoji },
+        });
+      }
+    } catch (err: unknown) {
+      // Handle race-condition: another request created the same reaction between
+      // our findFirst and create calls. Treat as a successful toggle-off by
+      // attempting to delete the duplicate if it exists.
+      const isUniqueError =
+        err instanceof Error && err.message.includes('Unique constraint');
+      if (isUniqueError) {
+        const dup = await this.prisma.directMessageReaction.findFirst({
+          where: { userId, messageId, emoji },
+        });
+        if (dup) {
+          await this.prisma.directMessageReaction.delete({ where: { id: dup.id } });
+        }
+      } else {
+        throw err;
+      }
     }
 
     const reactions = await this.prisma.directMessageReaction.findMany({

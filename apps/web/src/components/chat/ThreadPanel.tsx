@@ -163,7 +163,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 xl:w-96 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col min-h-0">
+    <div className="w-80 xl:w-96 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header */}
       <div className="h-12 flex items-center justify-between px-4 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-2">
