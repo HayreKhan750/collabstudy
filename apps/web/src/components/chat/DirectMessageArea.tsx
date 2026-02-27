@@ -104,6 +104,15 @@ export default function DirectMessageArea({
   // ── Delete confirm state ─────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
 
+  // ── Copy toast state ──────────────────────────────────────────────────────
+  const [copyToast, setCopyToast] = useState(false);
+
+  const handleCopyMessage = useCallback((content: string) => {
+    navigator.clipboard.writeText(content).catch(() => {});
+    setCopyToast(true);
+    setTimeout(() => setCopyToast(false), 2000);
+  }, []);
+
   // ── Thread state ─────────────────────────────────────────────────────────
   const [activeThread, setActiveThread] = useState<Message | null>(null);
   const [pendingThreadReply, setPendingThreadReply] = useState<Message | null>(null);
@@ -324,20 +333,38 @@ export default function DirectMessageArea({
     // ── Events ─────────────────────────────────────────────────────────────
 
     socket.on('new_direct_message', (msg: DirectMessage) => {
-      // Only add top-level messages to the main list.
-      // Replies (parentId set) belong in ThreadPanel only — same logic as channels.
+      // Replies belong in ThreadPanel only
       if ((msg as any).parentId) {
         setPendingThreadReply(msg as unknown as Message);
         return;
       }
       setMessages((prev) => {
+        // Deduplicate: skip if we already have this exact id (real or optimistic replacement)
         if (prev.some((m) => m.id === msg.id)) return prev;
-        const isFromOther = msg.senderId !== user?.id;
-        // Only increment FAB unread count for messages from others when not at bottom
-        if (isFromOther) {
-          setFabUnreadCount((c) => c + 1);
+
+        if (msg.senderId === user?.id) {
+          // This is our own message echoed back from server.
+          // Replace any optimistic placeholder (id starts with 'optimistic-') that
+          // matches by content + conversationId — avoids double-render.
+          const optimisticIdx = prev.findIndex(
+            (m) => m.id.startsWith('optimistic-') && m.content === msg.content && m.senderId === user.id
+          );
+          if (optimisticIdx !== -1) {
+            const next = [...prev];
+            next[optimisticIdx] = { ...msg, reactions: msg.reactions ?? [] };
+            return next;
+          }
+          // No optimistic found — add normally (edge case)
+          return [...prev, { ...msg, reactions: msg.reactions ?? [] }];
         }
-        return [...prev, msg];
+
+        // Message from the other participant
+        const container = scrollContainerRef.current;
+        const dist = container
+          ? container.scrollHeight - container.scrollTop - container.clientHeight
+          : 0;
+        if (dist > 120) setFabUnreadCount((c) => c + 1);
+        return [...prev, { ...msg, reactions: msg.reactions ?? [] }];
       });
     });
 
@@ -446,21 +473,44 @@ export default function DirectMessageArea({
 
   const handleSend = async () => {
     if (!input.trim() && !pendingFile) return;
-    if (!token) return;
+    if (!token || !user) return;
     emitStopTyping();
 
     const content = input.trim();
     const file = pendingFile;
     setInput('');
     setPendingFile(null);
-    // Reset textarea auto-grow height back to one row
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setSending(true);
 
+    // ── Optimistic add: show message instantly before server confirms ────────
+    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticMsg: DirectMessage = {
+      id: optimisticId,
+      content: content || null,
+      fileUrl: file?.url ?? null,
+      fileType: file?.type ?? null,
+      fileSize: file?.size ?? null,
+      originalName: file?.name ?? null,
+      senderId: user.id,
+      conversationId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isEdited: false,
+      sender: {
+        id: user.id,
+        username: user.username ?? '',
+        fullName: user.fullName ?? null,
+        avatar: user.avatar ?? null,
+      },
+      reactions: [],
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+    // Scroll to bottom after optimistic add
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+
     try {
-      await fetch(`${API_URL}/direct/${conversationId}/messages`, {
+      const res = await fetch(`${API_URL}/direct/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -471,8 +521,21 @@ export default function DirectMessageArea({
           originalName: file?.name,
         }),
       });
+      if (res.ok) {
+        const saved = await res.json();
+        // Replace optimistic message with real one from server
+        setMessages((prev) =>
+          prev.map((m) => (m.id === optimisticId ? { ...saved, reactions: saved.reactions ?? [] } : m))
+        );
+      } else {
+        // Remove optimistic on failure and restore input
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        if (content) setInput(content);
+        if (file) setPendingFile(file);
+      }
     } catch (e) {
       console.warn('[DM] send error:', e);
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       if (content) setInput(content);
       if (file) setPendingFile(file);
     } finally {
@@ -941,6 +1004,7 @@ export default function DirectMessageArea({
                     onEditChange={setEditContent}
                     onEditSave={() => handleSaveEdit(msg.id)}
                     onEditCancel={handleCancelEdit}
+                    onCopy={msg.content ? () => handleCopyMessage(msg.content!) : undefined}
                   />
                 </div>
               </div>
@@ -1100,6 +1164,16 @@ export default function DirectMessageArea({
     </div>
 
       {/* ── Thread Panel ────────────────────────────────────────────────── */}
+      {/* Copy toast */}
+      {copyToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 pointer-events-none">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Copied!
+        </div>
+      )}
+
       {activeThread && (
         <ThreadPanel
           parentMessage={activeThread}

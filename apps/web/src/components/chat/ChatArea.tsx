@@ -182,6 +182,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   // ── Phase 11.3: Related Messages panel state ─────────────────────────────
   const [relatedSource, setRelatedSource] = useState<Message | null>(null);
 
+  // ── Copy toast state ──────────────────────────────────────────────────────
+  const [copyToast, setCopyToast] = useState(false);
+
   // ── Forward modal state ───────────────────────────────────────────────────
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null);
 
@@ -203,6 +206,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   const handleCopyMessage = useCallback((content: string) => {
     navigator.clipboard.writeText(content).catch(() => {});
+    setCopyToast(true);
+    setTimeout(() => setCopyToast(false), 2000);
   }, []);
 
   const handleSelectMessage = useCallback((messageId: string) => {
@@ -1640,6 +1645,16 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     </div>
 
     {/* Phase 11.3: Related Messages side panel — slides in from the right */}
+    {/* ── Copy toast ────────────────────────────────────────────────────── */}
+    {copyToast && (
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-fade-in pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Copied!
+      </div>
+    )}
+
     {/* Forward Modal */}
     {forwardMessage && (
       <ForwardModal

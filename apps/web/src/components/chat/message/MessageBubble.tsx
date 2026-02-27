@@ -499,6 +499,9 @@ export function MessageBubble({
               {message.isEdited && (
                 <span className="text-[10px] opacity-50 ml-1 select-none">(edited)</span>
               )}
+              {(message as any).isPinned && (
+                <span title="Pinned" className="ml-1 text-amber-400 text-xs select-none" aria-label="Pinned">📌</span>
+              )}
             </div>
           )}
         </div>
