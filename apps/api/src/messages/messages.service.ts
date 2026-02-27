@@ -98,7 +98,7 @@ export class MessagesService {
         { messageId: message.id, content: message.content },
         // jobId deduplication: if the same message is somehow enqueued twice
         // (e.g., on retry), the second add is a no-op.
-        { jobId: `embed:${message.id}` },
+        { jobId: `embed-${message.id}` },
       );
     }
 
