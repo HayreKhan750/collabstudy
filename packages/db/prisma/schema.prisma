@@ -125,6 +125,7 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isEdited  Boolean  @default(false)
+  isPinned  Boolean  @default(false)
   fileUrl      String?  // public URL to the uploaded file
   fileType     String?  // MIME type, e.g. 'image/jpeg', 'application/pdf'
   fileSize     Int?     // file size in bytes

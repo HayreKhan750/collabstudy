@@ -196,13 +196,26 @@ export default function DirectMessageArea({
     const last = messages[messages.length - 1];
     if (!last) return;
     if (last.id !== lastMsgIdRef.current) {
+      const isNewMessage = lastMsgIdRef.current !== null; // false = initial load
       lastMsgIdRef.current = last.id;
-      // Short delay so images/media have time to paint before scrolling.
       const tid = setTimeout(() => {
-        if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-          unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
-        } else {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        // On initial load → scroll to unread divider or bottom
+        if (!isNewMessage) {
+          if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
+            unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+          } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          }
+          return;
+        }
+        // On new incoming message → only auto-scroll if user is already at bottom
+        const container = scrollContainerRef.current;
+        if (container) {
+          const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+          if (distFromBottom < 120) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }
+          // else: user is reading history — do NOT auto-scroll; FAB count increments instead
         }
       }, 80);
       return () => clearTimeout(tid);
@@ -311,8 +324,19 @@ export default function DirectMessageArea({
     // ── Events ─────────────────────────────────────────────────────────────
 
     socket.on('new_direct_message', (msg: DirectMessage) => {
+      // Only add top-level messages to the main list.
+      // Replies (parentId set) belong in ThreadPanel only — same logic as channels.
+      if ((msg as any).parentId) {
+        setPendingThreadReply(msg as unknown as Message);
+        return;
+      }
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) return prev;
+        const isFromOther = msg.senderId !== user?.id;
+        // Only increment FAB unread count for messages from others when not at bottom
+        if (isFromOther) {
+          setFabUnreadCount((c) => c + 1);
+        }
         return [...prev, msg];
       });
     });
@@ -929,8 +953,8 @@ export default function DirectMessageArea({
         <ScrollToBottomFAB
           show={showScrollFab}
           unreadCount={fabUnreadCount}
-          onClick={() => {
-            if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
+          onScrollToUnread={() => {
+            if (unreadDividerRef.current) {
               unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
               fabScrolledPastDividerRef.current = true;
               setFabUnreadCount(0);
@@ -938,6 +962,11 @@ export default function DirectMessageArea({
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
               fabScrolledPastDividerRef.current = false;
             }
+          }}
+          onScrollToBottom={() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            fabScrolledPastDividerRef.current = false;
+            setFabUnreadCount(0);
           }}
         />
       </div>

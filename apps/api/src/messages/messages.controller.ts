@@ -135,6 +135,20 @@ export class MessagesController {
   }
 
   /**
+   * POST /channels/:channelId/messages/:messageId/pin
+   * Toggle pin on a message (workspace admins/owners or channel owner).
+   */
+  @Post(':messageId/pin')
+  @HttpCode(HttpStatus.OK)
+  async pinMessage(
+    @Request() req: any,
+    @Param('channelId') channelId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.messagesService.togglePin(req.user.userId, channelId, messageId);
+  }
+
+  /**
    * DELETE /channels/:channelId/messages/:messageId
    * Hard-delete a message (author only).
    * Emits message_deleted via WebSocket after a successful DB delete.

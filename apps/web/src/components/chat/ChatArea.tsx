@@ -489,18 +489,33 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   // Only scroll when the LAST message ID changes. On initial load, if there's
   // an unread divider, scroll to it; otherwise scroll to bottom (Task 3).
 
-  // Auto-scroll to bottom when messages load or channel changes
+  // Auto-scroll: initial load → unread divider or bottom.
+  // Real-time new message → only scroll if already near bottom (Telegram behaviour).
   useEffect(() => {
     if (messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
     const lastId = lastMessage?.id ?? null;
     if (lastId && lastId !== lastMessageIdRef.current) {
+      const isNewMessage = lastMessageIdRef.current !== null; // false = initial/channel-switch load
       lastMessageIdRef.current = lastId;
       const tid = setTimeout(() => {
-        if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-          unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
-        } else {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        if (!isNewMessage) {
+          // Initial load: jump to unread divider or bottom
+          if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
+            unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+          } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          }
+          return;
+        }
+        // Real-time message: only auto-scroll when user is already near bottom
+        const container = scrollContainerRef.current;
+        if (container) {
+          const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+          if (distFromBottom < 120) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }
+          // else: user is reading history — FAB badge increments, no auto-scroll
         }
       }, 80);
       return () => clearTimeout(tid);
@@ -633,8 +648,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         // Top-level message — add to main list, deduplicate by id
         setMessages((prev) => {
           if (prev.some((m) => m.id === message.id)) return prev;
+          // Increment FAB badge for messages from others when not at bottom
+          if (message.user?.id !== user?.id) {
+            const container = scrollContainerRef.current;
+            const dist = container
+              ? container.scrollHeight - container.scrollTop - container.clientHeight
+              : 0;
+            if (dist > 120) setFabUnreadCount((c) => c + 1);
+          }
           return [...prev, { ...message, reactions: message.reactions ?? [] }];
         });
+        // Only notify for messages from OTHER users (not our own echo)
+        if (message.user?.id !== user?.id) onNewMessage?.(message);
       } else {
         // Reply — find the parent and increment its reply count
         setMessages((prev) =>
@@ -1485,8 +1510,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         <ScrollToBottomFAB
           show={showScrollFab}
           unreadCount={fabUnreadCount}
-          onClick={() => {
-            if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
+          onScrollToUnread={() => {
+            if (unreadDividerRef.current) {
               unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
               fabScrolledPastDividerRef.current = true;
               setFabUnreadCount(0);
@@ -1494,6 +1519,11 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
               fabScrolledPastDividerRef.current = false;
             }
+          }}
+          onScrollToBottom={() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            fabScrolledPastDividerRef.current = false;
+            setFabUnreadCount(0);
           }}
         />
       </div>{/* end flex body row */}

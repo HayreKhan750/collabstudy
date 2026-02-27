@@ -222,6 +222,38 @@ export class MessagesService {
   }
 
   /**
+   * Toggle a pin on a message in a channel.
+   * Any workspace member can pin/unpin messages.
+   */
+  async togglePin(userId: string, channelId: string, messageId: string) {
+    await this.channelsService.verifyChannelAccess(userId, channelId);
+
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, channelId: true, isPinned: true },
+    });
+
+    if (!message || message.channelId !== channelId) {
+      throw new NotFoundException('Message not found');
+    }
+
+    const updated = await this.prisma.message.update({
+      where: { id: messageId },
+      data: { isPinned: !message.isPinned },
+      include: {
+        user: { select: { id: true, username: true, fullName: true, avatar: true } },
+        reactions: true,
+        _count: { select: { replies: true } },
+      },
+    });
+
+    // Broadcast the updated message so all clients show the pin indicator
+    this.chatGateway.emitMessageUpdated(channelId, updated as any);
+
+    return { messageId, isPinned: updated.isPinned };
+  }
+
+  /**
    * Get messages for a channel with pagination.
    * - If parentId is provided: return only replies to that parent (thread view).
    * - If parentId is omitted: return only top-level messages (parentId IS NULL).
