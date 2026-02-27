@@ -64,27 +64,6 @@ export default function DashboardPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchJumpTarget, setSearchJumpTarget] = useState<{ channelId: string; messageId: string } | null>(null);
 
-  // ── Restore last active channel from localStorage ─────────────────────
-  useEffect(() => {
-    if (channels.length > 0) {
-      const saved = localStorage.getItem('lastActiveChannel');
-      if (saved) {
-        const stillExists = channels.find(c => c.id === saved);
-        if (stillExists && !selectedChannel) {
-          setSelectedChannel(stillExists);
-          localStorage.removeItem('lastActiveChannel');
-        }
-      }
-    }
-  }, [channels]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Save active channel to localStorage whenever it changes ────────────
-  useEffect(() => {
-    if (selectedChannel) {
-      localStorage.setItem('lastActiveChannel', selectedChannel.id);
-    }
-  }, [selectedChannel]);
-
   // ── Voice/Video call state ────────────────────────────────────────────────
   const [incomingCall, setIncomingCall] = useState<IncomingCallPayload | null>(null);
   const [outgoingCall, setOutgoingCall] = useState<{ targetUserId: string; targetName: string; roomId: string } | null>(null);
@@ -194,10 +173,7 @@ export default function DashboardPage() {
       setSelectedConversation(cur => {
         if (cur?.id !== payload.conversationId) {
           setDirectConversations(prev =>
-            // Only increment unread count if the message was sent by someone else
-            payload.senderId !== user?.id
-              ? prev.map(c => c.id === payload.conversationId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c)
-              : prev,
+            prev.map(c => c.id === payload.conversationId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c),
           );
         }
         return cur;
@@ -220,10 +196,7 @@ export default function DashboardPage() {
       if (payload.messageId) processedMessageIds.current.add(payload.messageId);
       setSelectedChannel(cur => {
         if (cur?.id !== payload.channelId) {
-          // Only increment unread if the message is from someone else
-          if (payload.senderId !== user?.id) {
-            setChannels(prev => prev.map(c => c.id === payload.channelId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c));
-          }
+          setChannels(prev => prev.map(c => c.id === payload.channelId ? { ...c, unreadCount: (c.unreadCount ?? 0) + 1 } : c));
         }
         return cur;
       });
@@ -487,7 +460,6 @@ export default function DashboardPage() {
         userRole={userRole}
         username={user?.username}
         userId={user?.id}
-        userAvatar={user?.avatar}
         directConversations={directConversations}
         selectedConversationId={selectedConversation?.id}
         onConversationSelect={(conv) => {
@@ -522,34 +494,11 @@ export default function DashboardPage() {
           hasWorkspace={!!selectedWorkspace}
           onSearchOpen={() => setSearchOpen(true)}
           token={token}
-          onSelectChannel={async (channelId) => {
-            // First check current workspace's loaded channels
-            let target = channels.find((c) => c.id === channelId);
+          onSelectChannel={(channelId) => {
+            const target = channels.find((c) => c.id === channelId);
             if (target) {
               setSelectedChannel(target);
               setSelectedConversation(null);
-              setActiveThread(null);
-              return;
-            }
-            // Channel not in current workspace — search across all workspaces
-            if (!token) return;
-            for (const ws of workspaces) {
-              if (ws.id === selectedWorkspace?.id) continue;
-              try {
-                const wsChannels = await api.getChannels(ws.id, token);
-                target = wsChannels.find((c) => c.id === channelId);
-                if (target) {
-                  // Switch to that workspace first, then select channel
-                  setSelectedWorkspace(ws);
-                  setChannels(wsChannels);
-                  setSelectedChannel(target);
-                  setSelectedConversation(null);
-                  setActiveThread(null);
-                  return;
-                }
-              } catch {
-                // ignore fetch errors for other workspaces
-              }
             }
           }}
           onSelectConversation={(conversationId) => {
@@ -557,7 +506,6 @@ export default function DashboardPage() {
             if (target) {
               setSelectedConversation(target);
               setSelectedChannel(null);
-              setActiveThread(null);
             }
           }}
         />
@@ -585,7 +533,7 @@ export default function DashboardPage() {
               ) : null;
             })()
           ) : selectedChannel && token ? (
-            <div className="flex flex-1 min-h-0 overflow-hidden">
+            <>
               <ChatArea
                 key={selectedChannel.id}
                 channelId={selectedChannel.id}
@@ -610,7 +558,7 @@ export default function DashboardPage() {
                   newReply={pendingThreadReply}
                 />
               )}
-            </div>
+            </>
           ) : selectedWorkspace ? (
             <div className="flex-1 min-h-0 flex flex-col bg-slate-100 dark:bg-slate-800">
               <NoChannelState workspaceName={selectedWorkspace.name} />

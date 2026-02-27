@@ -37,13 +37,11 @@ interface DirectMessage {
   originalName: string | null;
   senderId: string;
   conversationId: string;
-  parentId?: string | null;
   createdAt: string;
   updatedAt: string;
   isEdited: boolean;
   sender: DMUser;
   reactions?: DMReaction[];
-  replies?: DirectMessage[];
 }
 
 interface DirectMessageAreaProps {
@@ -73,9 +71,6 @@ export default function DirectMessageArea({
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<DirectMessage | null>(null);
-  // Per-message-per-emoji lock to prevent rapid duplicate reaction requests
-  const reactionInFlightRef = useRef<Set<string>>(new Set());
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -94,7 +89,6 @@ export default function DirectMessageArea({
   const lastMsgIdRef = useRef<string | null>(null);
   const summaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isTypingRef = useRef(false);
   const typingStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -186,7 +180,7 @@ export default function DirectMessageArea({
     setMessages([]);
     lastMsgIdRef.current = null;
     fetchMessages();
-  }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   // ── Auto-scroll & scroll-to-unread divider (Task 3) ─────────────────────
 
@@ -198,14 +192,14 @@ export default function DirectMessageArea({
       // Short delay so images/media have time to paint before scrolling.
       const tid = setTimeout(() => {
         if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-          unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+          unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
       }, 80);
       return () => clearTimeout(tid);
     }
-  }, [messages, conversationId]);
+  }, [messages]);
 
   // ── Scroll FAB visibility + auto mark-as-read on scroll-to-bottom ──────────
   // A single scroll listener handles both concerns:
@@ -427,15 +421,9 @@ export default function DirectMessageArea({
     const file = pendingFile;
     setInput('');
     setPendingFile(null);
-    // Reset textarea auto-grow height back to one row
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
     setSending(true);
 
     try {
-      const parentId = replyingTo?.id ?? undefined;
-      setReplyingTo(null);
       await fetch(`${API_URL}/direct/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -445,7 +433,6 @@ export default function DirectMessageArea({
           fileType: file?.type,
           fileSize: file?.size,
           originalName: file?.name,
-          ...(parentId && { parentId }),
         }),
       });
     } catch (e) {
@@ -526,19 +513,12 @@ export default function DirectMessageArea({
       if (!token || !editContent.trim()) return;
       setEditSaving(true);
       setEditError(null);
-      const trimmed = editContent.trim();
       try {
         await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ content: trimmed }),
+          body: JSON.stringify({ content: editContent.trim() }),
         });
-        // Optimistically update local state immediately — don't wait for WS
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === messageId ? { ...m, content: trimmed, isEdited: true } : m
-          )
-        );
         setEditingMessageId(null);
         setEditContent('');
       } catch (err) {
@@ -554,10 +534,6 @@ export default function DirectMessageArea({
   const handleReactionClick = useCallback(
     async (emoji: string, messageId: string) => {
       if (!token) return;
-      // Debounce: prevent the same emoji on the same message from being sent twice
-      const lockKey = `${messageId}:${emoji}`;
-      if (reactionInFlightRef.current.has(lockKey)) return;
-      reactionInFlightRef.current.add(lockKey);
       try {
         const res = await fetch(
           `${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`,
@@ -569,17 +545,12 @@ export default function DirectMessageArea({
         );
         if (res.ok) {
           const updated = await res.json();
-          // Update local state with the authoritative server response
           setMessages((prev) =>
-            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions ?? [] } : m))
+            prev.map((m) => (m.id === messageId ? { ...m, reactions: updated.reactions || [] } : m))
           );
-        } else {
-          console.warn('[DM] reaction failed:', res.status);
         }
       } catch (err) {
         console.warn('[DM] reaction error:', err);
-      } finally {
-        reactionInFlightRef.current.delete(lockKey);
       }
     },
     [conversationId, token]
@@ -595,8 +566,6 @@ export default function DirectMessageArea({
     if (!token || !deleteConfirm) return;
     const { messageId } = deleteConfirm;
     setDeleteConfirm(null);
-    // Optimistically remove from local state immediately — don't wait for WS
-    setMessages((prev) => prev.filter((m) => m.id !== messageId));
     try {
       await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
         method: 'DELETE',
@@ -604,10 +573,8 @@ export default function DirectMessageArea({
       });
     } catch (err) {
       console.warn('[DM] delete error:', err);
-      // Re-fetch on failure to restore the message
-      fetchMessages();
     }
-  }, [conversationId, token, deleteConfirm, fetchMessages]);
+  }, [conversationId, token, deleteConfirm]);
 
   // ── Load older messages ──────────────────────────────────────────────────
 
@@ -857,7 +824,7 @@ export default function DirectMessageArea({
                     onRemoveReaction={(msgId: string, reactionId: string, emoji: string) =>
                       handleReactionClick(emoji, msgId)
                     }
-                    onOpenThread={() => setReplyingTo(msg)}
+                    onOpenThread={() => {}}
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
                     isEditing={editingMessageId === msg.id}
@@ -940,27 +907,9 @@ export default function DirectMessageArea({
         </div>
       )}
 
-      {/* Reply banner */}
-      {replyingTo && (
-        <div className="flex-shrink-0 mx-4 mb-1 px-3 py-2 bg-slate-700 rounded-t-lg border-l-4 border-blue-500 flex items-center justify-between gap-2">
-          <span className="text-xs text-slate-300 truncate">
-            <span className="text-blue-400 font-semibold">Replying to</span>{' '}
-            {replyingTo.sender.fullName ?? replyingTo.sender.username}:{' '}
-            <span className="text-slate-400">{replyingTo.content?.slice(0, 80)}</span>
-          </span>
-          <button
-            onClick={() => setReplyingTo(null)}
-            className="text-slate-400 hover:text-white flex-shrink-0 text-lg leading-none"
-            aria-label="Cancel reply"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* Input */}
       <div className="px-4 pb-4 flex-shrink-0">
-        <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
           <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -997,26 +946,13 @@ export default function DirectMessageArea({
               </svg>
             )}
           </button>
-          <textarea
-            ref={textareaRef}
-            rows={1}
+          <input
+            type="text"
             value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              // Auto-grow: reset then expand to scrollHeight
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (input.trim() || pendingFile) handleSend();
-              }
-              // Shift+Enter: browser inserts newline naturally — do nothing
-            }}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             placeholder={`Message ${displayName}`}
-            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none resize-none leading-relaxed"
-            style={{ minHeight: '24px', maxHeight: '120px', overflowY: 'auto' }}
+            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none"
           />
           <button
             onClick={handleSend}

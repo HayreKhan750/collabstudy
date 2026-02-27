@@ -36,14 +36,10 @@ export class EmbeddingsProcessor extends WorkerHost {
     const vector = await this.aiService.generateEmbedding(content);
 
     if (vector.length === 0) {
-      // Throw so BullMQ marks this job as FAILED rather than COMPLETED.
-      // A "completed" job with no embedding means the frontend polls forever
-      // ("Still processing…") because it checks for a non-null embedding column.
-      // A "failed" job lets the frontend detect the error and stop polling.
-      throw new Error(
-        `Embedding generation returned an empty vector for message ${messageId}. ` +
-        `Check that GEMINI_API_KEY is set and the Gemini API is reachable.`,
+      this.logger.warn(
+        `Embedding skipped for message ${messageId} — empty vector returned (API key missing?)`,
       );
+      return;
     }
 
     // Persist the vector using raw SQL because Prisma does not natively

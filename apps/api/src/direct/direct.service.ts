@@ -191,25 +191,12 @@ export class DirectService {
     const messages = await this.prisma.directMessage.findMany({
       where: {
         conversationId,
-        parentId: null, // top-level messages only; replies are nested under replies[]
         ...(cursor && { createdAt: { lt: new Date(Buffer.from(cursor, 'base64').toString()) } }),
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
-        reactions: {
-          include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
-        },
-        replies: {
-          include: {
-            sender: { select: { id: true, username: true, fullName: true, avatar: true } },
-            reactions: {
-              include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
       },
     });
 
@@ -273,13 +260,9 @@ export class DirectService {
         originalName: dto.originalName,
         senderId,
         conversationId,
-        ...(dto.parentId && { parentId: dto.parentId }),
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
-        reactions: {
-          include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
-        },
       },
     });
 
@@ -371,93 +354,6 @@ export class DirectService {
     });
 
     return { success: true, conversationId };
-  }
-
-  /**
-   * PATCH /direct/:id/messages/:messageId
-   * Edit a DM message (sender only). Broadcasts dm_message_updated via WebSocket.
-   */
-  async editDmMessage(userId: string, conversationId: string, messageId: string, content: string) {
-    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
-    if (!msg) throw new NotFoundException('Message not found');
-    if (msg.senderId !== userId) throw new ForbiddenException('You can only edit your own messages');
-    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message does not belong to this conversation');
-    const updated = await this.prisma.directMessage.update({
-      where: { id: messageId },
-      data: { content, isEdited: true },
-      include: { sender: { select: { id: true, username: true, fullName: true, avatar: true } } },
-    });
-    // Broadcast to all participants so the UI updates in real time
-    this.chatGateway.emitDmMessageUpdated(conversationId, updated);
-    return updated;
-  }
-
-  /**
-   * DELETE /direct/:id/messages/:messageId
-   * Delete a DM message (sender only). Broadcasts dm_message_deleted via WebSocket.
-   */
-  async deleteDmMessage(userId: string, conversationId: string, messageId: string) {
-    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
-    if (!msg) throw new NotFoundException('Message not found');
-    if (msg.senderId !== userId) throw new ForbiddenException('You can only delete your own messages');
-    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message does not belong to this conversation');
-    await this.prisma.directMessage.delete({ where: { id: messageId } });
-    // Broadcast to all participants so the message vanishes in real time
-    this.chatGateway.emitDmMessageDeleted(conversationId, messageId);
-    return { success: true, messageId };
-  }
-
-  /**
-   * POST /direct/:id/messages/:messageId/reactions
-   * Toggle an emoji reaction on a DM message. Broadcasts dm_reaction_updated via WebSocket.
-   */
-  async toggleDmReaction(userId: string, conversationId: string, messageId: string, emoji: string) {
-    // Verify participant — use findFirst to avoid compound-key schema issues
-    const participant = await this.prisma.directParticipant.findFirst({
-      where: { userId, conversationId },
-    });
-    if (!participant) throw new ForbiddenException('Not a participant of this conversation');
-
-    // Use findFirst (not findUnique on compound key) for resilience against
-    // any schema drift between environments
-    const existing = await this.prisma.directMessageReaction.findFirst({
-      where: { userId, messageId, emoji },
-    });
-
-    try {
-      if (existing) {
-        await this.prisma.directMessageReaction.delete({ where: { id: existing.id } });
-      } else {
-        await this.prisma.directMessageReaction.create({
-          data: { userId, messageId, emoji },
-        });
-      }
-    } catch (err: unknown) {
-      // Handle race-condition: another request created the same reaction between
-      // our findFirst and create calls. Treat as a successful toggle-off by
-      // attempting to delete the duplicate if it exists.
-      const isUniqueError =
-        err instanceof Error && err.message.includes('Unique constraint');
-      if (isUniqueError) {
-        const dup = await this.prisma.directMessageReaction.findFirst({
-          where: { userId, messageId, emoji },
-        });
-        if (dup) {
-          await this.prisma.directMessageReaction.delete({ where: { id: dup.id } });
-        }
-      } else {
-        throw err;
-      }
-    }
-
-    const reactions = await this.prisma.directMessageReaction.findMany({
-      where: { messageId },
-      include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
-    });
-
-    // Broadcast updated reactions to all participants in real time
-    this.chatGateway.emitDmReactionUpdated(conversationId, { messageId, reactions });
-    return { messageId, reactions };
   }
 
   /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, SearchResult } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -78,7 +78,6 @@ function EmptyState({ hasEmbedding }: { hasEmbedding: boolean }) {
       ) : (
         <>
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Still processing…</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">This may take a moment.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed max-w-[220px]">
             The AI embedding for this message is still being generated. Try again in a few seconds.
           </p>
@@ -100,9 +99,6 @@ export function RelatedMessagesPanel({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Fail-fast: stop polling after 15 seconds if embedding never appears
-  const pollStartRef = useRef<number>(Date.now());
-  const POLL_TIMEOUT_MS = 15_000;
   /** true if the source message returned an empty result due to missing embedding */
   const [hasEmbedding, setHasEmbedding] = useState(true);
 
@@ -112,13 +108,6 @@ export function RelatedMessagesPanel({
     setError(null);
     setResults([]);
     setHasEmbedding(true);
-
-    // Fail-fast: stop polling after 15s if embedding never materializes
-    if (Date.now() - pollStartRef.current > POLL_TIMEOUT_MS) {
-      setError('AI embeddings timed out. The message may not have been processed yet — try again shortly.');
-      setLoading(false);
-      return;
-    }
 
     api
       .getRelatedMessages(token, { messageId: sourceMessage.id, workspaceId, limit: 8 })

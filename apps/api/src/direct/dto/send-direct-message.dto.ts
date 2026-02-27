@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUUID, MaxLength, ValidateIf, IsNumber } from 'class-validator';
+import { IsOptional, IsString, MaxLength, ValidateIf, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { sanitizeTransform } from '../../common/sanitize.util';
 
@@ -25,9 +25,4 @@ export class SendDirectMessageDto {
   @IsOptional()
   @IsString()
   originalName?: string;
-
-  /** Optional: ID of the parent DM message this is a reply to (thread support) */
-  @IsOptional()
-  @IsUUID()
-  parentId?: string;
 }

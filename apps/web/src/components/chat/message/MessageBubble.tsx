@@ -464,7 +464,7 @@ export function MessageBubble({
 
               {/* Text content */}
               {message.content && (
-                <div className="leading-relaxed whitespace-pre-wrap break-words">
+                <div className="leading-relaxed">
                   {renderMessageContent(message.content, message.mentions ?? [])}
                 </div>
               )}

@@ -36,7 +36,7 @@ export default function MentionToast({ notifications, onDismiss }: MentionToastP
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none w-80 max-w-[calc(100vw-2rem)] overflow-hidden"
+      className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none"
       aria-live="polite"
       aria-label="Mention notifications"
     >
@@ -47,7 +47,7 @@ export default function MentionToast({ notifications, onDismiss }: MentionToastP
         return (
           <div
             key={n.id}
-            className="pointer-events-auto flex items-start gap-3 w-full bg-white dark:bg-slate-800 border border-blue-500/40 dark:border-blue-500/60 rounded-xl shadow-2xl px-4 py-3 animate-in slide-in-from-right-4 fade-in duration-300"
+            className="pointer-events-auto flex items-start gap-3 w-80 bg-white dark:bg-slate-800 border border-blue-500/40 dark:border-blue-500/60 rounded-xl shadow-2xl px-4 py-3 animate-in slide-in-from-right-4 fade-in duration-300"
           >
             {/* Author avatar */}
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 mt-0.5">

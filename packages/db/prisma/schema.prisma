@@ -55,7 +55,6 @@ model User {
   // Direct messaging
   directParticipations DirectParticipant[]
   directMessagesSent   DirectMessage[]
-  directMessageReactions DirectMessageReaction[]
   channelMemberships   ChannelMember[]
 
   @@index([email])
@@ -251,34 +250,14 @@ model DirectMessage {
   originalName   String?
   senderId       String   @db.Uuid
   conversationId String   @db.Uuid
-  parentId       String?  @db.Uuid
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   isEdited       Boolean  @default(false)
 
   sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
   conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  reactions    DirectMessageReaction[]
-  parent       DirectMessage?     @relation("DmThreadReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      DirectMessage[]    @relation("DmThreadReplies")
 
   @@index([conversationId, createdAt])
   @@index([senderId])
-  @@index([parentId])
   @@map("direct_messages")
-}
-
-model DirectMessageReaction {
-  id        String   @id @default(uuid()) @db.Uuid
-  emoji     String
-  userId    String   @db.Uuid
-  messageId String   @db.Uuid
-  createdAt DateTime @default(now())
-
-  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, messageId, emoji])
-  @@index([messageId])
-  @@map("direct_message_reactions")
 }

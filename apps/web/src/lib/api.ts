@@ -801,40 +801,6 @@ class ApiClient {
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to hide conversation');
     return res.json();
   }
-
-  // ── DM message actions ────────────────────────────────────────────────────
-
-  /** PATCH /direct/:convId/messages/:msgId — edit a DM message */
-  async editDmMessage(token: string, conversationId: string, messageId: string, content: string) {
-    const res = await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(token),
-      body: JSON.stringify({ content }),
-    });
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to edit message');
-    return res.json();
-  }
-
-  /** DELETE /direct/:convId/messages/:msgId — delete a DM message */
-  async deleteDmMessage(token: string, conversationId: string, messageId: string) {
-    const res = await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(token),
-    });
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to delete message');
-    return res.json();
-  }
-
-  /** POST /direct/:convId/messages/:msgId/reactions — toggle DM emoji reaction */
-  async toggleDmReaction(token: string, conversationId: string, messageId: string, emoji: string) {
-    const res = await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`, {
-      method: 'POST',
-      headers: this.getHeaders(token),
-      body: JSON.stringify({ emoji }),
-    });
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to toggle reaction');
-    return res.json();
-  }
 }
 
 export const api = new ApiClient();
