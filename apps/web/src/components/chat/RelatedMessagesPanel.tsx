@@ -78,6 +78,7 @@ function EmptyState({ hasEmbedding }: { hasEmbedding: boolean }) {
       ) : (
         <>
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Still processing…</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">This may take a moment.</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed max-w-[220px]">
             The AI embedding for this message is still being generated. Try again in a few seconds.
           </p>

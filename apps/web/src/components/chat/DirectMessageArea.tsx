@@ -89,6 +89,7 @@ export default function DirectMessageArea({
   const lastMsgIdRef = useRef<string | null>(null);
   const summaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isTypingRef = useRef(false);
   const typingStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -421,6 +422,10 @@ export default function DirectMessageArea({
     const file = pendingFile;
     setInput('');
     setPendingFile(null);
+    // Reset textarea auto-grow height back to one row
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     setSending(true);
 
     try {
@@ -909,7 +914,7 @@ export default function DirectMessageArea({
 
       {/* Input */}
       <div className="px-4 pb-4 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
+        <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
           <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -947,6 +952,7 @@ export default function DirectMessageArea({
             )}
           </button>
           <textarea
+            ref={textareaRef}
             rows={1}
             value={input}
             onChange={(e) => {

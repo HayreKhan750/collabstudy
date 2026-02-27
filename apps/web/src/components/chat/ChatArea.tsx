@@ -807,6 +807,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   // ─── Send message ──────────────────────────────────────────────────────────
 
+  // ref to the MentionInput textarea — used to reset auto-grow height after send
+  const mentionInputRef = useRef<HTMLTextAreaElement>(null);
+
   const handleSendMessage = async (mentionIds: string[]) => {
     if (!newMessage.trim() && !pendingFile) return;
     if (!token) return;
@@ -820,6 +823,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     const fileToSend = pendingFile;
     setNewMessage('');
     setPendingFile(null);
+    // Reset textarea auto-grow height so it returns to one row after send
+    if (mentionInputRef.current) {
+      mentionInputRef.current.style.height = 'auto';
+    }
 
     try {
       await api.sendMessage(
@@ -1521,6 +1528,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           {/* Message input */}
           <div className="flex-1">
             <MentionInput
+                  inputRef={mentionInputRef}
               value={newMessage}
               onChange={setNewMessage}
               onSend={handleSendMessage}

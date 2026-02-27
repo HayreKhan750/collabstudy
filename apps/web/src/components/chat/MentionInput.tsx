@@ -221,7 +221,7 @@ export default function MentionInput({
       )}
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <textarea
           ref={activeRef}
           rows={1}

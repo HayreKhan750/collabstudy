@@ -540,7 +540,7 @@ export default function DashboardPage() {
               ) : null;
             })()
           ) : selectedChannel && token ? (
-            <div className="relative flex flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-1 min-h-0 overflow-hidden">
               <ChatArea
                 key={selectedChannel.id}
                 channelId={selectedChannel.id}
