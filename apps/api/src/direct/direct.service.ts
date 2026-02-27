@@ -191,6 +191,7 @@ export class DirectService {
     const messages = await this.prisma.directMessage.findMany({
       where: {
         conversationId,
+        parentId: null, // top-level messages only; replies are nested under replies[]
         ...(cursor && { createdAt: { lt: new Date(Buffer.from(cursor, 'base64').toString()) } }),
       },
       orderBy: { createdAt: 'desc' },
@@ -199,6 +200,15 @@ export class DirectService {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
         reactions: {
           include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
+        },
+        replies: {
+          include: {
+            sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+            reactions: {
+              include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
         },
       },
     });
@@ -263,9 +273,13 @@ export class DirectService {
         originalName: dto.originalName,
         senderId,
         conversationId,
+        ...(dto.parentId && { parentId: dto.parentId }),
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+        reactions: {
+          include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
+        },
       },
     });
 

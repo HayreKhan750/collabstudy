@@ -37,11 +37,13 @@ interface DirectMessage {
   originalName: string | null;
   senderId: string;
   conversationId: string;
+  parentId?: string | null;
   createdAt: string;
   updatedAt: string;
   isEdited: boolean;
   sender: DMUser;
   reactions?: DMReaction[];
+  replies?: DirectMessage[];
 }
 
 interface DirectMessageAreaProps {
@@ -71,6 +73,9 @@ export default function DirectMessageArea({
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<DirectMessage | null>(null);
+  // Per-message-per-emoji lock to prevent rapid duplicate reaction requests
+  const reactionInFlightRef = useRef<Set<string>>(new Set());
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -429,6 +434,8 @@ export default function DirectMessageArea({
     setSending(true);
 
     try {
+      const parentId = replyingTo?.id ?? undefined;
+      setReplyingTo(null);
       await fetch(`${API_URL}/direct/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -438,6 +445,7 @@ export default function DirectMessageArea({
           fileType: file?.type,
           fileSize: file?.size,
           originalName: file?.name,
+          ...(parentId && { parentId }),
         }),
       });
     } catch (e) {
@@ -546,6 +554,10 @@ export default function DirectMessageArea({
   const handleReactionClick = useCallback(
     async (emoji: string, messageId: string) => {
       if (!token) return;
+      // Debounce: prevent the same emoji on the same message from being sent twice
+      const lockKey = `${messageId}:${emoji}`;
+      if (reactionInFlightRef.current.has(lockKey)) return;
+      reactionInFlightRef.current.add(lockKey);
       try {
         const res = await fetch(
           `${API_URL}/direct/${conversationId}/messages/${messageId}/reactions`,
@@ -566,6 +578,8 @@ export default function DirectMessageArea({
         }
       } catch (err) {
         console.warn('[DM] reaction error:', err);
+      } finally {
+        reactionInFlightRef.current.delete(lockKey);
       }
     },
     [conversationId, token]
@@ -843,10 +857,7 @@ export default function DirectMessageArea({
                     onRemoveReaction={(msgId: string, reactionId: string, emoji: string) =>
                       handleReactionClick(emoji, msgId)
                     }
-                    onOpenThread={() => {
-                      // DMs do not support threading (no parentId on DirectMessage schema)
-                      // — no-op to prevent 404s against /channels/:dmId/messages
-                    }}
+                    onOpenThread={() => setReplyingTo(msg)}
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
                     isEditing={editingMessageId === msg.id}
@@ -926,6 +937,24 @@ export default function DirectMessageArea({
               ✕
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Reply banner */}
+      {replyingTo && (
+        <div className="flex-shrink-0 mx-4 mb-1 px-3 py-2 bg-slate-700 rounded-t-lg border-l-4 border-blue-500 flex items-center justify-between gap-2">
+          <span className="text-xs text-slate-300 truncate">
+            <span className="text-blue-400 font-semibold">Replying to</span>{' '}
+            {replyingTo.sender.fullName ?? replyingTo.sender.username}:{' '}
+            <span className="text-slate-400">{replyingTo.content?.slice(0, 80)}</span>
+          </span>
+          <button
+            onClick={() => setReplyingTo(null)}
+            className="text-slate-400 hover:text-white flex-shrink-0 text-lg leading-none"
+            aria-label="Cancel reply"
+          >
+            ✕
+          </button>
         </div>
       )}
 
