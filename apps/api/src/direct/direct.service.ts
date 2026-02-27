@@ -358,7 +358,7 @@ export class DirectService {
 
   /**
    * PATCH /direct/:id/messages/:messageId
-   * Edit a DM message (sender only).
+   * Edit a DM message (sender only). Broadcasts dm_message_updated via WebSocket.
    */
   async editDmMessage(userId: string, conversationId: string, messageId: string, content: string) {
     const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
@@ -370,12 +370,14 @@ export class DirectService {
       data: { content, isEdited: true },
       include: { sender: { select: { id: true, username: true, fullName: true, avatar: true } } },
     });
+    // Broadcast to all participants so the UI updates in real time
+    this.chatGateway.emitDmMessageUpdated(conversationId, updated);
     return updated;
   }
 
   /**
    * DELETE /direct/:id/messages/:messageId
-   * Delete a DM message (sender only).
+   * Delete a DM message (sender only). Broadcasts dm_message_deleted via WebSocket.
    */
   async deleteDmMessage(userId: string, conversationId: string, messageId: string) {
     const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
@@ -383,12 +385,14 @@ export class DirectService {
     if (msg.senderId !== userId) throw new ForbiddenException('You can only delete your own messages');
     if (msg.conversationId !== conversationId) throw new ForbiddenException('Message does not belong to this conversation');
     await this.prisma.directMessage.delete({ where: { id: messageId } });
+    // Broadcast to all participants so the message vanishes in real time
+    this.chatGateway.emitDmMessageDeleted(conversationId, messageId);
     return { success: true, messageId };
   }
 
   /**
    * POST /direct/:id/messages/:messageId/reactions
-   * Toggle an emoji reaction on a DM message.
+   * Toggle an emoji reaction on a DM message. Broadcasts dm_reaction_updated via WebSocket.
    */
   async toggleDmReaction(userId: string, conversationId: string, messageId: string, emoji: string) {
     // Verify participant — use findFirst to avoid compound-key schema issues
@@ -433,6 +437,9 @@ export class DirectService {
       where: { messageId },
       include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } },
     });
+
+    // Broadcast updated reactions to all participants in real time
+    this.chatGateway.emitDmReactionUpdated(conversationId, { messageId, reactions });
     return { messageId, reactions };
   }
 

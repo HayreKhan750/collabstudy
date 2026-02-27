@@ -628,6 +628,33 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   /**
+   * Broadcast an edited DM message to all participants in the conversation room.
+   */
+  emitDmMessageUpdated(conversationId: string, message: unknown): void {
+    const room = `direct:${conversationId}`;
+    this.server.to(room).emit('dm_message_updated', message);
+    console.log(`[Socket] Emitted dm_message_updated to ${room}`);
+  }
+
+  /**
+   * Broadcast a deleted DM message ID to all participants in the conversation room.
+   */
+  emitDmMessageDeleted(conversationId: string, messageId: string): void {
+    const room = `direct:${conversationId}`;
+    this.server.to(room).emit('dm_message_deleted', { messageId });
+    console.log(`[Socket] Emitted dm_message_deleted to ${room} (messageId: ${messageId})`);
+  }
+
+  /**
+   * Broadcast updated reactions for a DM message to all participants.
+   */
+  emitDmReactionUpdated(conversationId: string, payload: { messageId: string; reactions: unknown[] }): void {
+    const room = `direct:${conversationId}`;
+    this.server.to(room).emit('dm_reaction_updated', payload);
+    console.log(`[Socket] Emitted dm_reaction_updated to ${room} (messageId: ${payload.messageId})`);
+  }
+
+  /**
    * Broadcast a DM typing indicator to the conversation room.
    */
   @SubscribeMessage('dm_typing')
