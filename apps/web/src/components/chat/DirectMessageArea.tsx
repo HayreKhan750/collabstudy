@@ -193,14 +193,14 @@ export default function DirectMessageArea({
       // Short delay so images/media have time to paint before scrolling.
       const tid = setTimeout(() => {
         if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-          unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
         } else {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
         }
       }, 80);
       return () => clearTimeout(tid);
     }
-  }, [messages]);
+  }, [messages, conversationId]);
 
   // ── Scroll FAB visibility + auto mark-as-read on scroll-to-bottom ──────────
   // A single scroll listener handles both concerns:

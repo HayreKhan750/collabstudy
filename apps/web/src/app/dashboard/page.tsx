@@ -64,6 +64,27 @@ export default function DashboardPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchJumpTarget, setSearchJumpTarget] = useState<{ channelId: string; messageId: string } | null>(null);
 
+  // ── Restore last active channel from localStorage ─────────────────────
+  useEffect(() => {
+    if (channels.length > 0) {
+      const saved = localStorage.getItem('lastActiveChannel');
+      if (saved) {
+        const stillExists = channels.find(c => c.id === saved);
+        if (stillExists && !selectedChannel) {
+          setSelectedChannel(stillExists);
+          localStorage.removeItem('lastActiveChannel');
+        }
+      }
+    }
+  }, [channels]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Save active channel to localStorage whenever it changes ────────────
+  useEffect(() => {
+    if (selectedChannel) {
+      localStorage.setItem('lastActiveChannel', selectedChannel.id);
+    }
+  }, [selectedChannel]);
+
   // ── Voice/Video call state ────────────────────────────────────────────────
   const [incomingCall, setIncomingCall] = useState<IncomingCallPayload | null>(null);
   const [outgoingCall, setOutgoingCall] = useState<{ targetUserId: string; targetName: string; roomId: string } | null>(null);
