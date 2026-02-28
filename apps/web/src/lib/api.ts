@@ -842,6 +842,71 @@ class ApiClient {
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to toggle reaction');
     return res.json();
   }
+
+  // ── Saved Messages (Private Cloud) ────────────────────────────────────────
+
+  /** GET /direct/saved-messages — get or create saved-messages conversation */
+  async getSavedMessagesConversation(token: string): Promise<{ conversationId: string }> {
+    const res = await fetch(`${API_URL}/direct/saved-messages`, {
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) throw new Error('Failed to get saved messages conversation');
+    return res.json();
+  }
+
+  /** GET /direct/saved-messages/messages — fetch paginated saved messages */
+  async getSavedMessages(
+    token: string,
+    limit = 50,
+    cursor?: string,
+  ): Promise<{ messages: any[]; nextCursor: string | null; conversationId: string }> {
+    let url = `${API_URL}/direct/saved-messages/messages?limit=${limit}`;
+    if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+    const res = await fetch(url, { headers: this.getHeaders(token) });
+    if (!res.ok) throw new Error('Failed to fetch saved messages');
+    return res.json();
+  }
+
+  /** POST /direct/saved-messages/messages — save a new message / forward to saved */
+  async sendSavedMessage(
+    token: string,
+    data: {
+      content?: string;
+      fileUrl?: string;
+      fileType?: string;
+      fileSize?: number;
+      originalName?: string;
+      forwardedFromId?: string;
+    },
+  ): Promise<any> {
+    const res = await fetch(`${API_URL}/direct/saved-messages/messages`, {
+      method: 'POST',
+      headers: this.getHeaders(token),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to save message');
+    return res.json();
+  }
+
+  /** PATCH /direct/saved-messages/messages/:messageId — edit a saved message */
+  async editSavedMessage(token: string, messageId: string, content: string): Promise<any> {
+    const res = await fetch(`${API_URL}/direct/saved-messages/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(token),
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to edit saved message');
+    return res.json();
+  }
+
+  /** DELETE /direct/saved-messages/messages/:messageId — delete a saved message */
+  async deleteSavedMessage(token: string, messageId: string): Promise<void> {
+    const res = await fetch(`${API_URL}/direct/saved-messages/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(token),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to delete saved message');
+  }
 }
 
 export const api = new ApiClient();

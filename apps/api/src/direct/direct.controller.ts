@@ -228,4 +228,74 @@ export class DirectController {
   ) {
     return this.directService.getWorkspaceUsers(req.user.userId, workspaceId);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SAVED MESSAGES (Private Cloud)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /direct/saved-messages
+   * Get or create the saved-messages conversation, return conversationId.
+   */
+  @Get('saved-messages')
+  @HttpCode(HttpStatus.OK)
+  getSavedMessagesConversation(@Request() req: any) {
+    return this.directService.getOrCreateSavedMessagesConversation(req.user.userId);
+  }
+
+  /**
+   * GET /direct/saved-messages/messages
+   * Fetch paginated saved messages.
+   */
+  @Get('saved-messages/messages')
+  getSavedMessages(
+    @Request() req: any,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.directService.getSavedMessages(
+      req.user.userId,
+      limit ? parseInt(limit, 10) : 50,
+      cursor,
+    );
+  }
+
+  /**
+   * POST /direct/saved-messages/messages
+   * Send a message to saved messages.
+   */
+  @Post('saved-messages/messages')
+  @HttpCode(HttpStatus.CREATED)
+  sendSavedMessage(
+    @Request() req: any,
+    @Body() dto: SendDirectMessageDto,
+  ) {
+    return this.directService.sendSavedMessage(req.user.userId, dto);
+  }
+
+  /**
+   * PATCH /direct/saved-messages/messages/:messageId
+   * Edit a saved message.
+   */
+  @Patch('saved-messages/messages/:messageId')
+  editSavedMessage(
+    @Request() req: any,
+    @Param('messageId') messageId: string,
+    @Body() body: { content: string },
+  ) {
+    return this.directService.editSavedMessage(req.user.userId, messageId, body.content);
+  }
+
+  /**
+   * DELETE /direct/saved-messages/messages/:messageId
+   * Delete a saved message.
+   */
+  @Delete('saved-messages/messages/:messageId')
+  @HttpCode(HttpStatus.OK)
+  deleteSavedMessage(
+    @Request() req: any,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.directService.deleteSavedMessage(req.user.userId, messageId);
+  }
 }

@@ -33,6 +33,14 @@ interface DmItem {
   avatar?: string | null;
 }
 
+function BookmarkIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M6.75 3A2.25 2.25 0 0 0 4.5 5.25v15.75l7.5-4.5 7.5 4.5V5.25A2.25 2.25 0 0 0 17.25 3H6.75Z" />
+    </svg>
+  );
+}
+
 export default function ForwardModal({ messages, workspaces, onClose, onForwarded }: ForwardModalProps) {
   const { token } = useAuth();
   const [channels, setChannels] = useState<ChannelItem[]>([]);
@@ -45,7 +53,6 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
 
   useEffect(() => {
     if (!token) return;
-    // Reset all state so stale data from a previous user never bleeds through
     setChannels([]);
     setDms([]);
     setSent(null);
@@ -103,6 +110,35 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
     load();
     return () => controller.abort();
   }, [token, workspaces]);
+
+  const forwardToSavedMessages = async () => {
+    if (!token || sending) return;
+    setSending('saved-messages');
+    try {
+      for (const message of messages) {
+        const res = await fetch(`${API_URL}/direct/saved-messages/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            content: message.content || undefined,
+            fileUrl: message.fileUrl || undefined,
+            fileType: message.fileType || undefined,
+            fileSize: message.fileSize || undefined,
+            originalName: message.originalName || undefined,
+            forwardedFromId: message.id,
+          }),
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      }
+      setSent('saved-messages');
+      setTimeout(() => { onForwarded?.(); onClose(); }, 800);
+    } catch (err) {
+      console.error('Forward to saved messages failed:', err);
+      setError('Failed to forward. Please try again.');
+    } finally {
+      setSending(null);
+    }
+  };
 
   const forwardToChannel = async (channelId: string) => {
     if (!token || sending) return;
@@ -171,6 +207,9 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
     dm.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // "Saved Messages" always shows unless search doesn't match
+  const showSavedMessages = 'saved messages'.includes(search.toLowerCase()) || search === '';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -217,6 +256,31 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
             <div className="flex items-center justify-center py-8 text-slate-400 text-sm">Loading…</div>
           ) : (
             <>
+              {/* ── Saved Messages — always pinned at top ─────────────────── */}
+              {showSavedMessages && (
+                <div>
+                  <p className="px-5 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Save</p>
+                  <button
+                    onClick={forwardToSavedMessages}
+                    disabled={!!sending || !!sent}
+                    className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-left disabled:opacity-60"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center text-indigo-500 dark:text-indigo-400 flex-shrink-0">
+                      <BookmarkIcon />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">Saved Messages</p>
+                      <p className="text-xs text-slate-400">Your private cloud</p>
+                    </div>
+                    {sent === 'saved-messages' ? (
+                      <span className="text-green-500 text-xs font-medium">Saved ✓</span>
+                    ) : sending === 'saved-messages' ? (
+                      <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                    ) : null}
+                  </button>
+                </div>
+              )}
+
               {filteredChannels.length > 0 && (
                 <div>
                   <p className="px-5 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Channels</p>
@@ -238,6 +302,7 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
                   ))}
                 </div>
               )}
+
               {filteredDms.length > 0 && (
                 <div>
                   <p className="px-5 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Direct Messages</p>
@@ -262,7 +327,8 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
                   ))}
                 </div>
               )}
-              {filteredChannels.length === 0 && filteredDms.length === 0 && (
+
+              {!showSavedMessages && filteredChannels.length === 0 && filteredDms.length === 0 && (
                 <div className="flex items-center justify-center py-8 text-slate-400 text-sm">No results found</div>
               )}
             </>

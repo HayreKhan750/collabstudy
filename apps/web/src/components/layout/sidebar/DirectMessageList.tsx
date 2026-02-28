@@ -13,6 +13,18 @@ interface DirectMessageListProps {
   onlineUserIds: Set<string>;
   userId: string | undefined;
   collapsed: boolean;
+  /** Whether "Saved Messages" is currently selected */
+  savedMessagesSelected?: boolean;
+  /** Callback when user clicks "Saved Messages" */
+  onSavedMessagesSelect?: () => void;
+}
+
+function BookmarkIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M6.75 3A2.25 2.25 0 0 0 4.5 5.25v15.75l7.5-4.5 7.5 4.5V5.25A2.25 2.25 0 0 0 17.25 3H6.75Z" />
+    </svg>
+  );
 }
 
 function PlusIcon() {
@@ -53,11 +65,26 @@ export function DirectMessageList({
   onlineUserIds,
   userId,
   collapsed,
+  savedMessagesSelected,
+  onSavedMessagesSelect,
 }: DirectMessageListProps) {
   // ── Collapsed mode ───────────────────────────────────────────────────────
   if (collapsed) {
     return (
       <div className="flex flex-col items-center gap-1 py-2 border-t border-slate-200 dark:border-white/10">
+        {/* Saved Messages icon */}
+        <SidebarTooltip label="Saved Messages">
+          <button
+            onClick={onSavedMessagesSelect}
+            className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
+              ${savedMessagesSelected
+                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                : 'bg-gradient-to-br from-indigo-500/20 to-purple-600/20 text-indigo-500 dark:text-indigo-400 hover:from-indigo-500/40 hover:to-purple-600/40'}`}
+          >
+            <BookmarkIcon />
+          </button>
+        </SidebarTooltip>
+
         {directConversations.slice(0, 5).map((conv) => {
           const other = conv.participants.find((p) => p.userId !== userId)?.user;
           if (!other) return null;
@@ -118,6 +145,25 @@ export function DirectMessageList({
           title="New direct message"
         >
           <PlusIcon />
+        </button>
+      </div>
+
+      {/* ── Saved Messages pinned item ────────────────────────────────── */}
+      <div className="px-1.5 mb-1">
+        <button
+          onClick={onSavedMessagesSelect}
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
+            ${savedMessagesSelected
+              ? 'bg-indigo-500/20 dark:bg-indigo-500/30 text-indigo-600 dark:text-indigo-300'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+        >
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
+            ${savedMessagesSelected
+              ? 'bg-indigo-500 text-white'
+              : 'bg-gradient-to-br from-indigo-500/80 to-purple-600/80 text-white'}`}>
+            <BookmarkIcon />
+          </div>
+          <span className="text-xs font-semibold truncate flex-1 text-left">Saved Messages</span>
         </button>
       </div>
 

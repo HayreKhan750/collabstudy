@@ -44,6 +44,8 @@ interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   onOpenSettings?: () => void;
+  savedMessagesSelected?: boolean;
+  onSavedMessagesSelect?: () => void;
 }
 
 function ChevronLeftIcon() {
@@ -108,6 +110,8 @@ export default function Sidebar({
   mobileOpen = false,
   onMobileClose,
   onOpenSettings,
+  savedMessagesSelected,
+  onSavedMessagesSelect,
 }: SidebarProps) {
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [loadingChannels, setLoadingChannels] = useState(false);
@@ -319,6 +323,8 @@ export default function Sidebar({
           onlineUserIds={onlineUserIds}
           userId={userId}
           collapsed={collapsed}
+          savedMessagesSelected={savedMessagesSelected}
+          onSavedMessagesSelect={onSavedMessagesSelect}
         />
       </div>
 

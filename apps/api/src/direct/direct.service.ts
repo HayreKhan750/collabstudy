@@ -416,6 +416,206 @@ export class DirectService {
     return { success: true, messageId };
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SAVED MESSAGES (Private Cloud)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /saved-messages
+   * Return or create a "Saved Messages" self-conversation for the current user.
+   * The conversation has a single participant: the user themselves.
+   * It is identified by a single participant whose userId equals the conversation
+   * creator, i.e. participantCount = 1 and that participant is the requesting user.
+   */
+  async getOrCreateSavedMessagesConversation(userId: string): Promise<{ conversationId: string }> {
+    // Find an existing saved-messages conversation: a DirectConversation that
+    // has exactly one participant and that participant is the current user.
+    const existing = await this.prisma.directConversation.findFirst({
+      where: {
+        participants: {
+          every: { userId },
+        },
+        // Ensure there's at least one participant (i.e. it exists)
+        AND: { participants: { some: { userId } } },
+      },
+      include: {
+        participants: { select: { userId: true } },
+      },
+    });
+
+    // Filter to only those with exactly 1 participant (the user themselves)
+    if (existing) {
+      const participantCount = existing.participants.length;
+      if (participantCount === 1) {
+        return { conversationId: existing.id };
+      }
+    }
+
+    // Use a raw query to find a self-conversation robustly
+    type SelfConvRow = { id: string };
+    const rows = await this.prisma.$queryRaw<SelfConvRow[]>`
+      SELECT dc.id
+      FROM direct_conversations dc
+      JOIN direct_participants dp ON dp."conversationId" = dc.id
+      WHERE dp."userId" = ${userId}::uuid
+      GROUP BY dc.id
+      HAVING COUNT(*) = 1
+      LIMIT 1
+    `;
+
+    if (rows.length > 0) {
+      return { conversationId: rows[0].id };
+    }
+
+    // Create a new self-conversation
+    const conv = await this.prisma.directConversation.create({
+      data: {
+        participants: {
+          create: [{ userId }],
+        },
+      },
+    });
+
+    return { conversationId: conv.id };
+  }
+
+  /**
+   * GET /saved-messages/messages
+   * Fetch paginated messages for the saved-messages conversation.
+   */
+  async getSavedMessages(
+    userId: string,
+    limit = 50,
+    cursor?: string,
+  ) {
+    const { conversationId } = await this.getOrCreateSavedMessagesConversation(userId);
+
+    const messages = await this.prisma.directMessage.findMany({
+      where: {
+        conversationId,
+        parentId: null,
+        ...(cursor && { createdAt: { lt: new Date(Buffer.from(cursor, 'base64').toString()) } }),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      include: {
+        sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+        reactions: {
+          include: {
+            user: { select: { id: true, username: true, fullName: true, avatar: true } },
+          },
+        },
+        forwardedFrom: {
+          select: { id: true, content: true, sender: { select: { id: true, username: true, fullName: true } } },
+        },
+      },
+    });
+
+    const hasMore = messages.length > limit;
+    if (hasMore) messages.pop();
+
+    const nextCursor =
+      hasMore && messages.length > 0
+        ? Buffer.from(messages[messages.length - 1].createdAt.toISOString()).toString('base64')
+        : null;
+
+    const ordered = messages.reverse();
+
+    const messagesWithUrls = await Promise.all(
+      ordered.map(async (msg) => {
+        if (msg.fileUrl) {
+          return { ...msg, fileUrl: await this.uploadService.getPresignedUrl(msg.fileUrl) };
+        }
+        return msg;
+      }),
+    );
+
+    return { messages: messagesWithUrls, nextCursor, conversationId };
+  }
+
+  /**
+   * POST /saved-messages/messages
+   * Send a message to saved messages (the user's private cloud).
+   */
+  async sendSavedMessage(userId: string, dto: SendDirectMessageDto) {
+    const { conversationId } = await this.getOrCreateSavedMessagesConversation(userId);
+
+    if (!dto.content?.trim() && !dto.fileUrl) {
+      throw new BadRequestException('Message must have content or a file');
+    }
+
+    const message = await this.prisma.directMessage.create({
+      data: {
+        content: dto.content?.trim() || null,
+        fileUrl: dto.fileUrl,
+        fileType: dto.fileType,
+        fileSize: dto.fileSize,
+        originalName: dto.originalName,
+        senderId: userId,
+        conversationId,
+        ...(dto.forwardedFromId ? { forwardedFromId: dto.forwardedFromId } : {}),
+      },
+      include: {
+        sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+        forwardedFrom: {
+          select: {
+            id: true,
+            content: true,
+            sender: { select: { id: true, username: true, fullName: true } },
+          },
+        },
+      },
+    });
+
+    await this.prisma.directConversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() },
+    });
+
+    const messageForWs = message.fileUrl
+      ? { ...message, fileUrl: await this.uploadService.getPresignedUrl(message.fileUrl) }
+      : message;
+
+    // Emit only to the user's own room so they see the message in real-time
+    this.chatGateway.emitDirectMessage(conversationId, messageForWs, [userId], userId);
+
+    return { ...messageForWs, conversationId };
+  }
+
+  /**
+   * DELETE /saved-messages/messages/:messageId
+   * Delete a saved message (must be owned by the current user).
+   */
+  async deleteSavedMessage(userId: string, messageId: string) {
+    const { conversationId } = await this.getOrCreateSavedMessagesConversation(userId);
+    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new NotFoundException('Message not found');
+    if (msg.senderId !== userId) throw new ForbiddenException('You can only delete your own messages');
+    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message not in saved messages');
+    await this.prisma.directMessage.delete({ where: { id: messageId } });
+    this.chatGateway.emitDmMessageDeleted(conversationId, messageId);
+    return { success: true, messageId };
+  }
+
+  /**
+   * PATCH /saved-messages/messages/:messageId
+   * Edit a saved message.
+   */
+  async editSavedMessage(userId: string, messageId: string, content: string) {
+    const { conversationId } = await this.getOrCreateSavedMessagesConversation(userId);
+    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new NotFoundException('Message not found');
+    if (msg.senderId !== userId) throw new ForbiddenException('You can only edit your own messages');
+    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message not in saved messages');
+    const updated = await this.prisma.directMessage.update({
+      where: { id: messageId },
+      data: { content, isEdited: true },
+      include: { sender: { select: { id: true, username: true, fullName: true, avatar: true } } },
+    });
+    this.chatGateway.emitDmMessageUpdated(conversationId, updated);
+    return updated;
+  }
+
   /**
    * Clear all messages in a DM conversation for the current user.
    * Deletes all DirectMessage records in the conversation.

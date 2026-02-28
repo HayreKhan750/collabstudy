@@ -9,6 +9,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import ChatArea from '@/components/chat/ChatArea';
 import ThreadPanel from '@/components/chat/ThreadPanel';
 import DirectMessageArea from '@/components/chat/DirectMessageArea';
+import SavedMessagesArea from '@/components/chat/SavedMessagesArea';
 import DiscoverWorkspacesModal from '@/components/chat/DiscoverWorkspacesModal';
 import MentionToast, { MentionNotification } from '@/components/chat/MentionToast';
 import { NoWorkspaceState, NoChannelState } from '@/components/chat/EmptyState';
@@ -56,6 +57,9 @@ export default function DashboardPage() {
   const [selectedConversation, setSelectedConversation] = useState<DirectConversation | null>(null);
   const [showNewDMModal, setShowNewDMModal] = useState(false);
   const [dmUsers, setDmUsers] = useState<{ user: { id: string; username: string; fullName: string | null; avatar: string | null; status: string } }[]>([]);
+
+  // ── Saved Messages state ───────────────────────────────────────────────────
+  const [showSavedMessages, setShowSavedMessages] = useState(false);
 
   // ── Page-level workspace socket ────────────────────────────────────────────
   const workspaceSocketRef = useRef<Socket | null>(null);
@@ -476,6 +480,7 @@ export default function DashboardPage() {
         onChannelSelect={(ch) => {
           setSelectedChannel(ch);
           setSelectedConversation(null);
+          setShowSavedMessages(false);
           setMobileSidebarOpen(false);
           if (ch.unreadCount && ch.unreadCount > 0 && token) {
             setChannels(prev => prev.map(c => c.id === ch.id ? { ...c, unreadCount: 0 } : c));
@@ -501,6 +506,7 @@ export default function DashboardPage() {
         onConversationSelect={(conv) => {
           setSelectedConversation(conv);
           setSelectedChannel(null);
+          setShowSavedMessages(false);
           setMobileSidebarOpen(false);
           if (conv.unreadCount && conv.unreadCount > 0 && token) {
             setDirectConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
@@ -515,6 +521,14 @@ export default function DashboardPage() {
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
         onOpenSettings={() => setShowSettings(true)}
+        savedMessagesSelected={showSavedMessages}
+        onSavedMessagesSelect={() => {
+          setShowSavedMessages(true);
+          setSelectedConversation(null);
+          setSelectedChannel(null);
+          setActiveThread(null);
+          setMobileSidebarOpen(false);
+        }}
       />
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
@@ -573,7 +587,14 @@ export default function DashboardPage() {
 
         {/* Content */}
         <div className="flex-1 min-h-0 flex overflow-hidden">
-          {selectedConversation && token ? (
+          {showSavedMessages ? (
+            <SavedMessagesArea
+              onBack={() => {
+                setShowSavedMessages(false);
+                setMobileSidebarOpen(true);
+              }}
+            />
+          ) : selectedConversation && token ? (
             (() => {
               const recipient = selectedConversation.participants.find(p => p.userId !== user?.id)?.user;
               return recipient ? (
