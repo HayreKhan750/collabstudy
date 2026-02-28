@@ -10,7 +10,8 @@ function CallbackInner() {
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
-      localStorage.setItem('token', token);
+      // Must use 'auth_token' key — matches what AuthContext.tsx reads on mount
+      localStorage.setItem('auth_token', token);
       window.location.href = '/dashboard';
     } else {
       router.replace('/login?error=oauth_failed');

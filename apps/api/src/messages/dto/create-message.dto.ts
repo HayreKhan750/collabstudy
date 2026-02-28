@@ -3,8 +3,8 @@ import { Transform } from 'class-transformer';
 import { sanitizeTransform } from '../../common/sanitize.util';
 
 export class CreateMessageDto {
-  // content is optional when a fileUrl is provided (file-only messages)
-  @ValidateIf((o: CreateMessageDto) => !o.fileUrl)
+  // content is optional when a fileUrl or poll is provided
+  @ValidateIf((o: CreateMessageDto) => !o.fileUrl && !o.poll)
   @Transform(sanitizeTransform)
   @IsString()
   @MaxLength(2000)
