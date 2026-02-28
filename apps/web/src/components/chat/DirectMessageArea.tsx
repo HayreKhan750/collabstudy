@@ -787,15 +787,19 @@ export default function DirectMessageArea({
 
   const handleDeleteSelected = useCallback(async () => {
     if (!token) return;
-    for (const id of selectedMessageIds) {
-      await fetch(`${API_URL}/direct/${conversationId}/messages/${id}`, {
+    const ids = Array.from(selectedMessageIds);
+    try {
+      await fetch(`${API_URL}/direct/${conversationId}/messages/bulk`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ messageIds: ids }),
+      });
+      setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
+    } catch (err) {
+      console.warn('[DM bulk delete] error:', err);
     }
-    setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
     handleCancelSelection();
-  }, [selectedMessageIds, conversationId, token]);
+  }, [selectedMessageIds, conversationId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePinMessage = useCallback(async (messageId: string) => {
     if (!token) return;
@@ -1257,8 +1261,14 @@ export default function DirectMessageArea({
       {/* Forward Modal */}
       {forwardMessage && (
         <ForwardModal
-          messageContent={forwardMessage.content ?? ''}
-          messageId={forwardMessage.id}
+          message={{
+            id: forwardMessage.id,
+            content: forwardMessage.content,
+            fileUrl: forwardMessage.fileUrl,
+            fileType: forwardMessage.fileType,
+            fileSize: forwardMessage.fileSize,
+            originalName: forwardMessage.originalName,
+          }}
           workspaces={[]}
           onClose={() => setForwardMessage(null)}
         />

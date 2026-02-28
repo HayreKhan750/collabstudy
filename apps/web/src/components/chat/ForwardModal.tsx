@@ -6,8 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface ForwardModalProps {
-  messageContent: string;
-  messageId: string;
+  message: {
+    id: string;
+    content: string | null;
+    fileUrl?: string | null;
+    fileType?: string | null;
+    fileSize?: number | null;
+    originalName?: string | null;
+  };
   workspaces: { id: string; name: string }[];
   onClose: () => void;
   onForwarded?: () => void;
@@ -25,7 +31,7 @@ interface DmItem {
   avatar?: string | null;
 }
 
-export default function ForwardModal({ messageContent, workspaces, onClose, onForwarded }: ForwardModalProps) {
+export default function ForwardModal({ message, workspaces, onClose, onForwarded }: ForwardModalProps) {
   const { token } = useAuth();
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [dms, setDms] = useState<DmItem[]>([]);
@@ -91,7 +97,14 @@ export default function ForwardModal({ messageContent, workspaces, onClose, onFo
       const res = await fetch(`${API_URL}/channels/${channelId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content: messageContent }),
+        body: JSON.stringify({
+          content: message.content || undefined,
+          fileUrl: message.fileUrl || undefined,
+          fileType: message.fileType || undefined,
+          fileSize: message.fileSize || undefined,
+          originalName: message.originalName || undefined,
+          forwardedFromId: message.id,
+        }),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       setSent(channelId);
@@ -111,7 +124,14 @@ export default function ForwardModal({ messageContent, workspaces, onClose, onFo
       const res = await fetch(`${API_URL}/direct/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content: messageContent }),
+        body: JSON.stringify({
+          content: message.content || undefined,
+          fileUrl: message.fileUrl || undefined,
+          fileType: message.fileType || undefined,
+          fileSize: message.fileSize || undefined,
+          originalName: message.originalName || undefined,
+          forwardedFromId: message.id,
+        }),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       setSent(conversationId);
@@ -148,7 +168,7 @@ export default function ForwardModal({ messageContent, workspaces, onClose, onFo
         {/* Message preview */}
         <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-white/10">
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Forwarding:</p>
-          <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">{messageContent}</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">{message.content ?? (message.originalName ? `[File: ${message.originalName}]` : '[No content]')}</p>
         </div>
 
         {/* Search */}

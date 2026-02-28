@@ -483,14 +483,20 @@ export function MessageBubble({
               )}
 
               {/* Telegram-style Forwarded tag */}
-              {(message as any).forwardedFrom && (
-                <div className="flex items-center gap-1.5 mb-1 pb-1 border-b border-current/20">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-semibold opacity-80">Forwarded from {(message as any).forwardedFrom}</span>
-                </div>
-              )}
+              {(message as any).forwardedFrom && (() => {
+                const fwd = (message as any).forwardedFrom;
+                const senderName = fwd?.user?.fullName || fwd?.user?.username || fwd?.sender?.fullName || fwd?.sender?.username || 'Unknown';
+                return (
+                  <div className="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-blue-400/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-blue-400 hover:text-blue-300 cursor-pointer hover:underline transition-colors">
+                      Forwarded from {senderName}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Text content */}
               {message.content && (

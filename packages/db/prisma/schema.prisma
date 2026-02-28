@@ -126,6 +126,7 @@ model Message {
   updatedAt DateTime @updatedAt
   isEdited  Boolean  @default(false)
   isPinned  Boolean  @default(false)
+  forwardedFromId String? @db.Uuid
   fileUrl      String?  // public URL to the uploaded file
   fileType     String?  // MIME type, e.g. 'image/jpeg', 'application/pdf'
   fileSize     Int?     // file size in bytes
@@ -144,6 +145,10 @@ model Message {
   parent  Message?  @relation("ThreadReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies Message[] @relation("ThreadReplies")
 
+  // Forwarded messages relation
+  forwardedFrom Message? @relation("ForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedCopies Message[] @relation("ForwardedMessages")
+
   // Implicit many-to-many for mentions
   mentions User[] @relation("MessageMentions")
 
@@ -156,6 +161,7 @@ model Message {
   @@index([createdAt])
   @@index([channelId, createdAt])
   @@index([parentId])
+  @@index([forwardedFromId])
   @@map("messages")
 }
 
@@ -256,12 +262,16 @@ model DirectMessage {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   isEdited       Boolean  @default(false)
+  forwardedFromId String? @db.Uuid
 
   sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
   conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   parent       DirectMessage?     @relation("DmThreadReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies      DirectMessage[]    @relation("DmThreadReplies")
   reactions    DirectMessageReaction[]
+
+  forwardedFrom DirectMessage? @relation("DmForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedCopies DirectMessage[] @relation("DmForwardedMessages")
 
   @@index([conversationId, createdAt])
   @@index([conversationId, parentId])

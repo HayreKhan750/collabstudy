@@ -233,13 +233,17 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   const handleDeleteSelected = useCallback(async () => {
     if (!token) return;
-    for (const id of selectedMessageIds) {
-      await fetch(`${API_URL}/channels/${channelId}/messages/${id}`, {
+    const ids = Array.from(selectedMessageIds);
+    try {
+      await fetch(`${API_URL}/channels/${channelId}/messages/bulk`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ messageIds: ids }),
+      });
+      setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
+    } catch (err) {
+      console.warn('[Bulk delete] error:', err);
     }
-    setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
     handleCancelSelection();
   }, [selectedMessageIds, channelId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1723,8 +1727,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     {/* Forward Modal */}
     {forwardMessage && (
       <ForwardModal
-        messageContent={forwardMessage.content ?? ''}
-        messageId={forwardMessage.id}
+        message={forwardMessage}
         workspaces={workspaces}
         onClose={() => setForwardMessage(null)}
       />

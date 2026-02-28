@@ -76,6 +76,7 @@ export class MessagesService {
         ...(createMessageDto.fileType && { fileType: createMessageDto.fileType }),
         ...(createMessageDto.fileSize && { fileSize: createMessageDto.fileSize }),
         ...(createMessageDto.originalName && { originalName: createMessageDto.originalName }),
+        ...(createMessageDto.forwardedFromId && { forwardedFromId: createMessageDto.forwardedFromId }),
       },
       include: {
         user: {
@@ -244,6 +245,9 @@ export class MessagesService {
         user: { select: { id: true, username: true, fullName: true, avatar: true } },
         reactions: true,
         _count: { select: { replies: true } },
+        forwardedFrom: {
+          select: { id: true, content: true, user: { select: { id: true, username: true, fullName: true } } },
+        },
       },
     });
 
@@ -287,6 +291,9 @@ export class MessagesService {
       },
       mentions: { select: { id: true, username: true, fullName: true, avatar: true } },
       _count: { select: { replies: true } },
+      forwardedFrom: {
+        select: { id: true, content: true, user: { select: { id: true, username: true, fullName: true } } },
+      },
     } as const;
 
     // Both initial load and paginated load use DESC so we always walk

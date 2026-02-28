@@ -149,6 +149,31 @@ export class MessagesController {
   }
 
   /**
+   * DELETE /channels/:channelId/messages/bulk
+   * Bulk delete messages (author can delete own; admins can delete any).
+   */
+  @Delete('bulk')
+  @HttpCode(HttpStatus.OK)
+  async bulkDeleteMessages(
+    @Request() req: any,
+    @Param('channelId') channelId: string,
+    @Body() body: { messageIds: string[] },
+  ) {
+    const userId = req.user.userId;
+    const deleted: string[] = [];
+    for (const messageId of body.messageIds ?? []) {
+      try {
+        await this.messagesService.deleteMessage(userId, channelId, messageId);
+        this.chatGateway.emitMessageDeleted(channelId, { messageId, channelId });
+        deleted.push(messageId);
+      } catch {
+        // Skip messages user can't delete (403/404) — delete what we can
+      }
+    }
+    return { deleted };
+  }
+
+  /**
    * DELETE /channels/:channelId/messages/:messageId
    * Hard-delete a message (author only).
    * Emits message_deleted via WebSocket after a successful DB delete.

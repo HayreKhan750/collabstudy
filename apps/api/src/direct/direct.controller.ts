@@ -138,6 +138,30 @@ export class DirectController {
   }
 
   /**
+   * DELETE /direct/:id/messages/bulk
+   * Bulk delete DM messages (sender only per message).
+   */
+  @Delete(':id/messages/bulk')
+  @HttpCode(HttpStatus.OK)
+  async bulkDeleteDmMessages(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Body() body: { messageIds: string[] },
+  ) {
+    const userId = req.user.userId;
+    const deleted: string[] = [];
+    for (const messageId of body.messageIds ?? []) {
+      try {
+        await this.directService.deleteDmMessage(userId, conversationId, messageId);
+        deleted.push(messageId);
+      } catch {
+        // Skip messages user can't delete
+      }
+    }
+    return { deleted };
+  }
+
+  /**
    * PATCH /direct/:id/messages/:messageId
    * Edit a DM message (sender only)
    */

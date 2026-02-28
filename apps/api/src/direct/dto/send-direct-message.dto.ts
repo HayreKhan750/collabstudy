@@ -30,4 +30,8 @@ export class SendDirectMessageDto {
   @IsOptional()
   @IsString()
   parentId?: string;
+
+  @IsOptional()
+  @IsString()
+  forwardedFromId?: string;
 }
