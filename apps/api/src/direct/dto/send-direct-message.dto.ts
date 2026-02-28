@@ -34,4 +34,10 @@ export class SendDirectMessageDto {
   @IsOptional()
   @IsString()
   forwardedFromId?: string;
+
+  @IsOptional()
+  poll?: {
+    question: string;
+    options: string[];
+  };
 }

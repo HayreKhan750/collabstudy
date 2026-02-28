@@ -14,6 +14,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import ForwardModal from './ForwardModal';
 import { PinnedMessageBar } from './PinnedMessageBar';
 import UserProfileModal from './UserProfileModal';
+import CreatePollModal from './CreatePollModal';
 import type { Message } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -149,6 +150,9 @@ export default function DirectMessageArea({
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [profileUser, setProfileUser] = useState<{ id: string; username: string; fullName: string | null; avatar: string | null } | null>(null);
+
+  // ── Poll Modal state ─────────────────────────────────────────────────────
+  const [showPollModal, setShowPollModal] = useState(false);
 
   const handleSummarize = async () => {
     if (!token) return;
@@ -572,6 +576,20 @@ export default function DirectMessageArea({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleCreatePollDM = async (question: string, pollOptions: string[]) => {
+    if (!token || !user) return;
+    try {
+      await fetch(`${API_URL}/direct/${conversationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: null, poll: { question, options: pollOptions } }),
+      });
+      setShowPollModal(false);
+    } catch (e) {
+      console.error('Create DM poll failed:', e);
     }
   };
 
@@ -1121,6 +1139,15 @@ export default function DirectMessageArea({
                     onCopy={msg.content ? () => handleCopyMessage(msg.content!) : undefined}
                     onForward={() => setForwardMessage(msg)}
                     onPin={() => handlePinMessage(msg.id)}
+                    onVotePoll={async (msgId: string, optId: string) => {
+                      try {
+                        await fetch(`${API_URL}/channels/dm/${msgId}/poll/vote`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ optionId: optId }),
+                        });
+                      } catch(e) { console.warn('DM Vote failed', e); }
+                    }}
                     onSelect={() => handleSelectMessage(msg.id)}
                     onSave={async () => {
                       try {
@@ -1230,6 +1257,18 @@ export default function DirectMessageArea({
         <div className="px-4 pb-4 flex-shrink-0">
           <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
+            {/* Poll button */}
+            <button
+              type="button"
+              onClick={() => setShowPollModal(true)}
+              className="flex-shrink-0 p-2 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600"
+              title="Create Poll"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </button>
+
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingFile}
@@ -1383,6 +1422,14 @@ export default function DirectMessageArea({
           workspaceMembers={[]}
           newReply={pendingThreadReply}
           isDm={true}
+        />
+      )}
+
+      {/* DM Poll Creation Modal */}
+      {showPollModal && (
+        <CreatePollModal
+          onClose={() => setShowPollModal(false)}
+          onCreatePoll={handleCreatePollDM}
         />
       )}
     </div>

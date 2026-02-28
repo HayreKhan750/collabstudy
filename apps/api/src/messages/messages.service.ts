@@ -77,6 +77,16 @@ export class MessagesService {
         ...(createMessageDto.fileSize && { fileSize: createMessageDto.fileSize }),
         ...(createMessageDto.originalName && { originalName: createMessageDto.originalName }),
         ...(createMessageDto.forwardedFromId && { forwardedFromId: createMessageDto.forwardedFromId }),
+        ...(createMessageDto.poll && {
+          poll: {
+            create: {
+              question: createMessageDto.poll.question,
+              options: {
+                create: createMessageDto.poll.options.map((text: string) => ({ text })),
+              },
+            },
+          },
+        }),
       },
       include: {
         user: {
@@ -92,6 +102,13 @@ export class MessagesService {
             id: true,
             content: true,
             user: { select: { id: true, username: true, fullName: true } },
+          },
+        },
+        poll: {
+          include: {
+            options: {
+              include: { votes: { select: { userId: true } } },
+            },
           },
         },
       },
@@ -300,6 +317,13 @@ export class MessagesService {
       _count: { select: { replies: true } },
       forwardedFrom: {
         select: { id: true, content: true, user: { select: { id: true, username: true, fullName: true } } },
+      },
+      poll: {
+        include: {
+          options: {
+            include: { votes: { select: { userId: true } } },
+          },
+        },
       },
     } as const;
 
