@@ -59,6 +59,7 @@ model User {
   directMessageReactions DirectMessageReaction[]
   channelMemberships   ChannelMember[]
   savedMessages        SavedMessage[]
+  createdPolls         Poll[]
 
   @@index([email])
   @@index([username])
@@ -312,12 +313,18 @@ model SavedMessage {
 }
 
 model Poll {
-  id        String       @id @default(uuid()) @db.Uuid
-  messageId String       @unique @db.Uuid
-  question  String
-  isClosed  Boolean      @default(false)
-  options   PollOption[]
-  message   Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id            String       @id @default(uuid()) @db.Uuid
+  messageId     String       @unique @db.Uuid
+  question      String
+  isClosed      Boolean      @default(false)
+  createdBy     String       @db.Uuid
+  allowMultiple Boolean      @default(false)
+  isAnonymous   Boolean      @default(false)
+  expiresAt     DateTime?
+  options       PollOption[]
+  votes         PollVote[]
+  message       Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  creator       User         @relation(fields: [createdBy], references: [id])
   @@map("polls")
 }
 
@@ -325,6 +332,7 @@ model PollOption {
   id      String     @id @default(uuid()) @db.Uuid
   pollId  String     @db.Uuid
   text    String
+  order   Int        @default(0)
   votes   PollVote[]
   poll    Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   @@map("poll_options")
@@ -332,9 +340,12 @@ model PollOption {
 
 model PollVote {
   id           String     @id @default(uuid()) @db.Uuid
+  pollId       String     @db.Uuid
   userId       String     @db.Uuid
   pollOptionId String     @db.Uuid
+  createdAt    DateTime   @default(now())
+  poll         Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option       PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
-  @@unique([userId, pollOptionId])
+  @@unique([pollId, userId])
   @@map("poll_votes")
 }

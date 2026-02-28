@@ -225,18 +225,25 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     setTimeout(() => setCopyToast(false), 2000);
   }, []);
 
-  const handleCreatePoll = async (question: string, pollOptions: string[]) => {
+  const handleCreatePoll = async (question: string, pollOptions: string[], allowMultiple: boolean, isAnonymous: boolean) => {
     if (!token || !user) return;
     try {
       await fetch(`${API_URL}/channels/${channelId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content: null, poll: { question, options: pollOptions } }),
+        body: JSON.stringify({ content: null, poll: { question, options: pollOptions, allowMultiple, isAnonymous } }),
       });
     } catch (e) {
       console.error('Create poll failed:', e);
     }
   };
+
+  // Handle real-time poll updates from other users' votes
+  const handlePollUpdate = useCallback((payload: { messageId: string; poll: any }) => {
+    setMessages(prev => prev.map(m =>
+      m.id === payload.messageId ? { ...m, poll: payload.poll } : m
+    ));
+  }, []);
 
   const handleSelectMessage = useCallback((messageId: string) => {
     setIsSelectionMode(true);
@@ -835,6 +842,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
     // ── summary_generated (Phase 9.3) ────────────────────────────────────────
     // Fired by the BullMQ worker once the Gemini API call completes.
+    socket.on('poll:updated', (payload: { messageId: string; poll: any }) => {
+      handlePollUpdate(payload);
+    });
+
     socket.on('summary_generated', (payload: { summary: string; channelId?: string }) => {
       if (payload.channelId && payload.channelId !== channelId) return;
       // Clear the 15s timeout — WS arrived in time
@@ -1583,6 +1594,14 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                         body: JSON.stringify({ optionId: optId }),
                       });
                     } catch(e) { console.warn('Vote failed', e); }
+                  }}
+                  onClosePoll={async (msgId: string) => {
+                    try {
+                      await fetch(`${API_URL}/channels/${channelId}/messages/${msgId}/poll/close`, {
+                        method: 'PATCH',
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                    } catch(e) { console.warn('Close poll failed', e); }
                   }}
                   onSelect={() => handleSelectMessage(message.id)}
                   onSave={async () => {

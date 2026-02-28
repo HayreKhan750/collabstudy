@@ -4,12 +4,14 @@ import { useState } from 'react';
 
 interface CreatePollModalProps {
   onClose: () => void;
-  onCreatePoll: (question: string, options: string[]) => void;
+  onCreatePoll: (question: string, options: string[], allowMultiple: boolean, isAnonymous: boolean) => void;
 }
 
 export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollModalProps) {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
+  const [allowMultiple, setAllowMultiple] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const addOption = () => {
     if (options.length < 10) setOptions(prev => [...prev, '']);
@@ -27,9 +29,22 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    onCreatePoll(question.trim(), options.filter(o => o.trim()));
+    onCreatePoll(question.trim(), options.filter(o => o.trim()), allowMultiple, isAnonymous);
     onClose();
   };
+
+  const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
+    <button
+      type="button"
+      onClick={onChange}
+      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+    >
+      <span className="text-sm text-slate-700 dark:text-slate-200 font-medium">{label}</span>
+      <div className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${checked ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`} />
+      </div>
+    </button>
+  );
 
   return (
     <div
@@ -109,6 +124,13 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
                 Add option
               </button>
             )}
+          </div>
+
+          {/* Settings toggles */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Settings</label>
+            <Toggle label="Allow multiple answers" checked={allowMultiple} onChange={() => setAllowMultiple(v => !v)} />
+            <Toggle label="Anonymous voting" checked={isAnonymous} onChange={() => setIsAnonymous(v => !v)} />
           </div>
         </div>
 

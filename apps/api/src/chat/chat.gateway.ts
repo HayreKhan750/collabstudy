@@ -540,6 +540,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     console.log(`[Socket] Emitted channel_updated to workspace:${workspaceId}`);
   }
 
+  broadcastPollUpdate(channelId: string, payload: unknown): void {
+    const roomName = `channel:${channelId}`;
+    this.server.to(roomName).emit('poll:updated', payload);
+    this.logger.debug(`[Socket] Emitted poll:updated to ${roomName}`);
+  }
+
   emitChannelDeleted(workspaceId: string, payload: { channelId: string; workspaceId: string }): void {
     this.server.to(`workspace:${workspaceId}`).emit('channel_deleted', payload);
     console.log(`[Socket] Emitted channel_deleted to workspace:${workspaceId}`);

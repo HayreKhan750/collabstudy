@@ -81,8 +81,11 @@ export class MessagesService {
           poll: {
             create: {
               question: createMessageDto.poll.question,
+              createdBy: userId,
+              allowMultiple: createMessageDto.poll.allowMultiple ?? false,
+              isAnonymous: createMessageDto.poll.isAnonymous ?? false,
               options: {
-                create: createMessageDto.poll.options.map((text: string) => ({ text })),
+                create: createMessageDto.poll.options.map((text: string, idx: number) => ({ text, order: idx })),
               },
             },
           },
@@ -607,28 +610,76 @@ export class MessagesService {
 
   /**
    * POST /channels/:channelId/messages/:messageId/poll/vote
-   * Cast or retract a vote on a poll option.
+   * Cast or retract a vote — enforces single-choice, expiry, and closed state.
+   * Returns updated poll results for real-time broadcast.
    */
-  async votePoll(userId: string, messageId: string, optionId: string): Promise<{ voted: boolean; optionId: string }> {
-    // Ensure the poll and option exist
+  async votePoll(userId: string, messageId: string, optionId: string) {
     const option = await this.prisma.pollOption.findUnique({
       where: { id: optionId },
-      include: { poll: { select: { messageId: true } } },
+      include: {
+        poll: {
+          include: {
+            options: { include: { votes: { select: { userId: true } } }, orderBy: { order: 'asc' } },
+          },
+        },
+      },
     });
     if (!option || option.poll.messageId !== messageId) {
       throw new NotFoundException('Poll option not found');
     }
+    const poll = option.poll;
+    if (poll.isClosed) throw new BadRequestException('Poll is closed');
+    if (poll.expiresAt && poll.expiresAt < new Date()) throw new BadRequestException('Poll has expired');
 
-    const existing = await this.prisma.pollVote.findUnique({
-      where: { userId_pollOptionId: { userId, pollOptionId: optionId } },
+    // Check if user already voted on THIS option
+    const existingOnThis = await this.prisma.pollVote.findUnique({
+      where: { pollId_userId: { pollId: poll.id, userId } },
     });
 
-    if (existing) {
-      await this.prisma.pollVote.delete({ where: { id: existing.id } });
-      return { voted: false, optionId };
-    }
+    await this.prisma.$transaction(async (tx) => {
+      if (existingOnThis) {
+        // Retract vote (toggle off)
+        await tx.pollVote.delete({ where: { id: existingOnThis.id } });
+      } else {
+        if (!poll.allowMultiple) {
+          // Single-choice: remove any existing vote for this poll first
+          await tx.pollVote.deleteMany({ where: { pollId: poll.id, userId } });
+        }
+        await tx.pollVote.create({ data: { pollId: poll.id, pollOptionId: optionId, userId } });
+      }
+    });
 
-    await this.prisma.pollVote.create({ data: { userId, pollOptionId: optionId } });
-    return { voted: true, optionId };
+    // Fetch updated poll for broadcast
+    const updated = await this.prisma.poll.findUnique({
+      where: { id: poll.id },
+      include: {
+        options: {
+          include: { votes: { select: { userId: true } } },
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+    return { messageId, poll: updated };
+  }
+
+  /**
+   * PATCH /channels/:channelId/messages/:messageId/poll/close
+   * Closes a poll (creator only).
+   */
+  async closePoll(userId: string, messageId: string) {
+    const poll = await this.prisma.poll.findUnique({ where: { messageId } });
+    if (!poll) throw new NotFoundException('Poll not found');
+    if (poll.createdBy !== userId) throw new ForbiddenException('Only the poll creator can close it');
+    const updated = await this.prisma.poll.update({
+      where: { id: poll.id },
+      data: { isClosed: true },
+      include: {
+        options: {
+          include: { votes: { select: { userId: true } } },
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+    return { messageId, poll: updated };
   }
 }

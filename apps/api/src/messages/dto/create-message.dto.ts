@@ -42,5 +42,7 @@ export class CreateMessageDto {
   poll?: {
     question: string;
     options: string[];
+    allowMultiple?: boolean;
+    isAnonymous?: boolean;
   };
 }

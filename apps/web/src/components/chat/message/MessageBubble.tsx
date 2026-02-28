@@ -35,9 +35,13 @@ export interface MessageData {
     id: string;
     question: string;
     isClosed: boolean;
+    allowMultiple?: boolean;
+    isAnonymous?: boolean;
+    createdBy?: string;
     options: {
       id: string;
       text: string;
+      order?: number;
       votes: {
         userId: string;
         user?: { id: string; username: string; fullName: string | null; avatar: string | null };
@@ -79,6 +83,8 @@ interface MessageBubbleProps {
   onPin?: () => void;
   /** Vote on a poll option */
   onVotePoll?: (messageId: string, optionId: string) => void;
+  /** Close a poll (creator only) */
+  onClosePoll?: (messageId: string) => void;
   /** Toggle select mode for this message */
   onSelect?: () => void;
   /** Save/bookmark this message */
@@ -282,23 +288,28 @@ function PollWidget({
   currentUserId,
   isOwner,
   onVotePoll,
+  onClosePoll,
 }: {
   poll: NonNullable<MessageData['poll']>;
   messageId: string;
   currentUserId: string;
   isOwner: boolean;
   onVotePoll?: (messageId: string, optionId: string) => void;
+  onClosePoll?: (messageId: string) => void;
 }) {
   // Optimistic local state: mirrors the poll but allows instant UI updates
   const [localOptions, setLocalOptions] = useState(() => poll.options.map(o => ({ ...o, votes: [...o.votes] })));
+  const [localClosed, setLocalClosed] = useState(poll.isClosed);
+  const [voterModalOption, setVoterModalOption] = useState<string | null>(null);
 
   const totalVotes = localOptions.reduce((sum, o) => sum + o.votes.length, 0);
-  const userVotedOptionId = localOptions.find(o => o.votes.some(v => v.userId === currentUserId))?.id;
+  const userVotedOptionIds = localOptions.filter(o => o.votes.some(v => v.userId === currentUserId)).map(o => o.id);
+  const userVotedOptionId = userVotedOptionIds[0]; // primary for single-choice display
   // Show results if: user has voted, is the creator, or poll is closed
-  const showResults = !!userVotedOptionId || isOwner || poll.isClosed;
+  const showResults = userVotedOptionIds.length > 0 || isOwner || localClosed;
 
   const handleVote = (optionId: string) => {
-    if (poll.isClosed) return;
+    if (localClosed) return;
     // Optimistic update: toggle vote instantly
     setLocalOptions(prev => {
       const alreadyVoted = prev.find(o => o.id === optionId)?.votes.some(v => v.userId === currentUserId);
@@ -308,90 +319,154 @@ function PollWidget({
             ? { ...o, votes: o.votes.filter(v => v.userId !== currentUserId) }
             : { ...o, votes: [...o.votes, { userId: currentUserId }] };
         }
-        // Remove vote from other options (single-choice)
-        return { ...o, votes: o.votes.filter(v => v.userId !== currentUserId) };
+        // For single-choice: remove vote from other options
+        if (!poll.allowMultiple) {
+          return { ...o, votes: o.votes.filter(v => v.userId !== currentUserId) };
+        }
+        return o;
       });
     });
     onVotePoll?.(messageId, optionId);
   };
 
-  return (
-    <div className="mt-1.5 space-y-1.5 min-w-[220px]">
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-        {poll.isClosed ? '📊 Poll · Closed' : '📊 Poll'}
-      </p>
-      <p className="text-sm font-semibold text-slate-900 dark:text-white mb-2">{poll.question}</p>
-      {localOptions.map(option => {
-        const voteCount = option.votes.length;
-        const pct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
-        const isVoted = option.id === userVotedOptionId;
-        // Voter avatars (up to 3 shown)
-        const voters = (poll.options.find(o => o.id === option.id)?.votes ?? [])
-          .filter((v): v is typeof v & { user: NonNullable<typeof v.user> } => !!v.user)
-          .slice(0, 3);
+  const handleClose = () => {
+    setLocalClosed(true);
+    onClosePoll?.(messageId);
+  };
 
-        return (
+  const voterOptionData = voterModalOption
+    ? localOptions.find(o => o.id === voterModalOption)
+    : null;
+
+  return (
+    <div className="mt-1.5 space-y-1.5 min-w-[240px]">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          {localClosed ? '📊 Poll · Closed' : poll.allowMultiple ? '📊 Poll · Multiple choice' : '📊 Poll'}
+        </p>
+        {isOwner && !localClosed && (
           <button
-            key={option.id}
-            disabled={poll.isClosed}
-            onClick={() => handleVote(option.id)}
-            className={`w-full text-left rounded-xl overflow-hidden border transition-all ${
-              isVoted
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/20'
-                : 'border-slate-200 dark:border-white/10 hover:border-indigo-400 bg-white dark:bg-slate-700/50'
-            } ${poll.isClosed ? 'cursor-default' : 'cursor-pointer'}`}
+            onClick={handleClose}
+            className="text-[10px] font-semibold text-red-400 hover:text-red-500 transition-colors"
           >
-            <div className="relative px-3 py-2">
-              {/* Progress fill — only when results are visible */}
-              {showResults && (
-                <div
-                  className={`absolute inset-0 ${
-                    isVoted ? 'bg-indigo-200/60 dark:bg-indigo-500/30' : 'bg-slate-100 dark:bg-slate-700/30'
-                  } transition-all duration-500 rounded-xl`}
-                  style={{ width: `${pct}%` }}
-                />
-              )}
-              <div className="relative flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  {/* Radio circle */}
-                  <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    isVoted ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-500'
-                  }`}>
-                    {isVoted && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
-                  </span>
-                  <span className={`text-sm font-medium truncate ${
-                    isVoted ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
-                  }`}>
-                    {option.text}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {/* Voter mini-avatars (creator/voted view) */}
-                  {showResults && voters.length > 0 && (
-                    <div className="flex -space-x-1.5">
-                      {voters.map(v => (
-                        v.user.avatar
-                          ? <img key={v.userId} src={v.user.avatar} alt={v.user.username} title={v.user.fullName || v.user.username} className="w-4 h-4 rounded-full object-cover ring-1 ring-white dark:ring-slate-800" />
-                          : <span key={v.userId} title={v.user.fullName || v.user.username} className="w-4 h-4 rounded-full bg-indigo-400 ring-1 ring-white dark:ring-slate-800 flex items-center justify-center text-[8px] text-white font-bold">{(v.user.fullName || v.user.username).charAt(0).toUpperCase()}</span>
-                      ))}
-                    </div>
-                  )}
-                  {/* Percentage — only when results visible */}
-                  {showResults && (
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      {pct}%
+            Close poll
+          </button>
+        )}
+      </div>
+      <p className="text-sm font-semibold text-slate-900 dark:text-white">{poll.question}</p>
+
+      {/* Options */}
+      <div className="space-y-1.5">
+        {localOptions.map(option => {
+          const voteCount = option.votes.length;
+          const pct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+          const isVoted = userVotedOptionIds.includes(option.id);
+
+          return (
+            <button
+              key={option.id}
+              disabled={localClosed}
+              onClick={() => handleVote(option.id)}
+              className={`w-full text-left rounded-xl overflow-hidden border transition-all duration-200 ${
+                isVoted
+                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/15'
+                  : 'border-slate-200 dark:border-white/10 hover:border-indigo-400/60 bg-white dark:bg-slate-700/40'
+              } ${localClosed ? 'cursor-default' : 'cursor-pointer'}`}
+            >
+              <div className="relative px-3 py-2.5">
+                {/* Animated progress fill */}
+                {showResults && (
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-xl transition-all duration-500 ease-out ${
+                      isVoted ? 'bg-indigo-200/50 dark:bg-indigo-500/25' : 'bg-slate-100 dark:bg-white/5'
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  />
+                )}
+                <div className="relative flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {/* Choice indicator */}
+                    <span className={`w-4 h-4 ${poll.allowMultiple ? 'rounded' : 'rounded-full'} border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${
+                      isVoted ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-500'
+                    }`}>
+                      {isVoted && (
+                        poll.allowMultiple
+                          ? <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                          : <span className="w-1.5 h-1.5 rounded-full bg-white block" />
+                      )}
                     </span>
+                    <span className={`text-sm font-medium ${
+                      isVoted ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
+                    }`}>
+                      {option.text}
+                    </span>
+                  </div>
+                  {showResults && (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Click to see voters (creator only, non-anonymous) */}
+                      {isOwner && !poll.isAnonymous && voteCount > 0 && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setVoterModalOption(option.id); }}
+                          className="text-[10px] text-slate-400 hover:text-indigo-400 transition-colors"
+                        >
+                          {voteCount} {voteCount === 1 ? 'vote' : 'votes'}
+                        </button>
+                      )}
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 min-w-[30px] text-right">
+                        {pct}%
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
       <p className="text-[11px] text-slate-400 dark:text-slate-500">
         {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+        {poll.isAnonymous && <span className="ml-1">· Anonymous</span>}
         {!showResults && <span className="ml-1 italic">· Vote to see results</span>}
       </p>
+
+      {/* Voter modal (creator only) */}
+      {voterModalOption && voterOptionData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setVoterModalOption(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-72 p-5"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Voted for: {voterOptionData.text}</h3>
+              <button onClick={() => setVoterModalOption(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {voterOptionData.votes.length === 0
+                ? <p className="text-sm text-slate-400">No votes yet</p>
+                : voterOptionData.votes.map(v => (
+                    <div key={v.userId} className="flex items-center gap-2">
+                      {v.user?.avatar
+                        ? <img src={v.user.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                        : <div className="w-6 h-6 rounded-full bg-indigo-400 flex items-center justify-center text-[10px] text-white font-bold">{(v.user?.fullName || v.user?.username || '?').charAt(0).toUpperCase()}</div>
+                      }
+                      <span className="text-sm text-slate-700 dark:text-slate-200">{v.user?.fullName || v.user?.username || 'Unknown'}</span>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -446,6 +521,7 @@ export function MessageBubble({
   onForward,
   onPin,
   onVotePoll,
+  onClosePoll,
   onSelect,
   onSave,
   onAvatarClick,
@@ -478,7 +554,7 @@ export function MessageBubble({
     : '';
 
   const bubbleColorClass = isOwnMessage
-    ? 'bg-blue-600 text-white'
+    ? 'bg-gradient-to-br from-[#5B8CFF] to-[#4DA3FF] text-white shadow-md shadow-blue-500/20'
     : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-100 dark:border-white/[0.06]';
 
   const hasFileOnly = !!message.fileUrl && !message.content && !(message as any).forwardedFrom;
@@ -678,6 +754,7 @@ export function MessageBubble({
                   currentUserId={currentUserId}
                   isOwner={message.user.id === currentUserId}
                   onVotePoll={onVotePoll}
+                  onClosePoll={onClosePoll}
                 />
               )}
 

@@ -213,11 +213,31 @@ export class MessagesController {
    */
   @Post(':messageId/poll/vote')
   @HttpCode(HttpStatus.OK)
-  votePoll(
+  async votePoll(
     @Request() req: any,
+    @Param('channelId') channelId: string,
     @Param('messageId') messageId: string,
     @Body() body: { optionId: string },
   ) {
-    return this.messagesService.votePoll(req.user.userId, messageId, body.optionId);
+    const result = await this.messagesService.votePoll(req.user.userId, messageId, body.optionId);
+    // Broadcast real-time poll update to channel room
+    this.chatGateway.broadcastPollUpdate(channelId, result);
+    return result;
+  }
+
+  /**
+   * PATCH /channels/:channelId/messages/:messageId/poll/close
+   * Close a poll (creator only).
+   */
+  @Patch(':messageId/poll/close')
+  @HttpCode(HttpStatus.OK)
+  async closePoll(
+    @Request() req: any,
+    @Param('channelId') channelId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    const result = await this.messagesService.closePoll(req.user.userId, messageId);
+    this.chatGateway.broadcastPollUpdate(channelId, result);
+    return result;
   }
 }
