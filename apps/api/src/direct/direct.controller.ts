@@ -205,6 +205,19 @@ export class DirectController {
   }
 
   /**
+   * DELETE /direct/:id/history
+   * Clear all messages in a DM conversation.
+   */
+  @Delete(':id/history')
+  @HttpCode(HttpStatus.OK)
+  async clearHistory(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+  ) {
+    return this.directService.clearHistory(req.user.userId, conversationId);
+  }
+
+  /**
    * GET /direct/workspace/:workspaceId/users
    * Get all workspace members (for picking DM recipients).
    */

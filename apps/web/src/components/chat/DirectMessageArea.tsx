@@ -13,6 +13,7 @@ import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import ForwardModal from './ForwardModal';
 import { PinnedMessageBar } from './PinnedMessageBar';
+import UserProfileModal from './UserProfileModal';
 import type { Message } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -143,6 +144,11 @@ export default function DirectMessageArea({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryText, setSummaryText] = useState<string | null>(null);
+
+  // ── Clear History state ──────────────────────────────────────────────────
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [profileUser, setProfileUser] = useState<{ id: string; username: string; fullName: string | null; avatar: string | null } | null>(null);
 
   const handleSummarize = async () => {
     if (!token) return;
@@ -952,6 +958,31 @@ export default function DirectMessageArea({
               <span className="hidden sm:inline">Summarize</span>
             </button>
           )}
+          {/* Header kebab menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowHeaderMenu(v => !v)}
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
+              title="More options"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01" />
+              </svg>
+            </button>
+            {showHeaderMenu && (
+              <div className="absolute right-0 top-10 z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 py-1 overflow-hidden">
+                <button
+                  onClick={() => { setShowHeaderMenu(false); setShowClearConfirm(true); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Clear History
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1091,6 +1122,15 @@ export default function DirectMessageArea({
                     onForward={() => setForwardMessage(msg)}
                     onPin={() => handlePinMessage(msg.id)}
                     onSelect={() => handleSelectMessage(msg.id)}
+                    onSave={async () => {
+                      try {
+                        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/channels/dm/${msg.id}/save`, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                      } catch(e) { console.warn('Save DM failed', e); }
+                    }}
+                    onAvatarClick={() => setProfileUser({ id: msg.senderId, username: msg.sender.username, fullName: msg.sender.fullName, avatar: msg.sender.avatar })}
                     isSelected={selectedMessageIds.has(msg.id)}
                     isSelectionMode={isSelectionMode}
                     isEditing={editingMessageId === msg.id}
@@ -1285,6 +1325,54 @@ export default function DirectMessageArea({
           </svg>
           Copied!
         </div>
+      )}
+
+      {/* Clear History Confirmation */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowClearConfirm(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-80 mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white">Clear History</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">This cannot be undone</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">Are you sure you want to clear this chat history? All messages will be permanently deleted for everyone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowClearConfirm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">Cancel</button>
+              <button
+                onClick={async () => {
+                  setShowClearConfirm(false);
+                  try {
+                    await fetch(`${API_URL}/direct/${conversationId}/history`, {
+                      method: 'DELETE',
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    setMessages([]);
+                  } catch (e) {
+                    console.error('Clear history failed:', e);
+                  }
+                }}
+                className="flex-1 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors"
+              >Clear History</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Profile Modal */}
+      {profileUser && (
+        <UserProfileModal
+          user={profileUser}
+          isOnline={onlineUserIds?.has(profileUser.id) ?? false}
+          onClose={() => setProfileUser(null)}
+          isSelf={profileUser.id === user?.id}
+        />
       )}
 
       {activeThread && (

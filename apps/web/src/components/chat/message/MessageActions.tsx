@@ -21,6 +21,8 @@ interface MessageActionsProps {
   onPin?: () => void;
   /** Toggle select mode for this message */
   onSelect?: () => void;
+  /** Save/bookmark this message */
+  onSave?: () => void;
 }
 
 // 5 columns × 8 rows = 40 emojis
@@ -93,6 +95,7 @@ export function MessageActions({
   onForward,
   onPin,
   onSelect,
+  onSave,
 }: MessageActionsProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -261,6 +264,15 @@ export function MessageActions({
         <ActionButton onClick={onSelect} title="Select Message">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </ActionButton>
+      )}
+
+      {/* Save/Bookmark */}
+      {onSave && (
+        <ActionButton onClick={onSave} title="Save Message">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
           </svg>
         </ActionButton>
       )}

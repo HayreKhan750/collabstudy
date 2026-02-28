@@ -66,6 +66,10 @@ interface MessageBubbleProps {
   onPin?: () => void;
   /** Toggle select mode for this message */
   onSelect?: () => void;
+  /** Save/bookmark this message */
+  onSave?: () => void;
+  /** Avatar click handler to open user profile */
+  onAvatarClick?: () => void;
   /** Whether this message is currently selected in bulk selection mode */
   isSelected?: boolean;
   /** Whether selection mode is active for this message */
@@ -305,6 +309,8 @@ export function MessageBubble({
   onForward,
   onPin,
   onSelect,
+  onSave,
+  onAvatarClick,
   isSelected = false,
   isSelectionMode = false,
   readReceipts = {},
@@ -360,10 +366,13 @@ export function MessageBubble({
             <img
               src={message.user.avatar}
               alt={displayName}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-8 h-8 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+              onClick={onAvatarClick}
             />
           ) : (
-            <AvatarPlaceholder name={displayName} size={8} />
+            <div onClick={onAvatarClick} className={onAvatarClick ? 'cursor-pointer' : ''}>
+              <AvatarPlaceholder name={displayName} size={8} />
+            </div>
           )
         ) : (
           // Placeholder to keep alignment consistent
@@ -413,6 +422,7 @@ export function MessageBubble({
             onForward={onForward}
             onPin={onPin}
             onSelect={onSelect}
+            onSave={onSave}
           />
 
           {/* Inline edit mode */}

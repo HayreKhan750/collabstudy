@@ -15,6 +15,7 @@ import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { RelatedMessagesPanel } from './RelatedMessagesPanel';
 import ForwardModal from './ForwardModal';
 import { PinnedMessageBar } from './PinnedMessageBar';
+import UserProfileModal from './UserProfileModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -189,6 +190,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   // ── Forward modal state ───────────────────────────────────────────────────
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null);
   const [bulkForwardMessages, setBulkForwardMessages] = useState<Message[]>([]);
+
+  // ── User profile modal state ──────────────────────────────────────────────
+  const [profileUser, setProfileUser] = useState<{ id: string; username: string; fullName: string | null; avatar: string | null } | null>(null);
 
   // ── Bulk selection state ──────────────────────────────────────────────────
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -1555,6 +1559,17 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                     setShowPinnedBar(true);
                   }}
                   onSelect={() => handleSelectMessage(message.id)}
+                  onSave={async () => {
+                    try {
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/channels/${channelId}/messages/${message.id}/save`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      const data = await res.json();
+                      // Show a brief toast (reuse existing reaction error pattern)
+                    } catch(e) { console.warn('Save failed', e); }
+                  }}
+                  onAvatarClick={() => setProfileUser(message.user as any)}
                   isSelected={selectedMessageIds.has(message.id)}
                   isSelectionMode={isSelectionMode}
                 />
@@ -1767,6 +1782,16 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
             setRelatedSource(null);
           }
         }}
+      />
+    )}
+
+    {/* User Profile Modal */}
+    {profileUser && (
+      <UserProfileModal
+        user={profileUser}
+        isOnline={presence.get(profileUser.id) === 'ONLINE'}
+        onClose={() => setProfileUser(null)}
+        isSelf={profileUser.id === user?.id}
       />
     )}
   </div>

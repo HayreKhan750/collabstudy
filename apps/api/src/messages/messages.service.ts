@@ -564,4 +564,20 @@ export class MessagesService {
     // NOTE: emitMessageDeleted is called from MessagesController after this returns.
     return { success: true, messageId };
   }
+
+  /**
+   * POST /channels/:channelId/messages/:messageId/save
+   * Toggle save (bookmark) a message for the current user.
+   */
+  async saveMessage(userId: string, messageId: string): Promise<{ saved: boolean }> {
+    const existing = await this.prisma.savedMessage.findUnique({
+      where: { userId_messageId: { userId, messageId } },
+    });
+    if (existing) {
+      await this.prisma.savedMessage.delete({ where: { id: existing.id } });
+      return { saved: false };
+    }
+    await this.prisma.savedMessage.create({ data: { userId, messageId } });
+    return { saved: true };
+  }
 }

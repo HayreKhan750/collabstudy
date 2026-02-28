@@ -57,6 +57,7 @@ model User {
   directMessagesSent   DirectMessage[]
   directMessageReactions DirectMessageReaction[]
   channelMemberships   ChannelMember[]
+  savedMessages        SavedMessage[]
 
   @@index([email])
   @@index([username])
@@ -154,6 +155,10 @@ model Message {
 
   // Read receipts pointing at this message as the last-read
   readReceipts ReadReceipt[]
+
+  // Saved messages and polls
+  savedBy SavedMessage[]
+  poll    Poll?
 
   // Indexes for optimized queries
   @@index([channelId])
@@ -292,4 +297,43 @@ model DirectMessageReaction {
   @@unique([userId, messageId, emoji])
   @@index([messageId])
   @@map("direct_message_reactions")
+}
+
+model SavedMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  messageId String   @db.Uuid
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  @@unique([userId, messageId])
+  @@map("saved_messages")
+}
+
+model Poll {
+  id        String       @id @default(uuid()) @db.Uuid
+  messageId String       @unique @db.Uuid
+  question  String
+  isClosed  Boolean      @default(false)
+  options   PollOption[]
+  message   Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  @@map("polls")
+}
+
+model PollOption {
+  id      String     @id @default(uuid()) @db.Uuid
+  pollId  String     @db.Uuid
+  text    String
+  votes   PollVote[]
+  poll    Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  @@map("poll_options")
+}
+
+model PollVote {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @db.Uuid
+  pollOptionId String     @db.Uuid
+  option       PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+  @@unique([userId, pollOptionId])
+  @@map("poll_votes")
 }

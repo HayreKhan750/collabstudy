@@ -417,6 +417,24 @@ export class DirectService {
   }
 
   /**
+   * Clear all messages in a DM conversation for the current user.
+   * Deletes all DirectMessage records in the conversation.
+   */
+  async clearHistory(userId: string, conversationId: string): Promise<{ deleted: number }> {
+    // Verify the user is a participant
+    const participant = await this.prisma.directParticipant.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!participant) throw new ForbiddenException('Not a participant of this conversation');
+
+    const result = await this.prisma.directMessage.deleteMany({
+      where: { conversationId },
+    });
+
+    return { deleted: result.count };
+  }
+
+  /**
    * POST /direct/:id/messages/:messageId/reactions
    * Toggle an emoji reaction on a DM message. Broadcasts dm_reaction_updated via WebSocket.
    */

@@ -194,4 +194,16 @@ export class MessagesController {
     }
     return result;
   }
+
+  /**
+   * POST /channels/:channelId/messages/:messageId/save
+   * Toggle save (bookmark) a message for the current user.
+   */
+  @Post(':messageId/save')
+  saveMessage(
+    @Request() req: any,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.messagesService.saveMessage(req.user.userId, messageId);
+  }
 }
