@@ -26,7 +26,9 @@ export default function DashboardPage() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [loadingWorkspaces, setLoadingWorkspaces] = useState(true);
+  // Start false — loadWorkspaces sets it true when it begins fetching.
+  // Avoids infinite "Loading workspaces…" if token is not yet available.
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDiscoverModal, setShowDiscoverModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -276,7 +278,11 @@ export default function DashboardPage() {
   }, [token, user]);
 
   const loadWorkspaces = async () => {
-    if (!token) return;
+    // If no token yet, don't hang — set false so the UI renders
+    if (!token) {
+      setLoadingWorkspaces(false);
+      return;
+    }
     try {
       setLoadingWorkspaces(true);
       const data = await api.getWorkspaces(token);
