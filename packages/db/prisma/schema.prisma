@@ -146,7 +146,7 @@ model Message {
   replies Message[] @relation("ThreadReplies")
 
   // Forwarded messages relation
-  forwardedFrom Message? @relation("ForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedFrom   Message?  @relation("ForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
   forwardedCopies Message[] @relation("ForwardedMessages")
 
   // Implicit many-to-many for mentions
@@ -270,7 +270,7 @@ model DirectMessage {
   replies      DirectMessage[]    @relation("DmThreadReplies")
   reactions    DirectMessageReaction[]
 
-  forwardedFrom DirectMessage? @relation("DmForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedFrom   DirectMessage?  @relation("DmForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
   forwardedCopies DirectMessage[] @relation("DmForwardedMessages")
 
   @@index([conversationId, createdAt])
