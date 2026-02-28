@@ -1727,15 +1727,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     {/* Forward Modal */}
     {forwardMessage && (
       <ForwardModal
-        message={{
-          id: forwardMessage.id,
-          content: forwardMessage.content,
-          fileUrl: forwardMessage.fileUrl,
-          fileType: forwardMessage.fileType,
-          fileSize: forwardMessage.fileSize,
-          originalName: forwardMessage.originalName,
-          senderName: forwardMessage.user?.fullName || forwardMessage.user?.username || undefined,
-        }}
+        message={forwardMessage}
         workspaces={workspaces}
         onClose={() => setForwardMessage(null)}
       />

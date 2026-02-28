@@ -13,8 +13,6 @@ interface ForwardModalProps {
     fileType?: string | null;
     fileSize?: number | null;
     originalName?: string | null;
-    /** Original sender's display name — stored as forwardedFromUsername on the forwarded copy */
-    senderName?: string | null;
   };
   workspaces: { id: string; name: string }[];
   onClose: () => void;
@@ -106,7 +104,6 @@ export default function ForwardModal({ message, workspaces, onClose, onForwarded
           fileSize: message.fileSize || undefined,
           originalName: message.originalName || undefined,
           forwardedFromId: message.id,
-          forwardedFromUsername: message.senderName || undefined,
         }),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -134,7 +131,6 @@ export default function ForwardModal({ message, workspaces, onClose, onForwarded
           fileSize: message.fileSize || undefined,
           originalName: message.originalName || undefined,
           forwardedFromId: message.id,
-          forwardedFromUsername: message.senderName || undefined,
         }),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);

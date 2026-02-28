@@ -34,8 +34,4 @@ export class SendDirectMessageDto {
   @IsOptional()
   @IsString()
   forwardedFromId?: string;
-
-  @IsOptional()
-  @IsString()
-  forwardedFromUsername?: string;
 }

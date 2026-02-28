@@ -125,9 +125,8 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isEdited  Boolean  @default(false)
-  isPinned              Boolean  @default(false)
-  forwardedFromId       String?  @db.Uuid
-  forwardedFromUsername String?
+  isPinned  Boolean  @default(false)
+  forwardedFromId String? @db.Uuid
   fileUrl      String?  // public URL to the uploaded file
   fileType     String?  // MIME type, e.g. 'image/jpeg', 'application/pdf'
   fileSize     Int?     // file size in bytes
@@ -147,8 +146,8 @@ model Message {
   replies Message[] @relation("ThreadReplies")
 
   // Forwarded messages relation
-  // forwardedFromId is stored as plain metadata (no FK constraint) — cross-context
-  // forwards (channel→DM or DM→channel) would break a FK. Store as raw UUID only.
+  forwardedFrom Message? @relation("ForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedCopies Message[] @relation("ForwardedMessages")
 
   // Implicit many-to-many for mentions
   mentions User[] @relation("MessageMentions")
@@ -263,8 +262,7 @@ model DirectMessage {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   isEdited       Boolean  @default(false)
-  forwardedFromId       String? @db.Uuid
-  forwardedFromUsername String?
+  forwardedFromId String? @db.Uuid
 
   sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
   conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -272,9 +270,8 @@ model DirectMessage {
   replies      DirectMessage[]    @relation("DmThreadReplies")
   reactions    DirectMessageReaction[]
 
-  // forwardedFromId is stored as plain metadata (no FK constraint) so it can
-  // reference any message across channels or DMs without constraint failures.
-  // We do NOT add a @relation here — just store the UUID for display purposes.
+  forwardedFrom DirectMessage? @relation("DmForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedCopies DirectMessage[] @relation("DmForwardedMessages")
 
   @@index([conversationId, createdAt])
   @@index([conversationId, parentId])

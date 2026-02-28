@@ -77,7 +77,6 @@ export class MessagesService {
         ...(createMessageDto.fileSize && { fileSize: createMessageDto.fileSize }),
         ...(createMessageDto.originalName && { originalName: createMessageDto.originalName }),
         ...(createMessageDto.forwardedFromId && { forwardedFromId: createMessageDto.forwardedFromId }),
-        ...(createMessageDto.forwardedFromUsername && { forwardedFromUsername: createMessageDto.forwardedFromUsername }),
       },
       include: {
         user: {
@@ -246,7 +245,9 @@ export class MessagesService {
         user: { select: { id: true, username: true, fullName: true, avatar: true } },
         reactions: true,
         _count: { select: { replies: true } },
-        // forwardedFrom relation removed — forwardedFromUsername stored as plain text field
+        forwardedFrom: {
+          select: { id: true, content: true, user: { select: { id: true, username: true, fullName: true } } },
+        },
       },
     });
 
