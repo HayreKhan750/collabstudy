@@ -185,8 +185,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   // ── Phase 11.3: Related Messages panel state ─────────────────────────────
   const [relatedSource, setRelatedSource] = useState<Message | null>(null);
 
-  // ── Copy toast state ──────────────────────────────────────────────────────
+  // ── Copy / Save toast state ───────────────────────────────────────────────
   const [copyToast, setCopyToast] = useState(false);
+  const [saveToast, setSaveToast] = useState(false);
 
   // ── Forward modal state ───────────────────────────────────────────────────
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null);
@@ -1605,14 +1606,19 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   }}
                   onSelect={() => handleSelectMessage(message.id)}
                   onSave={async () => {
+                    if (!token) return;
                     try {
-                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/channels/${channelId}/messages/${message.id}/save`, {
-                        method: 'POST',
-                        headers: { Authorization: `Bearer ${token}` },
+                      await api.sendSavedMessage(token, {
+                        content: message.content ?? undefined,
+                        fileUrl: message.fileUrl ?? undefined,
+                        fileType: message.fileType ?? undefined,
+                        fileSize: message.fileSize ?? undefined,
+                        originalName: message.originalName ?? undefined,
+                        forwardedFromId: message.id,
                       });
-                      const data = await res.json();
-                      // Show a brief toast (reuse existing reaction error pattern)
-                    } catch(e) { console.warn('Save failed', e); }
+                      setSaveToast(true);
+                      setTimeout(() => setSaveToast(false), 2000);
+                    } catch (e) { console.warn('Save failed', e); }
                   }}
                   onAvatarClick={() => setProfileUser(message.user as any)}
                   isSelected={selectedMessageIds.has(message.id)}
@@ -1809,6 +1815,16 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     </div>
 
     {/* Phase 11.3: Related Messages side panel — slides in from the right */}
+    {/* ── Save toast ────────────────────────────────────────────────────── */}
+    {saveToast && (
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-lg shadow-indigo-500/30 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M6.75 3A2.25 2.25 0 0 0 4.5 5.25v15.75l7.5-4.5 7.5 4.5V5.25A2.25 2.25 0 0 0 17.25 3H6.75Z" />
+        </svg>
+        Saved to Private Cloud!
+      </div>
+    )}
+
     {/* ── Copy toast ────────────────────────────────────────────────────── */}
     {copyToast && (
       <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-fade-in pointer-events-none">

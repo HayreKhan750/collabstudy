@@ -340,7 +340,8 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Message list ───────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto py-4">
+        <div className="max-w-3xl mx-auto w-full px-4 space-y-1">
         {nextCursor && (
           <div className="flex justify-center mb-4">
             <button
@@ -472,10 +473,12 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
         )}
 
         <div ref={bottomRef} />
+        </div>{/* end max-w-3xl */}
       </div>
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3">
+        <div className="max-w-3xl mx-auto w-full">
         <div className="flex items-end gap-2 bg-slate-100 dark:bg-white/5 rounded-2xl px-3 py-2">
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -522,6 +525,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
         <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-1.5">
           Only visible to you · Drop files to attach
         </p>
+        </div>{/* end max-w-3xl */}
       </div>
 
       {/* ── Media viewer ───────────────────────────────────────────────────── */}

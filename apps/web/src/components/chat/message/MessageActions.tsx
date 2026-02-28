@@ -67,11 +67,12 @@ function ActionButton({
           onClick();
         }}
         className={`
-          p-1.5 rounded-md transition-colors duration-150
+          p-1.5 rounded-md transition-all duration-150
+          active:scale-90 active:opacity-70
           ${
             danger
-              ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
-              : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+              ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:bg-red-100 dark:active:bg-red-500/20'
+              : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 active:bg-slate-200 dark:active:bg-white/20'
           }
         `}
       >
@@ -98,6 +99,7 @@ export function MessageActions({
   onSave,
 }: MessageActionsProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   // Close picker on outside click
@@ -268,13 +270,30 @@ export function MessageActions({
         </ActionButton>
       )}
 
-      {/* Save/Bookmark */}
+      {/* Save/Bookmark — with flash feedback */}
       {onSave && (
-        <ActionButton onClick={onSave} title="Save Message">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-          </svg>
-        </ActionButton>
+        <Tooltip label={savedFlash ? 'Saved!' : 'Save Message'}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (savedFlash) return;
+              setSavedFlash(true);
+              setTimeout(() => setSavedFlash(false), 1800);
+              onSave();
+            }}
+            className={`
+              p-1.5 rounded-md transition-all duration-150 active:scale-90 active:opacity-70
+              ${savedFlash
+                ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-500/15'
+                : 'text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 active:bg-indigo-100 dark:active:bg-indigo-500/20'
+              }
+            `}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill={savedFlash ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+        </Tooltip>
       )}
 
       {/* Delete (own messages only) */}

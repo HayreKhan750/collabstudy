@@ -115,6 +115,7 @@ export default function DirectMessageArea({
   // ── Delete confirm state ─────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
   const [forwardMessage, setForwardMessage] = useState<DirectMessage | null>(null);
+  const [saveToast, setSaveToast] = useState(false);
   const [bulkForwardMessages, setBulkForwardMessages] = useState<any[]>([]);
 
   // ── Copy toast state ──────────────────────────────────────────────────────
@@ -1150,12 +1151,19 @@ export default function DirectMessageArea({
                     }}
                     onSelect={() => handleSelectMessage(msg.id)}
                     onSave={async () => {
+                      if (!token) return;
                       try {
-                        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/channels/dm/${msg.id}/save`, {
-                          method: 'POST',
-                          headers: { Authorization: `Bearer ${token}` },
+                        await api.sendSavedMessage(token, {
+                          content: msg.content ?? undefined,
+                          fileUrl: msg.fileUrl ?? undefined,
+                          fileType: msg.fileType ?? undefined,
+                          fileSize: msg.fileSize ?? undefined,
+                          originalName: msg.originalName ?? undefined,
+                          forwardedFromId: msg.id,
                         });
-                      } catch(e) { console.warn('Save DM failed', e); }
+                        setSaveToast(true);
+                        setTimeout(() => setSaveToast(false), 2000);
+                      } catch (e) { console.warn('Save DM failed', e); }
                     }}
                     onAvatarClick={() => setProfileUser({ id: msg.senderId, username: msg.sender.username, fullName: msg.sender.fullName, avatar: msg.sender.avatar })}
                     isSelected={selectedMessageIds.has(msg.id)}
@@ -1356,6 +1364,16 @@ export default function DirectMessageArea({
       )}
 
       {/* ── Thread Panel ────────────────────────────────────────────────── */}
+      {/* Save toast */}
+      {saveToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-lg shadow-indigo-500/30">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6.75 3A2.25 2.25 0 0 0 4.5 5.25v15.75l7.5-4.5 7.5 4.5V5.25A2.25 2.25 0 0 0 17.25 3H6.75Z" />
+          </svg>
+          Saved to Private Cloud!
+        </div>
+      )}
+
       {/* Copy toast */}
       {copyToast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 pointer-events-none">
