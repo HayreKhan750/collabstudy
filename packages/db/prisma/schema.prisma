@@ -39,6 +39,7 @@ model User {
   username     String     @unique
   passwordHash String
   fullName     String?
+  googleId     String?    @unique
   avatar       String?
   status       UserStatus @default(OFFLINE)
   createdAt    DateTime   @default(now())

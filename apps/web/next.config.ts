@@ -11,6 +11,22 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: require('path').resolve(__dirname, '../..'),
   },
+
+  // Allow Next.js <Image> and CSP to load avatars from Google's CDN
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.googleusercontent.com',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 // Wrap with Sentry's Next.js plugin for build-time source map upload

@@ -157,12 +157,27 @@ export class AuthService {
   }): Promise<{ user: any; token: string }> {
     const { email, fullName, avatar, googleId } = data;
 
-    // Try to find existing user by email
-    let user = await this.prisma.user.findUnique({ where: { email } });
+    // 1. Try to find by googleId first (survives email changes)
+    let user = await this.prisma.user.findUnique({ where: { googleId } });
 
+    // 2. Fallback: find by email (handles existing accounts before OAuth)
     if (!user) {
-      // Create a new user — no password needed for OAuth users
-      // Generate a unique username from email prefix
+      user = await this.prisma.user.findUnique({ where: { email } });
+    }
+
+    if (user) {
+      // UPSERT: always refresh avatar + link googleId on every login
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          ...(user.googleId !== googleId && { googleId }),
+          // Refresh avatar on every login — eliminates stale Google CDN URLs
+          ...(avatar && { avatar }),
+          ...(fullName && !user.fullName && { fullName }),
+        },
+      });
+    } else {
+      // Create new OAuth user — no password needed
       const baseUsername = email.split('@')[0].replace(/[^a-z0-9_]/gi, '_').toLowerCase();
       let username = baseUsername;
       let suffix = 1;
@@ -176,18 +191,11 @@ export class AuthService {
           username,
           fullName: fullName ?? null,
           avatar: avatar ?? null,
-          passwordHash: '',   // OAuth users have no password
+          passwordHash: '',
+          googleId,
           status: UserStatus.ONLINE,
         },
       });
-    } else {
-      // Update avatar if changed
-      if (avatar && user.avatar !== avatar) {
-        user = await this.prisma.user.update({
-          where: { id: user.id },
-          data: { avatar },
-        });
-      }
     }
 
     const token = this.generateToken(user.id, user.email);
