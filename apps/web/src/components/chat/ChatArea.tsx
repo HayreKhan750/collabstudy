@@ -14,6 +14,7 @@ import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { RelatedMessagesPanel } from './RelatedMessagesPanel';
 import ForwardModal from './ForwardModal';
+import { PinnedMessageBar } from './PinnedMessageBar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -188,8 +189,13 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   // ── Forward modal state ───────────────────────────────────────────────────
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null);
 
-  // ── Selected messages state ───────────────────────────────────────────────
+  // ── Bulk selection state ──────────────────────────────────────────────────
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+
+  // ── Pinned message state ──────────────────────────────────────────────────
+  const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
+  const [showPinnedBar, setShowPinnedBar] = useState(true);
 
   // ── Pinned messages ───────────────────────────────────────────────────────
   const handlePinMessage = useCallback(async (messageId: string) => {
@@ -211,6 +217,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   }, []);
 
   const handleSelectMessage = useCallback((messageId: string) => {
+    setIsSelectionMode(true);
     setSelectedMessageIds(prev => {
       const next = new Set(prev);
       if (next.has(messageId)) next.delete(messageId);
@@ -218,6 +225,23 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       return next;
     });
   }, []);
+
+  const handleCancelSelection = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
+  }, []);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (!token) return;
+    for (const id of selectedMessageIds) {
+      await fetch(`${API_URL}/channels/${channelId}/messages/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
+    setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
+    handleCancelSelection();
+  }, [selectedMessageIds, channelId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── AI Summary modal state ───────────────────────────────────────────────
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -1414,6 +1438,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       )}
 
       {/* Messages */}
+      {/* Pinned message bar */}
+      {pinnedMessage && showPinnedBar && (
+        <PinnedMessageBar
+          content={pinnedMessage.content ?? '[attachment]'}
+          onClick={() => {
+            const el = document.getElementById(`msg-${pinnedMessage.id}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          onClose={() => setShowPinnedBar(false)}
+        />
+      )}
+
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-6 pb-2 space-y-1">
 
         {/* Load older messages button — only shown when more history exists */}
@@ -1500,8 +1536,13 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   onFindSimilar={message.content ? () => setRelatedSource(message) : undefined}
                   onCopy={message.content ? () => handleCopyMessage(message.content!) : undefined}
                   onForward={message.content ? () => setForwardMessage(message) : undefined}
-                  onPin={() => handlePinMessage(message.id)}
+                  onPin={() => {
+                    handlePinMessage(message.id);
+                    setPinnedMessage((prev) => prev?.id === message.id ? null : message);
+                    setShowPinnedBar(true);
+                  }}
                   onSelect={() => handleSelectMessage(message.id)}
+                  isSelected={selectedMessageIds.has(message.id)}
                 />
               </div>
             );
@@ -1538,7 +1579,30 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         <TypingIndicator typingUsers={typingUsers} />
       </div>
 
+      {/* Bulk Selection Action Bar */}
+      {isSelectionMode && (
+        <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3 flex items-center gap-3">
+          <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">{selectedMessageIds.size} selected</span>
+          <button
+            onClick={() => {
+              const firstId = Array.from(selectedMessageIds)[0];
+              const msg = messages.find(m => m.id === firstId);
+              if (msg) { setForwardMessage(msg); handleCancelSelection(); }
+            }}
+            disabled={selectedMessageIds.size === 0}
+            className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+          >Forward</button>
+          <button
+            onClick={handleDeleteSelected}
+            disabled={selectedMessageIds.size === 0}
+            className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+          >Delete</button>
+          <button onClick={handleCancelSelection} className="ml-auto px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
+        </div>
+      )}
+
       {/* Input */}
+      {!isSelectionMode && (
       <div className="flex-shrink-0 px-4 pb-4">
         {sendError && <p className="text-red-400 text-xs mb-1">{sendError}</p>}
         {reactionError && <p className="text-red-400 text-xs mb-1">{reactionError}</p>}
@@ -1613,6 +1677,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           </div>
         </div>
       </div>
+      )} {/* end !isSelectionMode */}
 
       {/* AI Summary Modal */}
       <SummaryModal

@@ -66,6 +66,8 @@ interface MessageBubbleProps {
   onPin?: () => void;
   /** Toggle select mode for this message */
   onSelect?: () => void;
+  /** Whether this message is currently selected in bulk selection mode */
+  isSelected?: boolean;
   /**
    * Read receipts: map of userId → messageId they last read.
    * Used to render "seen" double-tick on outbound messages.
@@ -301,6 +303,7 @@ export function MessageBubble({
   onForward,
   onPin,
   onSelect,
+  isSelected = false,
   readReceipts = {},
 }: MessageBubbleProps) {
   const displayName = message.user.fullName || message.user.username;
@@ -341,6 +344,7 @@ export function MessageBubble({
         ${isOwnMessage ? 'flex-row-reverse' : ''}
         ${isFirstInGroup ? 'mt-3' : 'mt-0.5'}
         ${isHighlighted ? 'bg-yellow-500/10 rounded-lg -mx-2 px-2' : ''}
+        ${isSelected ? 'bg-blue-500/10 rounded-lg -mx-2 px-2' : ''}
         transition-colors duration-700
       `}
     >
@@ -476,6 +480,16 @@ export function MessageBubble({
                     `}
                   />
                 </span>
+              )}
+
+              {/* Telegram-style Forwarded tag */}
+              {(message as any).forwardedFrom && (
+                <div className="flex items-center gap-1.5 mb-1 pb-1 border-b border-current/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-xs font-semibold opacity-80">Forwarded from {(message as any).forwardedFrom}</span>
+                </div>
               )}
 
               {/* Text content */}

@@ -11,6 +11,8 @@ import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import ForwardModal from './ForwardModal';
+import { PinnedMessageBar } from './PinnedMessageBar';
 import type { Message } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -103,9 +105,21 @@ export default function DirectMessageArea({
 
   // ── Delete confirm state ─────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
+  const [forwardMessage, setForwardMessage] = useState<DirectMessage | null>(null);
 
   // ── Copy toast state ──────────────────────────────────────────────────────
   const [copyToast, setCopyToast] = useState(false);
+
+  // ── Bulk selection state ─────────────────────────────────────────────────
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+
+  // ── Inline reply state ───────────────────────────────────────────────────
+  const [replyingTo, setReplyingTo] = useState<DirectMessage | null>(null);
+
+  // ── Pinned message state ─────────────────────────────────────────────────
+  const [pinnedMessage, setPinnedMessage] = useState<DirectMessage | null>(null);
+  const [showPinnedBar, setShowPinnedBar] = useState(true);
 
   const handleCopyMessage = useCallback((content: string) => {
     navigator.clipboard.writeText(content).catch(() => {});
@@ -746,6 +760,61 @@ export default function DirectMessageArea({
     }
   };
 
+  const handleSelectMessage = useCallback((messageId: string) => {
+    setIsSelectionMode(true);
+    setSelectedMessageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(messageId)) next.delete(messageId);
+      else next.add(messageId);
+      return next;
+    });
+  }, []);
+
+  const handleCancelSelection = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
+  }, []);
+
+  const handleForwardSelected = useCallback(() => {
+    // Forward first selected message
+    const firstId = Array.from(selectedMessageIds)[0];
+    const msg = messages.find(m => m.id === firstId);
+    if (msg) {
+      setForwardMessage(msg as any);
+      handleCancelSelection();
+    }
+  }, [selectedMessageIds, messages]);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (!token) return;
+    for (const id of selectedMessageIds) {
+      await fetch(`${API_URL}/direct/${conversationId}/messages/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
+    setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
+    handleCancelSelection();
+  }, [selectedMessageIds, conversationId, token]);
+
+  const handlePinMessage = useCallback(async (messageId: string) => {
+    if (!token) return;
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg) return;
+    // Toggle: if already pinned, unpin; else pin
+    const currentlyPinned = pinnedMessage?.id === messageId;
+    try {
+      await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}/pin`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPinnedMessage(currentlyPinned ? null : msg);
+      setShowPinnedBar(!currentlyPinned);
+    } catch (err) {
+      console.warn('[DM] pin error:', err);
+    }
+  }, [conversationId, token, messages, pinnedMessage]);
+
   const displayName = recipient.fullName || recipient.username;
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -874,6 +943,18 @@ export default function DirectMessageArea({
         </div>
       </div>
 
+      {/* Pinned message bar */}
+      {pinnedMessage && showPinnedBar && (
+        <PinnedMessageBar
+          content={pinnedMessage.content ?? '[attachment]'}
+          onClick={() => {
+            const el = document.getElementById(`dm-${pinnedMessage.id}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          onClose={() => setShowPinnedBar(false)}
+        />
+      )}
+
       {/* Messages + scroll FAB wrapper */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
         <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-6 pb-2 space-y-1">
@@ -994,6 +1075,11 @@ export default function DirectMessageArea({
                     }}
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
+                    onCopy={msg.content ? () => handleCopyMessage(msg.content!) : undefined}
+                    onForward={() => setForwardMessage(msg)}
+                    onPin={() => handlePinMessage(msg.id)}
+                    onSelect={() => handleSelectMessage(msg.id)}
+                    isSelected={selectedMessageIds.has(msg.id)}
                     isEditing={editingMessageId === msg.id}
                     editContent={editContent}
                     editError={editError}
@@ -1001,7 +1087,6 @@ export default function DirectMessageArea({
                     onEditChange={setEditContent}
                     onEditSave={() => handleSaveEdit(msg.id)}
                     onEditCancel={handleCancelEdit}
-                    onCopy={msg.content ? () => handleCopyMessage(msg.content!) : undefined}
                   />
                 </div>
               </div>
@@ -1080,85 +1165,104 @@ export default function DirectMessageArea({
         </div>
       )}
 
-      {/* Input */}
-      <div className="px-4 pb-4 flex-shrink-0">
-        <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
-          <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingFile}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors disabled:opacity-50 flex-shrink-0"
-            title="Attach file"
-          >
-            {uploadingFile ? (
-              <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
+      {/* Input or Selection Mode */}
+      {isSelectionMode ? (
+        <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3 flex items-center gap-3">
+          <span className="text-sm text-slate-600 dark:text-slate-400">{selectedMessageIds.size} selected</span>
+          <button onClick={handleForwardSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">Forward</button>
+          <button onClick={handleDeleteSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors">Delete</button>
+          <button onClick={handleCancelSelection} className="ml-auto px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
+        </div>
+      ) : (
+        <div className="px-4 pb-4 flex-shrink-0">
+          <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
+            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors disabled:opacity-50 flex-shrink-0"
+              title="Attach file"
+            >
+              {uploadingFile ? (
+                <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-            ) : (
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                  />
+                </svg>
+              )}
+            </button>
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-grow: reset then expand to scrollHeight
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (input.trim() || pendingFile) handleSend();
+                }
+                // Shift+Enter: browser inserts newline naturally — do nothing
+              }}
+              placeholder={`Message ${displayName}`}
+              className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none resize-none leading-relaxed"
+              style={{ minHeight: '24px', maxHeight: '120px', overflowY: 'auto' }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={sending || (!input.trim() && !pendingFile)}
+              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0"
+              aria-label="Send message"
+              title="Send message"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
+                className="h-5 w-5 text-white"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+                fill="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                />
+                <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
               </svg>
-            )}
-          </button>
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              // Auto-grow: reset then expand to scrollHeight
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (input.trim() || pendingFile) handleSend();
-              }
-              // Shift+Enter: browser inserts newline naturally — do nothing
-            }}
-            placeholder={`Message ${displayName}`}
-            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none resize-none leading-relaxed"
-            style={{ minHeight: '24px', maxHeight: '120px', overflowY: 'auto' }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={sending || (!input.trim() && !pendingFile)}
-            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0"
-            aria-label="Send message"
-            title="Send message"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 text-white"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-            </svg>
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
+
+      {/* Forward Modal */}
+      {forwardMessage && (
+        <ForwardModal
+          messageContent={forwardMessage.content ?? ''}
+          messageId={forwardMessage.id}
+          workspaces={[]}
+          onClose={() => setForwardMessage(null)}
+        />
+      )}
 
       {/* ── Thread Panel ────────────────────────────────────────────────── */}
       {/* Copy toast */}
