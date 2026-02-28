@@ -344,18 +344,19 @@ export default function DirectMessageArea({
 
         if (msg.senderId === user?.id) {
           // This is our own message echoed back from server.
-          // Replace any optimistic placeholder (id starts with 'optimistic-') that
-          // matches by content + conversationId — avoids double-render.
-          const optimisticIdx = prev.findIndex(
-            (m) => m.id.startsWith('optimistic-') && m.content === msg.content && m.senderId === user.id
+          // Find and replace the temp- optimistic placeholder by matching content.
+          const tempIdx = prev.findIndex(
+            (m) => m.id.startsWith('temp-') && m.content === msg.content && m.senderId === user.id
           );
-          if (optimisticIdx !== -1) {
+          if (tempIdx !== -1) {
+            // Replace optimistic with real server message
             const next = [...prev];
-            next[optimisticIdx] = { ...msg, reactions: msg.reactions ?? [] };
+            next[tempIdx] = { ...msg, reactions: msg.reactions ?? [] };
             return next;
           }
-          // No optimistic found — add normally (edge case)
-          return [...prev, { ...msg, reactions: msg.reactions ?? [] }];
+          // No temp placeholder found — this is a duplicate echo, skip it
+          // (already replaced by an earlier WS event)
+          return prev;
         }
 
         // Message from the other participant
@@ -484,7 +485,7 @@ export default function DirectMessageArea({
     setSending(true);
 
     // ── Optimistic add: show message instantly before server confirms ────────
-    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticId = `temp-${Date.now()}`;
     const optimisticMsg: DirectMessage = {
       id: optimisticId,
       content: content || null,
@@ -521,18 +522,14 @@ export default function DirectMessageArea({
           originalName: file?.name,
         }),
       });
-      if (res.ok) {
-        const saved = await res.json();
-        // Replace optimistic message with real one from server
-        setMessages((prev) =>
-          prev.map((m) => (m.id === optimisticId ? { ...saved, reactions: saved.reactions ?? [] } : m))
-        );
-      } else {
+      if (!res.ok) {
         // Remove optimistic on failure and restore input
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         if (content) setInput(content);
         if (file) setPendingFile(file);
       }
+      // On success: the WS echo (new_direct_message) will replace the temp- placeholder
+      // with the real server message. We do NOT update state here to avoid double render.
     } catch (e) {
       console.warn('[DM] send error:', e);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
@@ -662,7 +659,7 @@ export default function DirectMessageArea({
             ...m,
             reactions: [
               ...withoutMine,
-              { id: `optimistic-${Date.now()}`, emoji, userId: user.id, user: { id: user.id, username: user.username ?? '' } },
+              { id: `temp-reaction-${Date.now()}`, emoji, userId: user.id, user: { id: user.id, username: user.username ?? '' } },
             ],
           };
         })
