@@ -52,7 +52,7 @@ function Alert({ type, msg }: { type: 'success' | 'error'; msg: string }) {
 }
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
-function ProfileTab({ token }: { token: string }) {
+function ProfileTab({ token, onSaved }: { token: string; onSaved?: () => void }) {
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [avatar, setAvatar] = useState('');
@@ -102,6 +102,7 @@ function ProfileTab({ token }: { token: string }) {
     try {
       await api.updateProfile(token, { fullName, username, avatarUrl: avatar || undefined });
       setSuccess('Profile updated successfully!');
+      onSaved?.(); // Refresh AuthContext so sidebar avatar updates immediately
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
@@ -294,7 +295,7 @@ interface SettingsPanelProps {
 }
 
 export default function SettingsPanel({ onClose }: SettingsPanelProps) {
-  const { token } = useAuth();
+  const { token, refreshUser } = useAuth();
   const [tab, setTab] = useState<Tab>('profile');
 
   if (!token) return null;
@@ -344,7 +345,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
 
           {/* Content */}
           <div className="flex-1 min-w-0 bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 rounded-2xl p-8">
-            {tab === 'profile' && <ProfileTab token={token} />}
+            {tab === 'profile' && <ProfileTab token={token} onSaved={refreshUser} />}
             {tab === 'account' && <AccountTab token={token} />}
             {tab === 'appearance' && <AppearanceTab />}
           </div>

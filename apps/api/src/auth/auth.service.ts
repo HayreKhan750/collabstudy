@@ -166,13 +166,18 @@ export class AuthService {
     }
 
     if (user) {
-      // UPSERT: always refresh avatar + link googleId on every login
+      // UPSERT: always refresh Google avatar URL, but never overwrite a custom (non-Google) avatar
+      // - If user has no avatar: set the Google one
+      // - If user has a Google avatar (lh*.googleusercontent.com): refresh it (prevents stale CDN URLs)
+      // - If user has a custom avatar (uploaded via Settings): preserve it
+      const isCurrentAvatarGoogle = user.avatar?.includes('googleusercontent.com') ?? false;
+      const shouldUpdateAvatar = avatar && (!user.avatar || isCurrentAvatarGoogle);
+
       user = await this.prisma.user.update({
         where: { id: user.id },
         data: {
           ...(user.googleId !== googleId && { googleId }),
-          // Refresh avatar on every login — eliminates stale Google CDN URLs
-          ...(avatar && { avatar }),
+          ...(shouldUpdateAvatar && { avatar }),
           ...(fullName && !user.fullName && { fullName }),
         },
       });

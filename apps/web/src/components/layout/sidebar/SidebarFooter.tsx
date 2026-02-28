@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WorkspaceRole } from '@/lib/api';
 import { SidebarTooltip } from './SidebarTooltip';
@@ -15,6 +16,7 @@ interface SidebarFooterProps {
 
 export function SidebarFooter({ username, avatar, userRole, collapsed, onOpenSettings }: SidebarFooterProps) {
   const router = useRouter();
+  const [imgError, setImgError] = useState(false);
   const initial = username ? username.charAt(0).toUpperCase() : 'U';
 
   const handleSettingsClick = () => {
@@ -28,12 +30,13 @@ export function SidebarFooter({ username, avatar, userRole, collapsed, onOpenSet
   /** Renders user avatar: real photo if available, gradient initial otherwise. */
   const Avatar = ({ size }: { size: 'sm' | 'md' }) => {
     const dim = size === 'sm' ? 'w-9 h-9' : 'w-8 h-8';
-    if (avatar) {
+    if (avatar && !imgError) {
       return (
         <img
           src={avatar}
           alt={username || 'User'}
           className={`${dim} rounded-xl object-cover shadow-lg ring-1 ring-white/10`}
+          onError={() => setImgError(true)}
         />
       );
     }

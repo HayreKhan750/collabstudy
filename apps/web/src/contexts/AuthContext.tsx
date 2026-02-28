@@ -10,6 +10,8 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   login: (data: LoginData) => Promise<void>;
   logout: () => Promise<void>;
+  /** Re-fetches the current user profile from the server and updates the context. */
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -80,6 +82,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /** Re-fetch the current user from the server and update context state. */
+  const refreshUser = async () => {
+    const t = token || localStorage.getItem('auth_token');
+    if (!t) return;
+    try {
+      const updated = await api.getProfile(t);
+      setUser(updated);
+    } catch (e) {
+      console.error('refreshUser failed:', e);
+    }
+  };
+
   const value = {
     user,
     token,
@@ -87,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     login,
     logout,
+    refreshUser,
     isAuthenticated: !!user && !!token,
   };
 
