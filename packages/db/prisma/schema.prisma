@@ -125,8 +125,9 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isEdited  Boolean  @default(false)
-  isPinned  Boolean  @default(false)
-  forwardedFromId String? @db.Uuid
+  isPinned              Boolean  @default(false)
+  forwardedFromId       String?  @db.Uuid
+  forwardedFromUsername String?
   fileUrl      String?  // public URL to the uploaded file
   fileType     String?  // MIME type, e.g. 'image/jpeg', 'application/pdf'
   fileSize     Int?     // file size in bytes
@@ -146,8 +147,8 @@ model Message {
   replies Message[] @relation("ThreadReplies")
 
   // Forwarded messages relation
-  forwardedFrom Message? @relation("ForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
-  forwardedCopies Message[] @relation("ForwardedMessages")
+  // forwardedFromId is stored as plain metadata (no FK constraint) — cross-context
+  // forwards (channel→DM or DM→channel) would break a FK. Store as raw UUID only.
 
   // Implicit many-to-many for mentions
   mentions User[] @relation("MessageMentions")
@@ -262,7 +263,8 @@ model DirectMessage {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   isEdited       Boolean  @default(false)
-  forwardedFromId String? @db.Uuid
+  forwardedFromId       String? @db.Uuid
+  forwardedFromUsername String?
 
   sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
   conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -270,8 +272,9 @@ model DirectMessage {
   replies      DirectMessage[]    @relation("DmThreadReplies")
   reactions    DirectMessageReaction[]
 
-  forwardedFrom DirectMessage? @relation("DmForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
-  forwardedCopies DirectMessage[] @relation("DmForwardedMessages")
+  // forwardedFromId is stored as plain metadata (no FK constraint) so it can
+  // reference any message across channels or DMs without constraint failures.
+  // We do NOT add a @relation here — just store the UUID for display purposes.
 
   @@index([conversationId, createdAt])
   @@index([conversationId, parentId])

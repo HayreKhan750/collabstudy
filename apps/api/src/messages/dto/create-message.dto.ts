@@ -37,4 +37,8 @@ export class CreateMessageDto {
   @IsOptional()
   @IsString()
   forwardedFromId?: string;
+
+  @IsOptional()
+  @IsString()
+  forwardedFromUsername?: string;
 }

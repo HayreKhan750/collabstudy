@@ -210,9 +210,7 @@ export class DirectService {
             user: { select: { id: true, username: true, fullName: true, avatar: true } },
           },
         },
-        forwardedFrom: {
-          select: { id: true, content: true, sender: { select: { id: true, username: true, fullName: true } } },
-        },
+        // forwardedFrom relation removed — forwardedFromUsername stored as plain text field
       },
     });
 
@@ -276,9 +274,9 @@ export class DirectService {
         originalName: dto.originalName,
         senderId,
         conversationId,
-        // parentId: thread reply support (null for main chat messages)
         ...(dto.parentId ? { parentId: dto.parentId } : {}),
         ...(dto.forwardedFromId ? { forwardedFromId: dto.forwardedFromId } : {}),
+        ...(dto.forwardedFromUsername ? { forwardedFromUsername: dto.forwardedFromUsername } : {}),
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
