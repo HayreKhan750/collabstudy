@@ -87,6 +87,13 @@ export class MessagesService {
           select: { id: true, username: true, fullName: true, avatar: true },
         },
         _count: { select: { replies: true } },
+        forwardedFrom: {
+          select: {
+            id: true,
+            content: true,
+            user: { select: { id: true, username: true, fullName: true } },
+          },
+        },
       },
     });
 

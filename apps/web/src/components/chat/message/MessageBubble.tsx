@@ -487,10 +487,22 @@ export function MessageBubble({
                 </span>
               )}
 
-              {/* Telegram-style Forwarded tag */}
-              {(message as any).forwardedFrom && (() => {
+              {/* Telegram-style Forwarded tag — renders whenever forwardedFromId exists */}
+              {((message as any).forwardedFromId || (message as any).forwardedFrom) && (() => {
                 const fwd = (message as any).forwardedFrom;
-                const senderName = fwd?.user?.fullName || fwd?.user?.username || fwd?.sender?.fullName || fwd?.sender?.username || 'Unknown';
+                // Debug: verify data arriving from server
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log('[MessageBubble] Forward Data:', {
+                    forwardedFromId: (message as any).forwardedFromId,
+                    forwardedFrom: fwd,
+                  });
+                }
+                const senderName =
+                  fwd?.user?.fullName ||
+                  fwd?.user?.username ||
+                  fwd?.sender?.fullName ||
+                  fwd?.sender?.username ||
+                  'Unknown User';
                 return (
                   <div className="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-blue-400/30">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -108,6 +108,13 @@ export interface Message {
   fileType?: string | null;
   fileSize?: number | null;
   originalName?: string | null;
+  forwardedFromId?: string | null;
+  forwardedFrom?: {
+    id: string;
+    content: string | null;
+    user?: { id: string; username: string; fullName: string | null };
+    sender?: { id: string; username: string; fullName: string | null };
+  } | null;
 }
 
 export interface DirectConversation {

@@ -46,6 +46,13 @@ interface DirectMessage {
   isEdited: boolean;
   sender: DMUser;
   reactions?: DMReaction[];
+  forwardedFromId?: string | null;
+  forwardedFrom?: {
+    id: string;
+    content: string | null;
+    sender?: { id: string; username: string; fullName: string | null };
+    user?: { id: string; username: string; fullName: string | null };
+  } | null;
 }
 
 interface DirectMessageAreaProps {

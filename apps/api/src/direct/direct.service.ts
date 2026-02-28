@@ -282,6 +282,13 @@ export class DirectService {
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
+        forwardedFrom: {
+          select: {
+            id: true,
+            content: true,
+            sender: { select: { id: true, username: true, fullName: true } },
+          },
+        },
       },
     });
 
