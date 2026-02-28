@@ -536,7 +536,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         if (!isNewMessage) {
           // Initial load: jump to unread divider or bottom
           if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-            unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+            unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
           } else {
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
           }
@@ -692,6 +692,10 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           }
           return [...prev, { ...message, reactions: message.reactions ?? [] }];
         });
+        // Auto-scroll sender to bottom when their own echo arrives
+        if (message.user?.id === user?.id) {
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+        }
         // Only notify for messages from OTHER users (not our own echo)
         if (message.user?.id !== user?.id) onNewMessage?.(message);
       } else {
@@ -923,6 +927,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     if (mentionInputRef.current) {
       mentionInputRef.current.style.height = 'auto';
     }
+
+    // Immediately scroll to bottom so sender sees their message
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 30);
 
     try {
       await api.sendMessage(
@@ -1564,7 +1571,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           unreadCount={fabUnreadCount}
           onScrollToUnread={() => {
             if (unreadDividerRef.current) {
-              unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
               fabScrolledPastDividerRef.current = true;
               setFabUnreadCount(0);
             } else {

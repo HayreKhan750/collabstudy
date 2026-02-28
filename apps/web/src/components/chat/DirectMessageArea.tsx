@@ -233,7 +233,7 @@ export default function DirectMessageArea({
         // On initial load → scroll to unread divider or bottom
         if (!isNewMessage) {
           if (unreadDividerRef.current && !fabScrolledPastDividerRef.current) {
-            unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+            unreadDividerRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
           } else {
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
           }
@@ -1114,7 +1114,7 @@ export default function DirectMessageArea({
           unreadCount={fabUnreadCount}
           onScrollToUnread={() => {
             if (unreadDividerRef.current) {
-              unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
               fabScrolledPastDividerRef.current = true;
               setFabUnreadCount(0);
             } else {
