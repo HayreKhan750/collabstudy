@@ -7,20 +7,20 @@ import { Message, MentionUser } from '@/lib/api';
 import MentionInput from './MentionInput';
 import { renderMessageContent } from '@/lib/renderMessageContent';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ThreadPanelProps {
   parentMessage: Message;
-  /** The channel ID (for channel threads) OR the DM conversationId (for DM threads). */
+  /** Channel ID (channel threads) OR DM conversationId (DM threads). */
   channelId: string;
   onClose: () => void;
   workspaceMembers?: MentionUser[];
+  /**
+   * For DM threads: the parent passes new replies via this prop.
+   * ThreadPanel does NOT open its own socket in DM mode to avoid mirroring.
+   */
   newReply?: Message | null;
-  /** When true, the thread is inside a DM conversation — use /direct endpoints. */
+  /** When true: use /direct endpoints, no own socket (DirectMessageArea handles WS). */
   isDm?: boolean;
 }
 
@@ -31,15 +31,12 @@ function formatTime(iso: string) {
 }
 
 function resolveUser(msg: any): { fullName?: string | null; username: string } {
-  // DM messages returned from /direct/:id/messages use `sender`, not `user`
   return msg.user ?? msg.sender ?? { username: '?' };
 }
-
 function getInitial(msg: any) {
   const u = resolveUser(msg);
   return (u.fullName || u.username || '?').charAt(0).toUpperCase();
 }
-
 function getDisplayName(msg: any) {
   const u = resolveUser(msg);
   return u.fullName || u.username || 'Unknown';
@@ -47,7 +44,14 @@ function getDisplayName(msg: any) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ThreadPanel({ parentMessage, channelId, onClose, workspaceMembers = [], newReply, isDm = false }: ThreadPanelProps) {
+export default function ThreadPanel({
+  parentMessage,
+  channelId,
+  onClose,
+  workspaceMembers = [],
+  newReply,
+  isDm = false,
+}: ThreadPanelProps) {
   const { token, user } = useAuth();
 
   const [replies, setReplies] = useState<Message[]>([]);
@@ -56,7 +60,6 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
   const repliesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
@@ -66,25 +69,14 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     if (!token) return;
     setLoading(true);
     try {
-      if (isDm) {
-        // DM threads: fetch DM messages filtered by parentId
-        const res = await fetch(
-          `${API_URL}/direct/${channelId}/messages?limit=100&parentId=${parentMessage.id}`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (!res.ok) throw new Error('Failed to fetch DM thread replies');
-        const data = await res.json();
-        setReplies(data.messages ?? []);
-      } else {
-        // Channel threads: use the channel messages endpoint with parentId
-        const res = await fetch(
-          `${API_URL}/channels/${channelId}/messages?limit=100&parentId=${parentMessage.id}`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (!res.ok) throw new Error('Failed to fetch messages');
-        const data = await res.json();
-        setReplies(data.messages ?? []);
-      }
+      const endpoint = isDm
+        ? `${API_URL}/direct/${channelId}/messages?limit=100&parentId=${parentMessage.id}`
+        : `${API_URL}/channels/${channelId}/messages?limit=100&parentId=${parentMessage.id}`;
+
+      const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to fetch replies');
+      const data = await res.json();
+      setReplies(data.messages ?? []);
     } catch (err) {
       console.error('[Thread] Failed to fetch replies:', err);
     } finally {
@@ -93,25 +85,15 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
   }, [channelId, token, parentMessage.id, isDm]);
 
   useEffect(() => {
+    setReplies([]);
     fetchReplies();
   }, [fetchReplies]);
 
-  // ─── Auto-scroll ──────────────────────────────────────────────────────────
+  // ─── Auto-scroll on new replies ──────────────────────────────────────────
 
   useEffect(() => {
     repliesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [replies]);
-
-  // ─── Handle externally-pushed replies (from ChatArea's socket) ───────────
-
-  useEffect(() => {
-    if (!newReply) return;
-    if (newReply.parentId !== parentMessage.id) return;
-    setReplies((prev) => {
-      if (prev.some((r) => r.id === newReply.id)) return prev;
-      return [...prev, { ...newReply, reactions: newReply.reactions ?? [] }];
-    });
-  }, [newReply, parentMessage.id]);
 
   // ─── Focus input on open ──────────────────────────────────────────────────
 
@@ -119,9 +101,25 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
-  // ─── Socket: listen for new replies in this thread ───────────────────────
+  // ─── DM mode: accept replies via prop from DirectMessageArea ─────────────
+  // DirectMessageArea's socket already receives new_direct_message and passes
+  // thread replies via the newReply prop. We do NOT open our own socket in DM
+  // mode to prevent mirroring / duplicate reception of messages.
 
   useEffect(() => {
+    if (!isDm || !newReply) return;
+    if (newReply.parentId !== parentMessage.id) return;
+    setReplies((prev) => {
+      if (prev.some((r) => r.id === newReply.id)) return prev;
+      return [...prev, { ...newReply, reactions: newReply.reactions ?? [] }];
+    });
+  }, [newReply, parentMessage.id, isDm]);
+
+  // ─── Channel mode: own socket for real-time channel thread replies ────────
+  // Only active when isDm === false. DM replies come via newReply prop above.
+
+  useEffect(() => {
+    if (isDm) return; // DM mode: no own socket
     if (!token || !user?.id) return;
 
     let connectTimer: ReturnType<typeof setTimeout>;
@@ -139,41 +137,15 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      if (isDm) {
-        socket.emit('join_direct', { conversationId: channelId });
-      } else {
-        socket.emit('join_channel', { channelId });
-      }
+      socket.emit('join_channel', { channelId });
     });
 
-    // Channel thread: listen for new_message with parentId matching ours
+    // FIREWALL: only accept replies that belong to THIS thread
     socket.on('new_message', (msg: Message) => {
-      if (msg.parentId !== parentMessage.id) return;
+      if (!msg.parentId || msg.parentId !== parentMessage.id) return;
       setReplies((prev) => {
         if (prev.some((r) => r.id === msg.id)) return prev;
         return [...prev, { ...msg, reactions: msg.reactions ?? [] }];
-      });
-    });
-
-    // DM thread: listen for new_direct_message with parentId matching ours
-    socket.on('new_direct_message', (msg: any) => {
-      if (!isDm || msg.parentId !== parentMessage.id) return;
-      setReplies((prev) => {
-        if (prev.some((r) => r.id === msg.id)) return prev;
-        // Normalise DM message shape to Message shape
-        const normalised: Message = {
-          id: msg.id,
-          content: msg.content ?? '',
-          channelId: msg.conversationId ?? channelId,
-          userId: msg.senderId ?? msg.userId,
-          parentId: msg.parentId,
-          createdAt: msg.createdAt,
-          updatedAt: msg.updatedAt,
-          isEdited: msg.isEdited,
-          user: msg.sender ?? msg.user,
-          reactions: msg.reactions ?? [],
-        };
-        return [...prev, normalised];
       });
     });
 
@@ -199,34 +171,60 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
     const content = replyContent.trim();
     setReplyContent('');
 
+    // Optimistic add for instant feedback
+    const optimisticId = `temp-reply-${Date.now()}`;
+    const optimisticReply: Message = {
+      id: optimisticId,
+      content,
+      channelId,
+      userId: user?.id ?? '',
+      parentId: parentMessage.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isEdited: false,
+      user: {
+        id: user?.id ?? '',
+        username: user?.username ?? '',
+        fullName: user?.fullName ?? undefined,
+        avatar: user?.avatar ?? undefined,
+      },
+      reactions: [],
+    };
+    setReplies((prev) => [...prev, optimisticReply]);
+
     try {
-      if (isDm) {
-        // Post a DM reply (with parentId so it threads properly)
-        const res = await fetch(`${API_URL}/direct/${channelId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ content, parentId: parentMessage.id }),
-        });
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(err || 'Failed to send DM reply');
-        }
-      } else {
-        // Post a channel thread reply
-        const res = await fetch(`${API_URL}/channels/${channelId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ content, parentId: parentMessage.id, mentionIds }),
-        });
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(err || 'Failed to send reply');
-        }
+      const endpoint = isDm
+        ? `${API_URL}/direct/${channelId}/messages`
+        : `${API_URL}/channels/${channelId}/messages`;
+
+      const body = isDm
+        ? { content, parentId: parentMessage.id }
+        : { content, parentId: parentMessage.id, mentionIds };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Failed to send reply');
       }
-      // The real message arrives via the socket listener above
+
+      const saved = await res.json();
+
+      // Replace optimistic with real server reply
+      setReplies((prev) =>
+        prev.map((r) =>
+          r.id === optimisticId ? { ...saved, reactions: saved.reactions ?? [] } : r
+        )
+      );
     } catch (err) {
       console.error('[Thread] Failed to send reply:', err);
       setSendError(err instanceof Error ? err.message : 'Failed to send reply. Please try again.');
+      // Remove optimistic and restore input
+      setReplies((prev) => prev.filter((r) => r.id !== optimisticId));
       setReplyContent(content);
     } finally {
       setSending(false);
@@ -237,7 +235,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
 
   return (
     <div className="w-80 xl:w-96 flex-shrink-0 bg-gray-900 border-l border-gray-700 flex flex-col h-full z-20">
-      {/* PINNED HEADER */}
+      {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-700 p-4 flex justify-between items-center bg-gray-900">
         <div className="flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -255,14 +253,22 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
         </button>
       </div>
 
-      {/* SCROLLABLE AREA: Parent message + replies */}
+      {/* Scrollable: parent message + replies */}
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {/* Parent Message */}
-        <div className="text-sm text-gray-300 bg-gray-800 p-3 rounded mb-2">
+        <div className="bg-gray-800 p-3 rounded">
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-              {getInitial(parentMessage)}
-            </div>
+            {resolveUser(parentMessage).username !== '?' && (parentMessage as any).sender?.avatar || (parentMessage as any).user?.avatar ? (
+              <img
+                src={(parentMessage as any).user?.avatar || (parentMessage as any).sender?.avatar}
+                alt={getDisplayName(parentMessage)}
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                {getInitial(parentMessage)}
+              </div>
+            )}
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="text-white text-sm font-semibold">{getDisplayName(parentMessage)}</span>
@@ -274,32 +280,41 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
             </div>
           </div>
         </div>
+
         <hr className="border-gray-700" />
         <div className="text-xs text-gray-500 pb-1">
           {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
         </div>
+
         {loading ? (
-          <p className="text-slate-400 dark:text-slate-500 text-xs text-center">Loading replies…</p>
+          <p className="text-slate-400 text-xs text-center py-4">Loading replies…</p>
         ) : replies.length === 0 ? (
-          <p className="text-slate-400 dark:text-slate-500 text-xs text-center">
-            No replies yet. Be the first to reply!
-          </p>
+          <p className="text-slate-400 text-xs text-center py-4">No replies yet. Be the first to reply!</p>
         ) : (
           replies.map((reply) => (
             <div key={reply.id} className="flex items-start gap-2">
-              <div className="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                {getInitial(reply)}
-              </div>
+              {(reply as any).user?.avatar || (reply as any).sender?.avatar ? (
+                <img
+                  src={(reply as any).user?.avatar || (reply as any).sender?.avatar}
+                  alt={getDisplayName(reply)}
+                  className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                  {getInitial(reply)}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="text-white text-xs font-semibold">{getDisplayName(reply)}</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-xs">{formatTime(reply.createdAt)}</span>
+                  <span className="text-slate-400 text-xs">{formatTime(reply.createdAt)}</span>
+                  {reply.id.startsWith('temp-') && (
+                    <span className="text-xs text-slate-500 italic">Sending…</span>
+                  )}
                 </div>
-                <p className="text-slate-700 dark:text-slate-300 text-sm break-words">
+                <p className="text-slate-300 text-sm break-words">
                   {renderMessageContent(reply.content ?? '', (reply as any).mentions ?? [])}
                 </p>
-
-                {/* Reactions on replies */}
                 {(reply.reactions?.length ?? 0) > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {Object.entries(
@@ -308,10 +323,7 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
                         return acc;
                       }, {}),
                     ).map(([emoji, count]) => (
-                      <span
-                        key={emoji}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300"
-                      >
+                      <span key={emoji} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs bg-slate-700 border border-slate-600 text-slate-300">
                         {emoji} {count}
                       </span>
                     ))}
@@ -324,11 +336,9 @@ export default function ThreadPanel({ parentMessage, channelId, onClose, workspa
         <div ref={repliesEndRef} />
       </div>
 
-      {/* PINNED INPUT */}
+      {/* Input */}
       <div className="flex-shrink-0 border-t border-gray-700 p-4 bg-gray-900">
-        {sendError && (
-          <p className="text-red-400 text-xs mb-1">{sendError}</p>
-        )}
+        {sendError && <p className="text-red-400 text-xs mb-1">{sendError}</p>}
         <MentionInput
           value={replyContent}
           onChange={setReplyContent}

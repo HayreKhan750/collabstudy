@@ -181,6 +181,7 @@ export class DirectService {
     conversationId: string,
     limit = 50,
     cursor?: string,
+    parentId?: string | null,
   ) {
     // Verify membership
     const participant = await this.prisma.directParticipant.findUnique({
@@ -188,9 +189,16 @@ export class DirectService {
     });
     if (!participant) throw new ForbiddenException('Not a participant of this conversation');
 
+    // parentId === undefined → main chat only (parentId IS NULL)
+    // parentId === 'some-uuid' → thread replies for that parent
+    const parentFilter = parentId !== undefined
+      ? { parentId }
+      : { parentId: null };
+
     const messages = await this.prisma.directMessage.findMany({
       where: {
         conversationId,
+        ...parentFilter,
         ...(cursor && { createdAt: { lt: new Date(Buffer.from(cursor, 'base64').toString()) } }),
       },
       orderBy: { createdAt: 'desc' },
@@ -265,6 +273,8 @@ export class DirectService {
         originalName: dto.originalName,
         senderId,
         conversationId,
+        // parentId: thread reply support (null for main chat messages)
+        ...(dto.parentId ? { parentId: dto.parentId } : {}),
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },

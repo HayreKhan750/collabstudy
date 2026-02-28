@@ -57,12 +57,16 @@ export class DirectController {
     @Param('id') conversationId: string,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
+    @Query('parentId') parentId?: string,
   ) {
     return this.directService.getMessages(
       req.user.userId,
       conversationId,
       limit ? parseInt(limit, 10) : 50,
       cursor,
+      // If parentId query param present → fetch thread replies for that parent
+      // If absent → fetch main chat messages only (parentId IS NULL)
+      parentId ?? undefined,
     );
   }
 
