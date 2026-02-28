@@ -5,10 +5,13 @@ import {
   Body,
   UseGuards,
   Req,
+  Res,
+  Redirect,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -45,5 +48,29 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: any) {
     return this.authService.logout(req.user.userId);
+  }
+
+  /**
+   * GET /auth/google
+   * Redirects to Google OAuth consent screen.
+   */
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Guard handles redirect
+  }
+
+  /**
+   * GET /auth/google/callback
+   * Google calls back here after user consents.
+   * Issues a JWT and redirects to the frontend.
+   */
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthCallback(@Req() req: any, @Res() res: any) {
+    const { token } = req.user;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    // Redirect to frontend with token in query param (frontend stores in localStorage)
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
   }
 }

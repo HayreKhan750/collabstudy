@@ -45,6 +45,13 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
 
   useEffect(() => {
     if (!token) return;
+    // Reset all state so stale data from a previous user never bleeds through
+    setChannels([]);
+    setDms([]);
+    setSent(null);
+    setSending(null);
+    setError(null);
+    const controller = new AbortController();
     const load = async () => {
       setLoading(true);
       setError(null);
@@ -54,6 +61,7 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
         for (const ws of workspaces) {
           const res = await fetch(`${API_URL}/channels?workspaceId=${ws.id}`, {
             headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
           });
           if (res.ok) {
             const data = await res.json();
@@ -68,6 +76,7 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
         // Load DM conversations
         const dmRes = await fetch(`${API_URL}/direct`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
         });
         if (dmRes.ok) {
           const dmData = await dmRes.json();
@@ -82,14 +91,17 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
           });
           setDms(dmItems);
         }
-      } catch (err) {
-        setError('Failed to load destinations. Please try again.');
-        console.error('ForwardModal load error:', err);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          setError('Failed to load destinations. Please try again.');
+          console.error('ForwardModal load error:', err);
+        }
       } finally {
         setLoading(false);
       }
     };
     load();
+    return () => controller.abort();
   }, [token, workspaces]);
 
   const forwardToChannel = async (channelId: string) => {

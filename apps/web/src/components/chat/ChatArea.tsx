@@ -16,6 +16,7 @@ import { RelatedMessagesPanel } from './RelatedMessagesPanel';
 import ForwardModal from './ForwardModal';
 import { PinnedMessageBar } from './PinnedMessageBar';
 import UserProfileModal from './UserProfileModal';
+import CreatePollModal from './CreatePollModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -202,6 +203,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
   const [showPinnedBar, setShowPinnedBar] = useState(true);
 
+  // ── Poll creation modal state ──────────────────────────────────────────────
+  const [showPollModal, setShowPollModal] = useState(false);
+
   // ── Pinned messages ───────────────────────────────────────────────────────
   const handlePinMessage = useCallback(async (messageId: string) => {
     if (!token) return;
@@ -220,6 +224,19 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     setCopyToast(true);
     setTimeout(() => setCopyToast(false), 2000);
   }, []);
+
+  const handleCreatePoll = async (question: string, pollOptions: string[]) => {
+    if (!token || !user) return;
+    try {
+      await fetch(`${API_URL}/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: null, poll: { question, options: pollOptions } }),
+      });
+    } catch (e) {
+      console.error('Create poll failed:', e);
+    }
+  };
 
   const handleSelectMessage = useCallback((messageId: string) => {
     setIsSelectionMode(true);
@@ -1558,6 +1575,15 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                     setPinnedMessage((prev) => prev?.id === message.id ? null : message);
                     setShowPinnedBar(true);
                   }}
+                  onVotePoll={async (msgId: string, optId: string) => {
+                    try {
+                      await fetch(`${API_URL}/channels/${channelId}/messages/${msgId}/poll/vote`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ optionId: optId }),
+                      });
+                    } catch(e) { console.warn('Vote failed', e); }
+                  }}
                   onSelect={() => handleSelectMessage(message.id)}
                   onSave={async () => {
                     try {
@@ -1676,6 +1702,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
             onChange={handleFileSelect}
           />
 
+          {/* Poll button */}
+          <button
+            type="button"
+            onClick={() => setShowPollModal(true)}
+            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-indigo-500 transition-colors"
+            title="Create Poll"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </button>
+
           {/* Paperclip button */}
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -1712,6 +1750,14 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         </div>
       </div>
       )} {/* end !isSelectionMode */}
+
+      {/* Poll Creation Modal */}
+      {showPollModal && (
+        <CreatePollModal
+          onClose={() => setShowPollModal(false)}
+          onCreatePoll={handleCreatePoll}
+        />
+      )}
 
       {/* AI Summary Modal */}
       <SummaryModal

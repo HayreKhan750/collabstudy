@@ -37,4 +37,10 @@ export class CreateMessageDto {
   @IsOptional()
   @IsString()
   forwardedFromId?: string;
+
+  @IsOptional()
+  poll?: {
+    question: string;
+    options: string[];
+  };
 }

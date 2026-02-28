@@ -580,4 +580,31 @@ export class MessagesService {
     await this.prisma.savedMessage.create({ data: { userId, messageId } });
     return { saved: true };
   }
+
+  /**
+   * POST /channels/:channelId/messages/:messageId/poll/vote
+   * Cast or retract a vote on a poll option.
+   */
+  async votePoll(userId: string, messageId: string, optionId: string): Promise<{ voted: boolean; optionId: string }> {
+    // Ensure the poll and option exist
+    const option = await this.prisma.pollOption.findUnique({
+      where: { id: optionId },
+      include: { poll: { select: { messageId: true } } },
+    });
+    if (!option || option.poll.messageId !== messageId) {
+      throw new NotFoundException('Poll option not found');
+    }
+
+    const existing = await this.prisma.pollVote.findUnique({
+      where: { userId_pollOptionId: { userId, pollOptionId: optionId } },
+    });
+
+    if (existing) {
+      await this.prisma.pollVote.delete({ where: { id: existing.id } });
+      return { voted: false, optionId };
+    }
+
+    await this.prisma.pollVote.create({ data: { userId, pollOptionId: optionId } });
+    return { voted: true, optionId };
+  }
 }

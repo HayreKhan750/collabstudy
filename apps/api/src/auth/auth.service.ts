@@ -148,4 +148,60 @@ export class AuthService {
 
     return { message: 'Logged out successfully' };
   }
+
+  async findOrCreateGoogleUser(data: {
+    email: string;
+    fullName?: string;
+    avatar?: string | null;
+    googleId: string;
+  }): Promise<{ user: any; token: string }> {
+    const { email, fullName, avatar, googleId } = data;
+
+    // Try to find existing user by email
+    let user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Create a new user — no password needed for OAuth users
+      // Generate a unique username from email prefix
+      const baseUsername = email.split('@')[0].replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+      let username = baseUsername;
+      let suffix = 1;
+      while (await this.prisma.user.findUnique({ where: { username } })) {
+        username = `${baseUsername}${suffix++}`;
+      }
+
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          username,
+          fullName: fullName ?? null,
+          avatar: avatar ?? null,
+          passwordHash: '',   // OAuth users have no password
+          status: UserStatus.ONLINE,
+        },
+      });
+    } else {
+      // Update avatar if changed
+      if (avatar && user.avatar !== avatar) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { avatar },
+        });
+      }
+    }
+
+    const token = this.generateToken(user.id, user.email);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        fullName: user.fullName,
+        avatar: user.avatar,
+        status: user.status,
+        createdAt: user.createdAt,
+      },
+      token,
+    };
+  }
 }

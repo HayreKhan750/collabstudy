@@ -206,4 +206,18 @@ export class MessagesController {
   ) {
     return this.messagesService.saveMessage(req.user.userId, messageId);
   }
+
+  /**
+   * POST /channels/:channelId/messages/:messageId/poll/vote
+   * Cast or retract a vote on a poll option.
+   */
+  @Post(':messageId/poll/vote')
+  @HttpCode(HttpStatus.OK)
+  votePoll(
+    @Request() req: any,
+    @Param('messageId') messageId: string,
+    @Body() body: { optionId: string },
+  ) {
+    return this.messagesService.votePoll(req.user.userId, messageId, body.optionId);
+  }
 }

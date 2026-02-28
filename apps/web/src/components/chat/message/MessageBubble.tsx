@@ -31,6 +31,16 @@ export interface MessageData {
   fileType?: string | null;
   fileSize?: number | null;
   originalName?: string | null;
+  poll?: {
+    id: string;
+    question: string;
+    isClosed: boolean;
+    options: {
+      id: string;
+      text: string;
+      votes: { userId: string }[];
+    }[];
+  } | null;
 }
 
 interface MessageBubbleProps {
@@ -64,6 +74,8 @@ interface MessageBubbleProps {
   onForward?: () => void;
   /** Pin message in channel */
   onPin?: () => void;
+  /** Vote on a poll option */
+  onVotePoll?: (messageId: string, optionId: string) => void;
   /** Toggle select mode for this message */
   onSelect?: () => void;
   /** Save/bookmark this message */
@@ -259,6 +271,73 @@ function ThreadBadge({ count, onClick }: { count: number; onClick: () => void })
   );
 }
 
+// ─── Poll Widget ──────────────────────────────────────────────────────────────
+
+function PollWidget({
+  poll,
+  messageId,
+  currentUserId,
+  onVotePoll,
+}: {
+  poll: NonNullable<MessageData['poll']>;
+  messageId: string;
+  currentUserId: string;
+  onVotePoll?: (messageId: string, optionId: string) => void;
+}) {
+  const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0);
+  const userVotedOptionId = poll.options.find(o => o.votes.some(v => v.userId === currentUserId))?.id;
+
+  return (
+    <div className="mt-1.5 space-y-1.5">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+        {poll.isClosed ? '📊 Poll closed' : '📊 Poll'}
+      </p>
+      <p className="text-sm font-semibold text-slate-900 dark:text-white mb-2">{poll.question}</p>
+      {poll.options.map(option => {
+        const voteCount = option.votes.length;
+        const pct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+        const isVoted = option.id === userVotedOptionId;
+        return (
+          <button
+            key={option.id}
+            disabled={poll.isClosed}
+            onClick={() => onVotePoll?.(messageId, option.id)}
+            className={`w-full text-left rounded-xl overflow-hidden border transition-all ${
+              isVoted
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/20'
+                : 'border-slate-200 dark:border-white/10 hover:border-indigo-400 bg-white dark:bg-slate-700/50'
+            } ${poll.isClosed ? 'cursor-default' : 'cursor-pointer'}`}
+          >
+            <div className="relative px-3 py-2">
+              {/* Progress fill */}
+              <div
+                className={`absolute inset-0 ${
+                  isVoted ? 'bg-indigo-200/60 dark:bg-indigo-500/30' : 'bg-slate-100 dark:bg-slate-700/30'
+                } transition-all duration-500`}
+                style={{ width: `${pct}%` }}
+              />
+              <div className="relative flex items-center justify-between gap-2">
+                <span className={`text-sm font-medium ${
+                  isVoted ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
+                }`}>
+                  {isVoted && <span className="mr-1">✓</span>}
+                  {option.text}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex-shrink-0">
+                  {pct}%
+                </span>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+      <p className="text-[11px] text-slate-400 dark:text-slate-500">
+        {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+      </p>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 // ─── Seen tick indicator ──────────────────────────────────────────────────────
@@ -308,6 +387,7 @@ export function MessageBubble({
   onCopy,
   onForward,
   onPin,
+  onVotePoll,
   onSelect,
   onSave,
   onAvatarClick,
@@ -530,6 +610,16 @@ export function MessageBubble({
                 <div className="leading-relaxed whitespace-pre-wrap break-words">
                   {renderMessageContent(message.content, message.mentions ?? [])}
                 </div>
+              )}
+
+              {/* Poll */}
+              {message.poll && (
+                <PollWidget
+                  poll={message.poll}
+                  messageId={message.id}
+                  currentUserId={currentUserId}
+                  onVotePoll={onVotePoll}
+                />
               )}
 
               {/* File attachment */}
