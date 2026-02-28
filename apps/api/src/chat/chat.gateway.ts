@@ -205,7 +205,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         username: user.username,
       };
 
-      console.log(`[Socket] User ${user.username} (${user.id}) connected with socket ${client.id}`);
+      this.logger.debug(`[Socket] User ${user.username} (${user.id}) connected with socket ${client.id}`);
 
       // ── Presence: register socket ──────────────────────────────────────────
       this.registerSocket(user.id, client.id);
@@ -235,10 +235,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       for (const { workspaceId } of memberships) {
         const room = `workspace:${workspaceId}`;
         await client.join(room);
-        console.log(`[Socket] User ${user.username} joined workspace room ${room}`);
+        this.logger.debug(`[Socket] User ${user.username} joined workspace room ${room}`);
       }
     } catch (error) {
-      console.error('Connection error:', (error as Error).message);
+      this.logger.error('Connection error:', (error as Error).message);
       client.disconnect();
     }
   }
@@ -252,7 +252,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       username?: string;
     };
 
-    console.warn(`[WS] Client disconnected: ${client.id} (user: ${username ?? 'unauthenticated'})`);
+    this.logger.warn(`[WS] Client disconnected: ${client.id} (user: ${username ?? 'unauthenticated'})`);
 
     // Clean up any lingering typing timers for this socket
     this.clearAllTypingTimersForSocket(client.id);
@@ -301,11 +301,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       const roomName = `channel:${channelId}`;
       await client.join(roomName);
 
-      console.log(`[WS] Client ${client.id} (user: ${client.data.user?.username ?? '?'}) joined channel ${channelId}`);
+      this.logger.debug(`[WS] Client ${client.id} (user: ${client.data.user?.username ?? '?'}) joined channel ${channelId}`);
 
       return { success: true, room: roomName };
     } catch (error) {
-      console.error('Join channel error:', (error as Error).message);
+      this.logger.error('Join channel error:', (error as Error).message);
       return { success: false, error: (error as Error).message };
     }
   }
@@ -376,7 +376,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitNewMessage(channelId: string, message: unknown): void {
     const roomName = `channel:${channelId}`;
     this.server.to(roomName).emit('new_message', message);
-    console.log(`Emitted new_message to ${roomName}`);
+    this.logger.debug(`Emitted new_message to ${roomName}`);
   }
 
   // ─── Reaction broadcasts (called by MessagesService) ──────────────────────
@@ -384,25 +384,25 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitReactionAdded(channelId: string, reaction: unknown): void {
     const roomName = `channel:${channelId}`;
     this.server.to(roomName).emit('reaction_added', reaction);
-    console.log(`[Socket] Emitted reaction_added to ${roomName}`);
+    this.logger.debug(`[Socket] Emitted reaction_added to ${roomName}`);
   }
 
   emitReactionRemoved(channelId: string, payload: { reactionId: string; messageId: string; userId: string; emoji: string }): void {
     const roomName = `channel:${channelId}`;
     this.server.to(roomName).emit('reaction_removed', payload);
-    console.log(`[Socket] Emitted reaction_removed to ${roomName}`);
+    this.logger.debug(`[Socket] Emitted reaction_removed to ${roomName}`);
   }
 
   emitMessageUpdated(channelId: string, message: unknown): void {
     const roomName = `channel:${channelId}`;
     this.server.to(roomName).emit('message_updated', message);
-    console.log(`[Socket] Emitted message_updated to ${roomName}`);
+    this.logger.debug(`[Socket] Emitted message_updated to ${roomName}`);
   }
 
   emitMessageDeleted(channelId: string, payload: { messageId: string; channelId: string }): void {
     const roomName = `channel:${channelId}`;
     this.server.to(roomName).emit('message_deleted', payload);
-    console.log(`[Socket] Emitted message_deleted to ${roomName}`);
+    this.logger.debug(`[Socket] Emitted message_deleted to ${roomName}`);
   }
 
   /**
@@ -419,7 +419,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitReadReceiptUpdated(channelId: string, payload: { userId: string; channelId: string; messageId: string; readAt: string }): void {
     const roomName = `channel:${channelId}`;
     this.server.to(roomName).emit('read_receipt_updated', payload);
-    console.log(`[Socket] Emitted read_receipt_updated to ${roomName}`);
+    this.logger.debug(`[Socket] Emitted read_receipt_updated to ${roomName}`);
   }
 
   /**
@@ -428,7 +428,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
    */
   emitChannelReadCleared(userId: string, channelId: string): void {
     this.server.to(`user_${userId}`).emit('channel_read_cleared', { channelId });
-    console.log(`[Socket] Emitted channel_read_cleared to user_${userId} for channel ${channelId}`);
+    this.logger.debug(`[Socket] Emitted channel_read_cleared to user_${userId} for channel ${channelId}`);
   }
 
   /**
@@ -437,7 +437,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
    */
   emitDmReadCleared(userId: string, conversationId: string): void {
     this.server.to(`user_${userId}`).emit('dm_read_cleared', { conversationId });
-    console.log(`[Socket] Emitted dm_read_cleared to user_${userId} for conversation ${conversationId}`);
+    this.logger.debug(`[Socket] Emitted dm_read_cleared to user_${userId} for conversation ${conversationId}`);
   }
 
   /**
@@ -501,7 +501,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitNewChannel(workspaceId: string, channel: Channel & { workspace: { id: string; name: string } }): void {
     const roomName = `workspace:${workspaceId}`;
     this.server.to(roomName).emit('new_channel_created', channel);
-    console.log(`[Socket] Emitted new_channel_created to ${roomName} (channel: ${channel.name})`);
+    this.logger.debug(`[Socket] Emitted new_channel_created to ${roomName} (channel: ${channel.name})`);
   }
 
   /**
@@ -521,23 +521,23 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ): void {
     for (const userId of mentionedUserIds) {
       this.server.to(`user_${userId}`).emit('user_mentioned', payload);
-      console.log(`[Socket] Emitted user_mentioned to user_${userId}`);
+      this.logger.debug(`[Socket] Emitted user_mentioned to user_${userId}`);
     }
   }
 
   emitWorkspaceUpdated(workspaceId: string, workspace: unknown): void {
     this.server.to(`workspace:${workspaceId}`).emit('workspace_updated', workspace);
-    console.log(`[Socket] Emitted workspace_updated to workspace:${workspaceId}`);
+    this.logger.debug(`[Socket] Emitted workspace_updated to workspace:${workspaceId}`);
   }
 
   emitWorkspaceDeleted(workspaceId: string): void {
     this.server.to(`workspace:${workspaceId}`).emit('workspace_deleted', { workspaceId });
-    console.log(`[Socket] Emitted workspace_deleted to workspace:${workspaceId}`);
+    this.logger.debug(`[Socket] Emitted workspace_deleted to workspace:${workspaceId}`);
   }
 
   emitChannelUpdated(workspaceId: string, channel: unknown): void {
     this.server.to(`workspace:${workspaceId}`).emit('channel_updated', channel);
-    console.log(`[Socket] Emitted channel_updated to workspace:${workspaceId}`);
+    this.logger.debug(`[Socket] Emitted channel_updated to workspace:${workspaceId}`);
   }
 
   broadcastPollUpdate(channelId: string, payload: unknown): void {
@@ -548,7 +548,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   emitChannelDeleted(workspaceId: string, payload: { channelId: string; workspaceId: string }): void {
     this.server.to(`workspace:${workspaceId}`).emit('channel_deleted', payload);
-    console.log(`[Socket] Emitted channel_deleted to workspace:${workspaceId}`);
+    this.logger.debug(`[Socket] Emitted channel_deleted to workspace:${workspaceId}`);
   }
 
   // ─── Direct Message broadcasts ─────────────────────────────────────────────
@@ -573,7 +573,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       const room = `direct:${data.conversationId}`;
       await client.join(room);
-      console.log(`[Socket] User ${userId} joined DM room ${room}`);
+      this.logger.debug(`[Socket] User ${userId} joined DM room ${room}`);
       return { success: true };
     } catch (error) {
       return { success: false, error: (error as Error).message };
@@ -593,7 +593,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ): void {
     const room = `direct:${conversationId}`;
     this.server.to(room).emit('new_direct_message', message);
-    console.log(`[Socket] Emitted new_direct_message to ${room}`);
+    this.logger.debug(`[Socket] Emitted new_direct_message to ${room}`);
 
     // Notify every OTHER participant's personal room so the sidebar badge fires
     // even when the DM panel is not open (and thus not joined to the DM room).
@@ -605,7 +605,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         messageId: (message as any).id,
         message,
       });
-      console.log(`[Socket] Emitted dm_unread_notification to user_${uid}`);
+      this.logger.debug(`[Socket] Emitted dm_unread_notification to user_${uid}`);
     }
   }
 
@@ -630,7 +630,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         messageId,
       });
     }
-    console.log(`[Socket] Emitted channel_unread_notification to ${memberUserIds.length - 1} members for channel ${channelId}`);
+    this.logger.debug(`[Socket] Emitted channel_unread_notification to ${memberUserIds.length - 1} members for channel ${channelId}`);
   }
 
   /**
@@ -639,7 +639,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitDmMessageUpdated(conversationId: string, message: unknown): void {
     const room = `direct:${conversationId}`;
     this.server.to(room).emit('dm_message_updated', message);
-    console.log(`[Socket] Emitted dm_message_updated to ${room}`);
+    this.logger.debug(`[Socket] Emitted dm_message_updated to ${room}`);
   }
 
   /**
@@ -648,7 +648,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitDmMessageDeleted(conversationId: string, messageId: string): void {
     const room = `direct:${conversationId}`;
     this.server.to(room).emit('dm_message_deleted', { messageId });
-    console.log(`[Socket] Emitted dm_message_deleted to ${room} (messageId: ${messageId})`);
+    this.logger.debug(`[Socket] Emitted dm_message_deleted to ${room} (messageId: ${messageId})`);
   }
 
   /**
@@ -657,7 +657,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitDmReactionUpdated(conversationId: string, messageId: string, reactions: unknown[]): void {
     const room = `direct:${conversationId}`;
     this.server.to(room).emit('dm_reaction_updated', { messageId, reactions });
-    console.log(`[Socket] Emitted dm_reaction_updated to ${room} (messageId: ${messageId})`);
+    this.logger.debug(`[Socket] Emitted dm_reaction_updated to ${room} (messageId: ${messageId})`);
   }
 
   /**
@@ -691,7 +691,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   emitUserJoinedWorkspace(workspaceId: string, payload: { userId: string; username: string }): void {
     const roomName = `workspace:${workspaceId}`;
     this.server.to(roomName).emit('user_joined_workspace', { workspaceId, ...payload });
-    console.log(`[Socket] Emitted user_joined_workspace to ${roomName} (user: ${payload.username})`);
+    this.logger.debug(`[Socket] Emitted user_joined_workspace to ${roomName} (user: ${payload.username})`);
   }
 
   // ─── WebRTC Signaling ────────────────────────────────────────────────────
@@ -807,7 +807,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       participants: Array.from(participants.values()),
     });
 
-    console.log(`[VoiceRoom] ${username} joined voice:${payload.channelId} (${participants.size} total)`);
+    this.logger.debug(`[VoiceRoom] ${username} joined voice:${payload.channelId} (${participants.size} total)`);
   }
 
   /** Leave a voice channel room. */
@@ -827,7 +827,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.server.to(room).emit('voice_participant_left', { userId, channelId: payload.channelId });
       if (participants.size === 0) this.voiceRooms.delete(payload.channelId);
     }
-    console.log(`[VoiceRoom] user ${userId} left voice:${payload.channelId}`);
+    this.logger.debug(`[VoiceRoom] user ${userId} left voice:${payload.channelId}`);
   }
 
   /**
@@ -855,10 +855,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       const room = `workspace:${workspaceId}`;
       await client.join(room);
-      console.log(`[Socket] User ${client.data.user.username} joined workspace room ${room} (via event)`);
+      this.logger.debug(`[Socket] User ${client.data.user.username} joined workspace room ${room} (via event)`);
       return { success: true };
     } catch (error) {
-      console.error('[Socket] join_workspace error:', (error as Error).message);
+      this.logger.error('[Socket] join_workspace error:', (error as Error).message);
       return { success: false, error: (error as Error).message };
     }
   }
@@ -871,7 +871,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (pendingTimer !== undefined) {
       clearTimeout(pendingTimer);
       this.offlineTimers.delete(userId);
-      console.log(`[Socket] Cancelled offline timer for user ${userId} (socket reconnected)`);
+      this.logger.debug(`[Socket] Cancelled offline timer for user ${userId} (socket reconnected)`);
     }
 
     if (!this.presenceMap.has(userId)) {
@@ -882,13 +882,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const wasOffline = sockets.size === 0;
     sockets.add(socketId);
 
-    console.log(
+    this.logger.debug(
       `[Socket] Registered socket ${socketId} for user ${userId}. Active sockets: ${sockets.size}`,
     );
 
     // Only emit ONLINE if this is their first active socket
     if (wasOffline) {
-      console.log(`[Socket] Emitting ONLINE for user ${userId}`);
+      this.logger.debug(`[Socket] Emitting ONLINE for user ${userId}`);
       this.server.emit('user_presence_update', {
         userId,
         status: 'ONLINE',
@@ -903,12 +903,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     sockets.delete(socketId);
 
-    console.log(
+    this.logger.debug(
       `[Socket] Unregistered socket ${socketId} for user ${userId}. Remaining sockets: ${sockets.size}`,
     );
 
     if (sockets.size === 0) {
-      console.log(
+      this.logger.debug(
         `[Socket] No active sockets for user ${userId}. Starting ${this.OFFLINE_GRACE_MS}ms offline grace period.`,
       );
       // Grace period before marking OFFLINE — handles fast tab refreshes
@@ -917,13 +917,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         const currentSockets = this.presenceMap.get(userId);
         if (!currentSockets || currentSockets.size === 0) {
           this.presenceMap.delete(userId);
-          console.log(`[Socket] Emitting OFFLINE for user ${userId} (grace period elapsed)`);
+          this.logger.debug(`[Socket] Emitting OFFLINE for user ${userId} (grace period elapsed)`);
           this.server.emit('user_presence_update', {
             userId,
             status: 'OFFLINE',
           } satisfies PresenceUpdatePayload);
         } else {
-          console.log(
+          this.logger.debug(
             `[Socket] User ${userId} reconnected during grace period — staying ONLINE`,
           );
         }

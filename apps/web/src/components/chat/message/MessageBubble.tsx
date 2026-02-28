@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, memo } from 'react';
 import { Reaction, MentionUser } from '@/lib/api';
 import { renderMessageContent } from '@/lib/renderMessageContent';
 import { ReactionPill } from './ReactionPill';
@@ -497,7 +497,7 @@ function SeenTick({ seenByCount }: { seenByCount: number }) {
   );
 }
 
-export function MessageBubble({
+const MessageBubbleInner = function MessageBubble({
   message,
   isFirstInGroup,
   isLastInGroup,
@@ -705,7 +705,7 @@ export function MessageBubble({
                   <span
                     className={`
                       block w-3 h-3 rounded-sm
-                      ${isOwnMessage ? 'bg-blue-600 -rotate-45 origin-bottom-left' : 'bg-white dark:bg-slate-800 rotate-45 origin-bottom-right'}
+                      ${isOwnMessage ? 'bg-[#5B8CFF] -rotate-45 origin-bottom-left' : 'bg-white dark:bg-slate-800 rotate-45 origin-bottom-right'}
                     `}
                   />
                 </span>
@@ -716,10 +716,7 @@ export function MessageBubble({
                 const fwd = (message as any).forwardedFrom;
                 // Debug: verify data arriving from server
                 if (process.env.NODE_ENV !== 'production') {
-                  console.log('[MessageBubble] Forward Data:', {
-                    forwardedFromId: (message as any).forwardedFromId,
-                    forwardedFrom: fwd,
-                  });
+                  // Forward debug logging removed — use browser DevTools network tab to inspect
                 }
                 const senderName =
                   fwd?.user?.fullName ||
@@ -794,4 +791,8 @@ export function MessageBubble({
       </div>
     </div>
   );
-}
+};
+
+// Memoized export — prevents re-renders when unrelated parent state changes
+// (e.g. typing indicator, scroll position, FAB visibility)
+export const MessageBubble = memo(MessageBubbleInner);
