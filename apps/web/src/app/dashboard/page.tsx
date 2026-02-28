@@ -589,6 +589,7 @@ export default function DashboardPage() {
         <div className="flex-1 min-h-0 flex overflow-hidden">
           {showSavedMessages ? (
             <SavedMessagesArea
+              socket={workspaceSocketRef.current}
               onBack={() => {
                 setShowSavedMessages(false);
                 setMobileSidebarOpen(true);

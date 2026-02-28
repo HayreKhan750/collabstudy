@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { renderMessageContent } from '@/lib/renderMessageContent';
 import { MediaViewer } from '@/components/media/MediaViewer';
+import { type Socket } from 'socket.io-client';
 
 interface SavedMessage {
   id: string;
@@ -33,6 +34,7 @@ interface SavedMessage {
 
 interface SavedMessagesAreaProps {
   onBack?: () => void;
+  socket?: Socket | null;
 }
 
 function BookmarkIcon({ className = 'h-5 w-5' }: { className?: string }) {
@@ -62,12 +64,13 @@ function getDateKey(iso: string) {
   return new Date(iso).toDateString();
 }
 
-export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
+export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaProps) {
   const { token, user } = useAuth();
   const [messages, setMessages] = useState<SavedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,6 +81,7 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Load messages + store conversationId ─────────────────────────────────
   const loadMessages = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -85,6 +89,7 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
       const data = await api.getSavedMessages(token, 50);
       setMessages(data.messages);
       setNextCursor(data.nextCursor);
+      setConversationId(data.conversationId);
     } catch (e) {
       setError('Failed to load saved messages');
       console.error(e);
@@ -102,8 +107,49 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     if (!loading && messages.length > 0) {
       bottomRef.current?.scrollIntoView({ behavior: 'instant' });
     }
-  }, [loading]);
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── WebSocket: join room + real-time listeners ────────────────────────────
+  useEffect(() => {
+    if (!socket || !conversationId) return;
+
+    // Join the DM room for this saved-messages conversation
+    socket.emit('join_direct', { conversationId });
+
+    const handleNewMessage = (msg: SavedMessage) => {
+      // Guard: only handle messages from this conversation
+      if (msg.conversationId !== conversationId) return;
+      setMessages((prev) => {
+        // Deduplicate — the optimistic add in handleSend already added it
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    };
+
+    const handleMessageUpdated = (updated: SavedMessage) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
+      );
+    };
+
+    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    };
+
+    socket.on('new_direct_message', handleNewMessage);
+    socket.on('dm_message_updated', handleMessageUpdated);
+    socket.on('dm_message_deleted', handleMessageDeleted);
+
+    return () => {
+      socket.emit('leave_direct', { conversationId });
+      socket.off('new_direct_message', handleNewMessage);
+      socket.off('dm_message_updated', handleMessageUpdated);
+      socket.off('dm_message_deleted', handleMessageDeleted);
+    };
+  }, [socket, conversationId]);
+
+  // ── Load more (older messages) ────────────────────────────────────────────
   const loadMore = async () => {
     if (!token || !nextCursor || loadingMore) return;
     setLoadingMore(true);
@@ -118,15 +164,16 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     }
   };
 
+  // ── Send message ──────────────────────────────────────────────────────────
   const handleSend = async () => {
-    if (!token || (!text.trim() && !sending)) return;
+    if (!token || !text.trim() || sending) return;
     const content = text.trim();
-    if (!content) return;
     setSending(true);
     setText('');
     try {
       const msg = await api.sendSavedMessage(token, { content });
-      setMessages((prev) => [...prev, msg]);
+      // Optimistically add — WebSocket deduplicates on arrival
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     } catch (e) {
       setError('Failed to save message');
@@ -143,6 +190,7 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     }
   };
 
+  // ── File upload ───────────────────────────────────────────────────────────
   const handleFileUpload = async (file: File) => {
     if (!token) return;
     setSending(true);
@@ -154,7 +202,7 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
         fileSize: uploaded.fileSize,
         originalName: uploaded.originalName,
       });
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     } catch (e) {
       setError('Failed to upload file');
@@ -163,16 +211,21 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     }
   };
 
+  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async (messageId: string) => {
     if (!token) return;
+    // Optimistic remove
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
     try {
       await api.deleteSavedMessage(token, messageId);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
     } catch (e) {
       setError('Failed to delete message');
+      // Re-fetch to restore state
+      loadMessages();
     }
   };
 
+  // ── Edit ──────────────────────────────────────────────────────────────────
   const handleEditStart = (msg: SavedMessage) => {
     setEditingId(msg.id);
     setEditText(msg.content ?? '');
@@ -180,13 +233,19 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
 
   const handleEditSave = async () => {
     if (!token || !editingId || !editText.trim()) return;
+    const id = editingId;
+    const newContent = editText.trim();
+    // Optimistic update
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, content: newContent, isEdited: true } : m)),
+    );
+    setEditingId(null);
+    setEditText('');
     try {
-      const updated = await api.editSavedMessage(token, editingId, editText.trim());
-      setMessages((prev) => prev.map((m) => (m.id === editingId ? { ...m, ...updated, isEdited: true } : m)));
-      setEditingId(null);
-      setEditText('');
+      await api.editSavedMessage(token, id, newContent);
     } catch (e) {
       setError('Failed to edit message');
+      loadMessages(); // Re-fetch to restore
     }
   };
 
@@ -196,6 +255,7 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     if (file) handleFileUpload(file);
   };
 
+  // ── Attachment rendering ──────────────────────────────────────────────────
   const isImage = (type?: string | null) => type?.startsWith('image/');
   const isVideo = (type?: string | null) => type?.startsWith('video/');
   const isAudio = (type?: string | null) => type?.startsWith('audio/');
@@ -239,7 +299,7 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     );
   };
 
-  // Group messages by date for dividers
+  // ── Group messages by date ────────────────────────────────────────────────
   const grouped: { dateKey: string; label: string; messages: SavedMessage[] }[] = [];
   for (const msg of messages) {
     const key = getDateKey(msg.createdAt);
@@ -259,7 +319,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex-shrink-0">
-        {/* Mobile back button */}
         {onBack && (
           <button
             onClick={onBack}
@@ -271,7 +330,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
           </button>
         )}
 
-        {/* Icon + title */}
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-indigo-500/30">
           <BookmarkIcon className="h-5 w-5" />
         </div>
@@ -283,7 +341,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
 
       {/* ── Message list ───────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-        {/* Load more */}
         {nextCursor && (
           <div className="flex justify-center mb-4">
             <button
@@ -325,9 +382,8 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
                 <div className="flex-1 h-px bg-slate-200 dark:bg-white/10" />
               </div>
 
-              {/* Messages in this date group */}
               {group.messages.map((msg) => (
-                <div key={msg.id} className="group flex items-start gap-2 py-0.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/3 px-1 transition-colors">
+                <div key={msg.id} className="group flex items-start gap-2 py-0.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/[0.03] px-1 transition-colors">
                   {/* Avatar */}
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 mt-0.5">
                     {user?.fullName?.charAt(0).toUpperCase() ?? user?.username?.charAt(0).toUpperCase() ?? 'Y'}
@@ -372,10 +428,8 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
                       </div>
                     )}
 
-                    {/* Attachment */}
                     {renderAttachment(msg)}
 
-                    {/* Timestamp */}
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{formatTime(msg.createdAt)}</p>
                   </div>
 
@@ -410,7 +464,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
           ))
         )}
 
-        {/* Error toast */}
         {error && (
           <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-red-500 text-white text-sm px-4 py-2 rounded-xl shadow-lg z-50">
             {error}
@@ -424,7 +477,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
       {/* ── Input area ─────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3">
         <div className="flex items-end gap-2 bg-slate-100 dark:bg-white/5 rounded-2xl px-3 py-2">
-          {/* File attach button */}
           <button
             onClick={() => fileInputRef.current?.click()}
             className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors flex-shrink-0 mb-0.5"
@@ -445,7 +497,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
             }}
           />
 
-          {/* Textarea */}
           <textarea
             ref={textareaRef}
             value={text}
@@ -457,7 +508,6 @@ export default function SavedMessagesArea({ onBack }: SavedMessagesAreaProps) {
             style={{ overflowY: text.split('\n').length > 4 ? 'auto' : 'hidden' }}
           />
 
-          {/* Send button */}
           <button
             onClick={handleSend}
             disabled={!text.trim() || sending}

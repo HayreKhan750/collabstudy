@@ -428,46 +428,31 @@ export class DirectService {
    * creator, i.e. participantCount = 1 and that participant is the requesting user.
    */
   async getOrCreateSavedMessagesConversation(userId: string): Promise<{ conversationId: string }> {
-    // Find an existing saved-messages conversation: a DirectConversation that
-    // has exactly one participant and that participant is the current user.
-    const existing = await this.prisma.directConversation.findFirst({
-      where: {
-        participants: {
-          every: { userId },
+    // Find all conversations this user participates in, with a participant count.
+    // A "self-conversation" (Saved Messages) is the one where the user is the
+    // ONLY participant (count = 1). We use pure Prisma — no raw SQL.
+    const participations = await this.prisma.directParticipant.findMany({
+      where: { userId },
+      select: {
+        conversationId: true,
+        conversation: {
+          select: {
+            _count: { select: { participants: true } },
+          },
         },
-        // Ensure there's at least one participant (i.e. it exists)
-        AND: { participants: { some: { userId } } },
-      },
-      include: {
-        participants: { select: { userId: true } },
       },
     });
 
-    // Filter to only those with exactly 1 participant (the user themselves)
-    if (existing) {
-      const participantCount = existing.participants.length;
-      if (participantCount === 1) {
-        return { conversationId: existing.id };
-      }
+    // Pick the first conversation that has exactly 1 participant
+    const selfParticipation = participations.find(
+      (p) => p.conversation._count.participants === 1,
+    );
+
+    if (selfParticipation) {
+      return { conversationId: selfParticipation.conversationId };
     }
 
-    // Use a raw query to find a self-conversation robustly
-    type SelfConvRow = { id: string };
-    const rows = await this.prisma.$queryRaw<SelfConvRow[]>`
-      SELECT dc.id
-      FROM direct_conversations dc
-      JOIN direct_participants dp ON dp."conversationId" = dc.id
-      WHERE dp."userId" = ${userId}::uuid
-      GROUP BY dc.id
-      HAVING COUNT(*) = 1
-      LIMIT 1
-    `;
-
-    if (rows.length > 0) {
-      return { conversationId: rows[0].id };
-    }
-
-    // Create a new self-conversation
+    // None found — create a new self-conversation (the user is the sole participant)
     const conv = await this.prisma.directConversation.create({
       data: {
         participants: {
