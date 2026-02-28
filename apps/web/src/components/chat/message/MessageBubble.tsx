@@ -38,7 +38,10 @@ export interface MessageData {
     options: {
       id: string;
       text: string;
-      votes: { userId: string }[];
+      votes: {
+        userId: string;
+        user?: { id: string; username: string; fullName: string | null; avatar: string | null };
+      }[];
     }[];
   } | null;
 }
@@ -277,31 +280,61 @@ function PollWidget({
   poll,
   messageId,
   currentUserId,
+  isOwner,
   onVotePoll,
 }: {
   poll: NonNullable<MessageData['poll']>;
   messageId: string;
   currentUserId: string;
+  isOwner: boolean;
   onVotePoll?: (messageId: string, optionId: string) => void;
 }) {
-  const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0);
-  const userVotedOptionId = poll.options.find(o => o.votes.some(v => v.userId === currentUserId))?.id;
+  // Optimistic local state: mirrors the poll but allows instant UI updates
+  const [localOptions, setLocalOptions] = useState(() => poll.options.map(o => ({ ...o, votes: [...o.votes] })));
+
+  const totalVotes = localOptions.reduce((sum, o) => sum + o.votes.length, 0);
+  const userVotedOptionId = localOptions.find(o => o.votes.some(v => v.userId === currentUserId))?.id;
+  // Show results if: user has voted, is the creator, or poll is closed
+  const showResults = !!userVotedOptionId || isOwner || poll.isClosed;
+
+  const handleVote = (optionId: string) => {
+    if (poll.isClosed) return;
+    // Optimistic update: toggle vote instantly
+    setLocalOptions(prev => {
+      const alreadyVoted = prev.find(o => o.id === optionId)?.votes.some(v => v.userId === currentUserId);
+      return prev.map(o => {
+        if (o.id === optionId) {
+          return alreadyVoted
+            ? { ...o, votes: o.votes.filter(v => v.userId !== currentUserId) }
+            : { ...o, votes: [...o.votes, { userId: currentUserId }] };
+        }
+        // Remove vote from other options (single-choice)
+        return { ...o, votes: o.votes.filter(v => v.userId !== currentUserId) };
+      });
+    });
+    onVotePoll?.(messageId, optionId);
+  };
 
   return (
-    <div className="mt-1.5 space-y-1.5">
+    <div className="mt-1.5 space-y-1.5 min-w-[220px]">
       <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-        {poll.isClosed ? '📊 Poll closed' : '📊 Poll'}
+        {poll.isClosed ? '📊 Poll · Closed' : '📊 Poll'}
       </p>
       <p className="text-sm font-semibold text-slate-900 dark:text-white mb-2">{poll.question}</p>
-      {poll.options.map(option => {
+      {localOptions.map(option => {
         const voteCount = option.votes.length;
         const pct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
         const isVoted = option.id === userVotedOptionId;
+        // Voter avatars (up to 3 shown)
+        const voters = (poll.options.find(o => o.id === option.id)?.votes ?? [])
+          .filter((v): v is typeof v & { user: NonNullable<typeof v.user> } => !!v.user)
+          .slice(0, 3);
+
         return (
           <button
             key={option.id}
             disabled={poll.isClosed}
-            onClick={() => onVotePoll?.(messageId, option.id)}
+            onClick={() => handleVote(option.id)}
             className={`w-full text-left rounded-xl overflow-hidden border transition-all ${
               isVoted
                 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/20'
@@ -309,23 +342,47 @@ function PollWidget({
             } ${poll.isClosed ? 'cursor-default' : 'cursor-pointer'}`}
           >
             <div className="relative px-3 py-2">
-              {/* Progress fill */}
-              <div
-                className={`absolute inset-0 ${
-                  isVoted ? 'bg-indigo-200/60 dark:bg-indigo-500/30' : 'bg-slate-100 dark:bg-slate-700/30'
-                } transition-all duration-500`}
-                style={{ width: `${pct}%` }}
-              />
+              {/* Progress fill — only when results are visible */}
+              {showResults && (
+                <div
+                  className={`absolute inset-0 ${
+                    isVoted ? 'bg-indigo-200/60 dark:bg-indigo-500/30' : 'bg-slate-100 dark:bg-slate-700/30'
+                  } transition-all duration-500 rounded-xl`}
+                  style={{ width: `${pct}%` }}
+                />
+              )}
               <div className="relative flex items-center justify-between gap-2">
-                <span className={`text-sm font-medium ${
-                  isVoted ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
-                }`}>
-                  {isVoted && <span className="mr-1">✓</span>}
-                  {option.text}
-                </span>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex-shrink-0">
-                  {pct}%
-                </span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {/* Radio circle */}
+                  <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    isVoted ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-500'
+                  }`}>
+                    {isVoted && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
+                  </span>
+                  <span className={`text-sm font-medium truncate ${
+                    isVoted ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
+                  }`}>
+                    {option.text}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {/* Voter mini-avatars (creator/voted view) */}
+                  {showResults && voters.length > 0 && (
+                    <div className="flex -space-x-1.5">
+                      {voters.map(v => (
+                        v.user.avatar
+                          ? <img key={v.userId} src={v.user.avatar} alt={v.user.username} title={v.user.fullName || v.user.username} className="w-4 h-4 rounded-full object-cover ring-1 ring-white dark:ring-slate-800" />
+                          : <span key={v.userId} title={v.user.fullName || v.user.username} className="w-4 h-4 rounded-full bg-indigo-400 ring-1 ring-white dark:ring-slate-800 flex items-center justify-center text-[8px] text-white font-bold">{(v.user.fullName || v.user.username).charAt(0).toUpperCase()}</span>
+                      ))}
+                    </div>
+                  )}
+                  {/* Percentage — only when results visible */}
+                  {showResults && (
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      {pct}%
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </button>
@@ -333,6 +390,7 @@ function PollWidget({
       })}
       <p className="text-[11px] text-slate-400 dark:text-slate-500">
         {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+        {!showResults && <span className="ml-1 italic">· Vote to see results</span>}
       </p>
     </div>
   );
@@ -618,6 +676,7 @@ export function MessageBubble({
                   poll={message.poll}
                   messageId={message.id}
                   currentUserId={currentUserId}
+                  isOwner={message.user.id === currentUserId}
                   onVotePoll={onVotePoll}
                 />
               )}

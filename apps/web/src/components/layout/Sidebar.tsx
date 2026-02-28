@@ -280,64 +280,6 @@ export default function Sidebar({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {/* ── Unread section: quick access to all unread channels & DMs ── */}
-        {!collapsed && (() => {
-          const unreadChannels = channels.filter(c => (c.unreadCount ?? 0) > 0);
-          const unreadDMs = directConversations.filter(c => (c.unreadCount ?? 0) > 0);
-          if (unreadChannels.length === 0 && unreadDMs.length === 0) return null;
-          return (
-            <div className="pt-3 pb-1 border-b border-slate-200 dark:border-white/10">
-              <div className="px-3 mb-1">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Unread</span>
-              </div>
-              <div className="space-y-0.5 px-1.5">
-                {unreadChannels.map(ch => (
-                  <button
-                    key={ch.id}
-                    onClick={() => onChannelSelect(ch)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all font-semibold"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                    </svg>
-                    <span className="flex-1 truncate text-slate-900 dark:text-white">{ch.name}</span>
-                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center leading-none flex-shrink-0">
-                      {(ch.unreadCount ?? 0) > 99 ? '99+' : ch.unreadCount}
-                    </span>
-                  </button>
-                ))}
-                {unreadDMs.map(conv => {
-                  const other = conv.participants.find((p: any) => p.userId !== userId)?.user;
-                  const displayName = other?.fullName || other?.username || 'DM';
-                  const isOnline = onlineUserIds.has(other?.id ?? '');
-                  return (
-                    <button
-                      key={conv.id}
-                      onClick={() => onConversationSelect?.(conv)}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all font-semibold"
-                    >
-                      <div className="relative flex-shrink-0">
-                        {other?.avatar ? (
-                          <img src={other.avatar} alt={displayName} className="w-6 h-6 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-purple-500/80 flex items-center justify-center text-white text-[10px] font-semibold">
-                            {displayName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white dark:border-slate-900 ${isOnline ? 'bg-green-400' : 'bg-slate-400'}`} />
-                      </div>
-                      <span className="flex-1 truncate text-slate-900 dark:text-white">{displayName}</span>
-                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center leading-none flex-shrink-0">
-                        {(conv.unreadCount ?? 0) > 99 ? '99+' : conv.unreadCount}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Workspace switcher */}
         <WorkspaceSwitcher
           workspaces={workspaces}
