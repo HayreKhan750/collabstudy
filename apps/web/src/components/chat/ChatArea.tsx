@@ -188,6 +188,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
   // ── Forward modal state ───────────────────────────────────────────────────
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null);
+  const [bulkForwardMessages, setBulkForwardMessages] = useState<Message[]>([]);
 
   // ── Bulk selection state ──────────────────────────────────────────────────
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -1342,6 +1343,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         </div>
       </div>
 
+      {/* Pinned message bar — sits between header and body, full width */}
+      {pinnedMessage && showPinnedBar && (
+        <PinnedMessageBar
+          content={pinnedMessage.content ?? '[attachment]'}
+          onClick={() => {
+            const el = document.getElementById(`msg-${pinnedMessage.id}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          onClose={() => setShowPinnedBar(false)}
+        />
+      )}
+
       {/* ── Body: chat messages OR search results panel ── */}
       <div className="flex flex-1 overflow-hidden relative">
 
@@ -1442,18 +1455,6 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       )}
 
       {/* Messages */}
-      {/* Pinned message bar */}
-      {pinnedMessage && showPinnedBar && (
-        <PinnedMessageBar
-          content={pinnedMessage.content ?? '[attachment]'}
-          onClick={() => {
-            const el = document.getElementById(`msg-${pinnedMessage.id}`);
-            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-          onClose={() => setShowPinnedBar(false)}
-        />
-      )}
-
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-6 pb-2 space-y-1">
 
         {/* Load older messages button — only shown when more history exists */}
@@ -1539,7 +1540,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   onEditCancel={handleCancelEdit}
                   onFindSimilar={message.content ? () => setRelatedSource(message) : undefined}
                   onCopy={message.content ? () => handleCopyMessage(message.content!) : undefined}
-                  onForward={message.content ? () => setForwardMessage(message) : undefined}
+                  onForward={message.content ? () => { setForwardMessage(message); setBulkForwardMessages([]); } : undefined}
                   onPin={() => {
                     handlePinMessage(message.id);
                     setPinnedMessage((prev) => prev?.id === message.id ? null : message);
@@ -1547,6 +1548,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   }}
                   onSelect={() => handleSelectMessage(message.id)}
                   isSelected={selectedMessageIds.has(message.id)}
+                  isSelectionMode={isSelectionMode}
                 />
               </div>
             );
@@ -1589,9 +1591,13 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">{selectedMessageIds.size} selected</span>
           <button
             onClick={() => {
-              const firstId = Array.from(selectedMessageIds)[0];
-              const msg = messages.find(m => m.id === firstId);
-              if (msg) { setForwardMessage(msg); handleCancelSelection(); }
+              const ids = Array.from(selectedMessageIds);
+              const msgs = messages.filter(m => ids.includes(m.id));
+              if (msgs.length > 0) {
+                setBulkForwardMessages(msgs);
+                setForwardMessage(msgs[0]);
+                handleCancelSelection();
+              }
             }}
             disabled={selectedMessageIds.size === 0}
             className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
@@ -1727,9 +1733,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     {/* Forward Modal */}
     {forwardMessage && (
       <ForwardModal
-        message={forwardMessage}
+        messages={bulkForwardMessages.length > 0 ? bulkForwardMessages : forwardMessage ? [forwardMessage] : []}
         workspaces={workspaces}
-        onClose={() => setForwardMessage(null)}
+        onClose={() => { setForwardMessage(null); setBulkForwardMessages([]); }}
       />
     )}
 

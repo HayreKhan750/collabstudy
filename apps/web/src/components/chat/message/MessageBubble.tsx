@@ -68,6 +68,8 @@ interface MessageBubbleProps {
   onSelect?: () => void;
   /** Whether this message is currently selected in bulk selection mode */
   isSelected?: boolean;
+  /** Whether selection mode is active for this message */
+  isSelectionMode?: boolean;
   /**
    * Read receipts: map of userId → messageId they last read.
    * Used to render "seen" double-tick on outbound messages.
@@ -304,6 +306,7 @@ export function MessageBubble({
   onPin,
   onSelect,
   isSelected = false,
+  isSelectionMode = false,
   readReceipts = {},
 }: MessageBubbleProps) {
   const displayName = message.user.fullName || message.user.username;
@@ -334,7 +337,7 @@ export function MessageBubble({
     ? 'bg-blue-600 text-white'
     : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-100 dark:border-white/[0.06]';
 
-  const hasFileOnly = !!message.fileUrl && !message.content;
+  const hasFileOnly = !!message.fileUrl && !message.content && !(message as any).forwardedFrom;
 
   return (
     <div
@@ -345,8 +348,10 @@ export function MessageBubble({
         ${isFirstInGroup ? 'mt-3' : 'mt-0.5'}
         ${isHighlighted ? 'bg-yellow-500/10 rounded-lg -mx-2 px-2' : ''}
         ${isSelected ? 'bg-blue-500/10 rounded-lg -mx-2 px-2' : ''}
+        ${isSelectionMode ? 'cursor-pointer' : ''}
         transition-colors duration-700
       `}
+      onClick={isSelectionMode ? onSelect : undefined}
     >
       {/* Avatar area — always reserve space; show avatar only on last in group */}
       <div className="w-8 flex-shrink-0 flex items-end justify-center self-end mb-0.5">

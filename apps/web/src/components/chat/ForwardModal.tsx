@@ -5,15 +5,17 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+interface SingleMessage {
+  id: string;
+  content: string | null;
+  fileUrl?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
+  originalName?: string | null;
+}
+
 interface ForwardModalProps {
-  message: {
-    id: string;
-    content: string | null;
-    fileUrl?: string | null;
-    fileType?: string | null;
-    fileSize?: number | null;
-    originalName?: string | null;
-  };
+  messages: SingleMessage[];
   workspaces: { id: string; name: string }[];
   onClose: () => void;
   onForwarded?: () => void;
@@ -31,7 +33,7 @@ interface DmItem {
   avatar?: string | null;
 }
 
-export default function ForwardModal({ message, workspaces, onClose, onForwarded }: ForwardModalProps) {
+export default function ForwardModal({ messages, workspaces, onClose, onForwarded }: ForwardModalProps) {
   const { token } = useAuth();
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [dms, setDms] = useState<DmItem[]>([]);
@@ -94,19 +96,21 @@ export default function ForwardModal({ message, workspaces, onClose, onForwarded
     if (!token || sending) return;
     setSending(channelId);
     try {
-      const res = await fetch(`${API_URL}/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          content: message.content || undefined,
-          fileUrl: message.fileUrl || undefined,
-          fileType: message.fileType || undefined,
-          fileSize: message.fileSize || undefined,
-          originalName: message.originalName || undefined,
-          forwardedFromId: message.id,
-        }),
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      for (const message of messages) {
+        const res = await fetch(`${API_URL}/channels/${channelId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            content: message.content || undefined,
+            fileUrl: message.fileUrl || undefined,
+            fileType: message.fileType || undefined,
+            fileSize: message.fileSize || undefined,
+            originalName: message.originalName || undefined,
+            forwardedFromId: message.id,
+          }),
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      }
       setSent(channelId);
       setTimeout(() => { onForwarded?.(); onClose(); }, 800);
     } catch (err) {
@@ -121,19 +125,21 @@ export default function ForwardModal({ message, workspaces, onClose, onForwarded
     if (!token || sending) return;
     setSending(conversationId);
     try {
-      const res = await fetch(`${API_URL}/direct/${conversationId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          content: message.content || undefined,
-          fileUrl: message.fileUrl || undefined,
-          fileType: message.fileType || undefined,
-          fileSize: message.fileSize || undefined,
-          originalName: message.originalName || undefined,
-          forwardedFromId: message.id,
-        }),
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      for (const message of messages) {
+        const res = await fetch(`${API_URL}/direct/${conversationId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            content: message.content || undefined,
+            fileUrl: message.fileUrl || undefined,
+            fileType: message.fileType || undefined,
+            fileSize: message.fileSize || undefined,
+            originalName: message.originalName || undefined,
+            forwardedFromId: message.id,
+          }),
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      }
       setSent(conversationId);
       setTimeout(() => { onForwarded?.(); onClose(); }, 800);
     } catch (err) {
@@ -167,8 +173,13 @@ export default function ForwardModal({ message, workspaces, onClose, onForwarded
 
         {/* Message preview */}
         <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-white/10">
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Forwarding:</p>
-          <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">{message.content ?? (message.originalName ? `[File: ${message.originalName}]` : '[No content]')}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+            Forwarding {messages.length > 1 ? `${messages.length} messages` : ''}:
+          </p>
+          <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">
+            {messages[0]?.content ?? (messages[0]?.originalName ? `[File: ${messages[0].originalName}]` : '[No content]')}
+            {messages.length > 1 && <span className="text-slate-400"> +{messages.length - 1} more</span>}
+          </p>
         </div>
 
         {/* Search */}

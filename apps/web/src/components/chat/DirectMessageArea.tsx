@@ -106,6 +106,7 @@ export default function DirectMessageArea({
   // ── Delete confirm state ─────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string } | null>(null);
   const [forwardMessage, setForwardMessage] = useState<DirectMessage | null>(null);
+  const [bulkForwardMessages, setBulkForwardMessages] = useState<any[]>([]);
 
   // ── Copy toast state ──────────────────────────────────────────────────────
   const [copyToast, setCopyToast] = useState(false);
@@ -776,14 +777,14 @@ export default function DirectMessageArea({
   }, []);
 
   const handleForwardSelected = useCallback(() => {
-    // Forward first selected message
-    const firstId = Array.from(selectedMessageIds)[0];
-    const msg = messages.find(m => m.id === firstId);
-    if (msg) {
-      setForwardMessage(msg as any);
+    const ids = Array.from(selectedMessageIds);
+    const msgs = messages.filter(m => ids.includes(m.id));
+    if (msgs.length > 0) {
+      setForwardMessage(msgs[0] as any);
+      setBulkForwardMessages(msgs as any[]);
       handleCancelSelection();
     }
-  }, [selectedMessageIds, messages]);
+  }, [selectedMessageIds, messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDeleteSelected = useCallback(async () => {
     if (!token) return;
@@ -1084,6 +1085,7 @@ export default function DirectMessageArea({
                     onPin={() => handlePinMessage(msg.id)}
                     onSelect={() => handleSelectMessage(msg.id)}
                     isSelected={selectedMessageIds.has(msg.id)}
+                    isSelectionMode={isSelectionMode}
                     isEditing={editingMessageId === msg.id}
                     editContent={editContent}
                     editError={editError}
@@ -1261,16 +1263,9 @@ export default function DirectMessageArea({
       {/* Forward Modal */}
       {forwardMessage && (
         <ForwardModal
-          message={{
-            id: forwardMessage.id,
-            content: forwardMessage.content,
-            fileUrl: forwardMessage.fileUrl,
-            fileType: forwardMessage.fileType,
-            fileSize: forwardMessage.fileSize,
-            originalName: forwardMessage.originalName,
-          }}
+          messages={bulkForwardMessages.length > 0 ? bulkForwardMessages.map(m => ({ id: m.id, content: m.content, fileUrl: m.fileUrl, fileType: m.fileType, fileSize: m.fileSize, originalName: m.originalName })) : [{ id: forwardMessage.id, content: forwardMessage.content, fileUrl: forwardMessage.fileUrl, fileType: forwardMessage.fileType, fileSize: forwardMessage.fileSize, originalName: forwardMessage.originalName }]}
           workspaces={[]}
-          onClose={() => setForwardMessage(null)}
+          onClose={() => { setForwardMessage(null); setBulkForwardMessages([]); }}
         />
       )}
 
