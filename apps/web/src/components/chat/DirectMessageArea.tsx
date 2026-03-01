@@ -1109,6 +1109,9 @@ export default function DirectMessageArea({
               fileType: msg.fileType,
               fileSize: msg.fileSize,
               originalName: msg.originalName,
+              // Pass forwarded-message metadata so MessageBubble renders the "Forwarded from" banner
+              ...(msg.forwardedFromId ? { forwardedFromId: msg.forwardedFromId } : {}),
+              ...(msg.forwardedFrom ? { forwardedFrom: msg.forwardedFrom } : {}),
             };
 
             return (
@@ -1165,7 +1168,7 @@ export default function DirectMessageArea({
                     onStartEdit={() => handleStartEdit(msg)}
                     onDeleteRequest={() => handleDeleteRequest(msg.id)}
                     onCopy={msg.content ? () => handleCopyMessage(msg.content!) : undefined}
-                    onForward={() => setForwardMessage(msg)}
+                    onForward={msg.content || msg.fileUrl ? () => setForwardMessage(msg) : undefined}
                     onPin={() => handlePinMessage(msg.id)}
                     onVotePoll={async (msgId: string, optId: string) => {
                       try {
