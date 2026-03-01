@@ -95,6 +95,7 @@ export class DirectService {
     const conversations = await this.prisma.directConversation.findMany({
       where: {
         participants: { some: { userId } },
+        isSavedMessages: false,
       },
       include: {
         participants: {
@@ -428,33 +429,22 @@ export class DirectService {
    * creator, i.e. participantCount = 1 and that participant is the requesting user.
    */
   async getOrCreateSavedMessagesConversation(userId: string): Promise<{ conversationId: string }> {
-    // Find all conversations this user participates in, with a participant count.
-    // A "self-conversation" (Saved Messages) is the one where the user is the
-    // ONLY participant (count = 1). We use pure Prisma — no raw SQL.
-    const participations = await this.prisma.directParticipant.findMany({
-      where: { userId },
-      select: {
-        conversationId: true,
-        conversation: {
-          select: {
-            _count: { select: { participants: true } },
-          },
-        },
+    // Use the deterministic isSavedMessages flag for a reliable lookup.
+    // This avoids the fragile participant-count heuristic.
+    const existing = await this.prisma.directConversation.findFirst({
+      where: {
+        isSavedMessages: true,
+        participants: { some: { userId } },
       },
+      select: { id: true },
     });
 
-    // Pick the first conversation that has exactly 1 participant
-    const selfParticipation = participations.find(
-      (p) => p.conversation._count.participants === 1,
-    );
+    if (existing) return { conversationId: existing.id };
 
-    if (selfParticipation) {
-      return { conversationId: selfParticipation.conversationId };
-    }
-
-    // None found — create a new self-conversation (the user is the sole participant)
+    // None found — create a new saved-messages conversation (user is sole participant)
     const conv = await this.prisma.directConversation.create({
       data: {
+        isSavedMessages: true,
         participants: {
           create: [{ userId }],
         },
