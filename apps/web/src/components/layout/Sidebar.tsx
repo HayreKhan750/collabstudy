@@ -336,13 +336,14 @@ export default function Sidebar({
   return (
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
-      <aside
-        className={`hidden md:flex flex-col h-full bg-white/40 dark:bg-black/20 backdrop-blur-xl border-r border-white/30 dark:border-white/[0.05] shadow-lg transition-all duration-300 ease-in-out flex-shrink-0 z-20
-          ${collapsed ? 'w-[60px]' : 'w-60'}`}
-        style={{ minWidth: collapsed ? 60 : 240 }}
+      <motion.aside
+        className="hidden md:flex flex-col h-full bg-white/40 dark:bg-black/20 backdrop-blur-xl border-r border-white/30 dark:border-white/[0.05] shadow-elevation-2 flex-shrink-0 z-20"
+        animate={{ width: collapsed ? 60 : 240 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 32, mass: 0.8 }}
+        style={{ minWidth: collapsed ? 60 : 240, overflow: 'hidden' }}
       >
         {sidebarContent}
-      </aside>
+      </motion.aside>
 
       {/* ── Mobile slide-over drawer ─────────────────────────────────────────── */}
       <AnimatePresence>

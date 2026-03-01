@@ -1,15 +1,41 @@
 'use client';
 
-/** Shows a tooltip to the right of an element — used in collapsed mode. */
+/**
+ * SidebarTooltip — animated fade-in tooltip for collapsed sidebar icon-only mode.
+ * Uses CSS opacity + translate transition for a premium feel without framer-motion overhead.
+ */
 export function SidebarTooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="relative group/tip flex items-center w-full">
       {children}
-      <div className="pointer-events-none absolute left-full ml-3 z-[200] hidden group-hover/tip:flex items-center">
-        <div className="bg-slate-800 dark:bg-slate-950 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-xl border border-slate-700 dark:border-slate-800 whitespace-nowrap">
+      {/* Tooltip — fades in on hover with a smooth translate */}
+      <div
+        className="
+          pointer-events-none absolute left-full ml-3 z-[200]
+          flex items-center
+          opacity-0 translate-x-[-4px]
+          group-hover/tip:opacity-100 group-hover/tip:translate-x-0
+          transition-all duration-150 ease-out
+        "
+      >
+        <div className="
+          relative
+          bg-surface-4 dark:bg-surface-4
+          text-fg text-xs font-medium
+          px-2.5 py-1.5 rounded-lg
+          shadow-elevation-3
+          border border-border
+          whitespace-nowrap
+          backdrop-blur-md
+        ">
           {label}
+          {/* Arrow */}
+          <div className="
+            absolute right-full top-1/2 -translate-y-1/2
+            border-4 border-transparent
+            border-r-surface-4
+          " />
         </div>
-        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800 dark:border-r-slate-950" />
       </div>
     </div>
   );

@@ -204,10 +204,18 @@ export function DirectMessageList({
 
             return (
               <div key={conv.id} className="relative group/dm flex items-center">
+                {/* Active glow indicator bar */}
+                {isSelected && (
+                  <motion.span
+                    layoutId="dm-active-bar"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.8)]"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
                 <button
                   onClick={() => onConversationSelect(conv)}
-                  className={`flex-1 min-w-0 text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
-                    ${isSelected ? 'bg-purple-500/20 dark:bg-purple-500/30 text-purple-600 dark:text-purple-200' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+                  className={`flex-1 min-w-0 text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150
+                    ${isSelected ? 'bg-violet-500/15 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
                 >
                   {/* Avatar with online dot */}
                   <div className="relative flex-shrink-0">

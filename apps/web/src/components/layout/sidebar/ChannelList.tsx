@@ -263,14 +263,24 @@ export function ChannelList({
         />
       ) : (
         <div className="space-y-0.5 px-1.5">
-          {channels.map((channel) => (
+          {channels.map((channel) => {
+            const isActive = selectedChannel?.id === channel.id;
+            return (
             <div key={channel.id} className="relative group/ch flex items-center">
+              {/* Active glow indicator bar */}
+              {isActive && (
+                <motion.span
+                  layoutId="channel-active-bar"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
               <button
                 onClick={() => onChannelSelect(channel)}
-                className={`flex-1 min-w-0 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
+                className={`flex-1 min-w-0 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150
                   ${
-                    selectedChannel?.id === channel.id
-                      ? 'bg-indigo-500/20 dark:bg-indigo-500/30 text-indigo-600 dark:text-indigo-200'
+                    isActive
+                      ? 'bg-indigo-500/15 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 font-medium shadow-sm'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
@@ -331,7 +341,8 @@ export function ChannelList({
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -53,7 +53,7 @@ export function SidebarFooter({ username, avatar, userRole, collapsed, onOpenSet
         <SidebarTooltip label={username || 'User'}>
           <div className="relative mx-auto cursor-pointer" onClick={handleSettingsClick}>
             <Avatar size="sm" />
-            <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white dark:border-slate-900" />
+            <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white dark:border-slate-900 shadow-[0_0_6px_rgba(74,222,128,0.7)]" />
           </div>
         </SidebarTooltip>
       </div>
@@ -69,7 +69,7 @@ export function SidebarFooter({ username, avatar, userRole, collapsed, onOpenSet
       >
         <div className="relative flex-shrink-0">
           <Avatar size="md" />
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white dark:border-slate-900" aria-label="Online" />
+          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white dark:border-slate-900 shadow-[0_0_6px_rgba(74,222,128,0.7)]" aria-label="Online" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{username || 'User'}</p>
