@@ -3,152 +3,193 @@
 @tailwind utilities;
 
 /* ============================================================================
-   CollabStudy Design System — Phase 10.1
-   Premium dark-first design tokens with light mode support.
-   Base grid: 4px. All spacing is a multiple of 4px.
-   All values accessible via CSS variables and Tailwind @theme.
+   CollabStudy Design System — FAANG Premium Foundation
+   8pt grid · 5-level surface elevation · Light/Dark theme
    ============================================================================ */
 
 /* --------------------------------------------------------------------------
-   DARK MODE (default)
+   DARK MODE TOKENS (default — dark-first design)
    -------------------------------------------------------------------------- */
 :root {
   color-scheme: dark;
 
-  /* Brand / Primary */
-  --color-primary:          #7c3aed; /* violet-600 */
-  --color-primary-hover:    #6d28d9; /* violet-700 */
-  --color-primary-light:    #8b5cf6; /* violet-500 */
-  --color-primary-muted:    rgba(124, 58, 237, 0.15);
+  /* ── Brand / Primary ─────────────────────────────── */
+  --color-primary:          #7c3aed;   /* violet-600 */
+  --color-primary-hover:    #6d28d9;   /* violet-700 */
+  --color-primary-light:    #a78bfa;   /* violet-400 — readable on dark */
+  --color-primary-muted:    rgba(124, 58, 237, 0.18);
   --color-primary-fg:       #ffffff;
 
-  /* Surfaces */
-  --color-bg:               #0f0f13; /* deepest background */
-  --color-surface:          #18181f; /* card / panel */
-  --color-surface-elevated: #22222d; /* modals, dropdowns */
-  --color-surface-hover:    #2a2a38; /* hover state */
-  --color-border:           rgba(255, 255, 255, 0.08);
-  --color-border-strong:    rgba(255, 255, 255, 0.16);
+  /* ── 5-Level Surface Elevation System ────────────── */
+  /* Each level adds perceived depth via bg opacity + subtle border */
+  --color-bg:               #07070c;   /* absolute canvas — deepest */
+  --color-surface-1:        #0f0f15;   /* base panels, sidebars */
+  --color-surface-2:        #16161f;   /* cards, message areas */
+  --color-surface-3:        #1e1e2a;   /* modals, popovers */
+  --color-surface-4:        #262635;   /* dropdowns, tooltips */
+  --color-surface-5:        #2e2e3f;   /* highest — selected items */
+  --color-surface-hover:    rgba(255, 255, 255, 0.06);
+  --color-surface-inset:    rgba(0, 0, 0, 0.25);   /* inputs, code blocks */
 
-  /* Text */
-  --color-fg:               #f0f0f5;
-  --color-fg-muted:         #9898a8;
-  --color-fg-subtle:        #5c5c70;
-  --color-fg-inverse:       #0f0f13;
+  /* ── Borders ─────────────────────────────────────── */
+  --color-border:           rgba(255, 255, 255, 0.07);
+  --color-border-strong:    rgba(255, 255, 255, 0.14);
+  --color-border-subtle:    rgba(255, 255, 255, 0.04);
 
-  /* Semantic */
-  --color-accent:           #06b6d4; /* cyan-500 */
-  --color-accent-hover:     #0891b2; /* cyan-600 */
-  --color-success:          #22c55e; /* green-500 */
-  --color-success-muted:    rgba(34, 197, 94, 0.15);
-  --color-danger:           #ef4444; /* red-500 */
-  --color-danger-hover:     #dc2626; /* red-600 */
-  --color-danger-muted:     rgba(239, 68, 68, 0.15);
-  --color-warning:          #f59e0b; /* amber-500 */
-  --color-warning-muted:    rgba(245, 158, 11, 0.15);
-  --color-info:             #3b82f6; /* blue-500 */
+  /* ── Text ────────────────────────────────────────── */
+  --color-fg:               #e8e8f0;   /* primary text */
+  --color-fg-muted:         #9090a8;   /* secondary text */
+  --color-fg-subtle:        #52526a;   /* tertiary / disabled */
+  --color-fg-inverse:       #07070c;   /* text on light backgrounds */
 
-  /* Mention / highlight */
-  --color-mention-bg:       rgba(124, 58, 237, 0.20);
-  --color-mention-border:   rgba(124, 58, 237, 0.50);
+  /* ── Semantic Colors ─────────────────────────────── */
+  --color-accent:           #22d3ee;   /* cyan-400 */
+  --color-accent-hover:     #06b6d4;   /* cyan-500 */
+  --color-success:          #4ade80;   /* green-400 */
+  --color-success-muted:    rgba(74, 222, 128, 0.14);
+  --color-danger:           #f87171;   /* red-400 */
+  --color-danger-hover:     #ef4444;   /* red-500 */
+  --color-danger-muted:     rgba(248, 113, 113, 0.14);
+  --color-warning:          #fbbf24;   /* amber-400 */
+  --color-warning-muted:    rgba(251, 191, 36, 0.14);
+  --color-info:             #60a5fa;   /* blue-400 */
 
-  /* Online presence dots */
-  --color-online:           #22c55e;
-  --color-away:             #f59e0b;
-  --color-offline:          #4b5563;
+  /* ── Mention / Highlight ─────────────────────────── */
+  --color-mention-bg:       rgba(124, 58, 237, 0.18);
+  --color-mention-border:   rgba(167, 139, 250, 0.45);
 
-  /* Typography */
-  --font-sans:              var(--font-geist-sans), 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono:              var(--font-geist-mono), 'JetBrains Mono', 'Fira Code', monospace;
+  /* ── Presence ────────────────────────────────────── */
+  --color-online:           #4ade80;
+  --color-away:             #fbbf24;
+  --color-offline:          #374151;
 
-  --text-xs:   0.75rem;   /* 12px */
-  --text-sm:   0.875rem;  /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg:   1.125rem;  /* 18px */
-  --text-xl:   1.25rem;   /* 20px */
-  --text-2xl:  1.5rem;    /* 24px */
-  --text-3xl:  1.875rem;  /* 30px */
-  --text-4xl:  2.25rem;   /* 36px */
+  /* ── Typography ──────────────────────────────────── */
+  --font-sans: var(--font-geist-sans), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', 'Fira Code', monospace;
 
-  --font-normal:   400;
-  --font-medium:   500;
-  --font-semibold: 600;
-  --font-bold:     700;
+  /* ── 8pt Spacing Grid ────────────────────────────── */
+  --space-px:  1px;
+  --space-0:   0;
+  --space-1:   0.25rem;  /* 4px  — micro */
+  --space-2:   0.5rem;   /* 8px  — 1 grid unit */
+  --space-3:   0.75rem;  /* 12px — 1.5 units */
+  --space-4:   1rem;     /* 16px — 2 units */
+  --space-5:   1.25rem;  /* 20px — 2.5 units */
+  --space-6:   1.5rem;   /* 24px — 3 units */
+  --space-8:   2rem;     /* 32px — 4 units ★ primary rhythm */
+  --space-10:  2.5rem;   /* 40px — 5 units */
+  --space-12:  3rem;     /* 48px — 6 units */
+  --space-14:  3.5rem;   /* 56px — 7 units */
+  --space-16:  4rem;     /* 64px — 8 units */
+  --space-20:  5rem;     /* 80px — 10 units */
+  --space-24:  6rem;     /* 96px — 12 units */
+  --space-32:  8rem;     /* 128px — 16 units */
 
-  --leading-tight:  1.25;
-  --leading-normal: 1.5;
-  --leading-relaxed:1.75;
+  /* ── Border Radius ───────────────────────────────── */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-xl:   14px;
+  --radius-2xl:  20px;
+  --radius-3xl:  28px;
+  --radius-full: 9999px;
 
-  /* Spacing — 4px base grid */
-  --space-1:  0.25rem;  /* 4px */
-  --space-2:  0.5rem;   /* 8px */
-  --space-3:  0.75rem;  /* 12px */
-  --space-4:  1rem;     /* 16px */
-  --space-5:  1.25rem;  /* 20px */
-  --space-6:  1.5rem;   /* 24px */
-  --space-8:  2rem;     /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  --space-16: 4rem;     /* 64px */
+  /* ── Elevation Shadows (dark) ────────────────────── */
+  /* Layered: ambient + directional + accent rim */
+  --shadow-elevation-1:
+    0 1px 2px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-elevation-2:
+    0 2px 8px rgba(0,0,0,0.55),
+    0 1px 2px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-elevation-3:
+    0 4px 16px rgba(0,0,0,0.6),
+    0 2px 4px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.07);
+  --shadow-elevation-4:
+    0 8px 32px rgba(0,0,0,0.65),
+    0 4px 8px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.08);
+  --shadow-elevation-5:
+    0 16px 48px rgba(0,0,0,0.7),
+    0 8px 16px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,255,255,0.09),
+    0 0 64px rgba(124,58,237,0.06);
 
-  /* Border radius */
-  --radius-sm:  0.25rem;  /* 4px  — inputs, tags */
-  --radius-md:  0.5rem;   /* 8px  — buttons, cards */
-  --radius-lg:  0.75rem;  /* 12px — panels, modals */
-  --radius-xl:  1rem;     /* 16px — large cards */
-  --radius-2xl: 1.5rem;   /* 24px — hero sections */
-  --radius-full: 9999px;  /* pills, avatars */
+  /* ── Glow Effects ────────────────────────────────── */
+  --shadow-glow-primary: 0 0 0 1px rgba(124,58,237,0.3), 0 0 32px rgba(124,58,237,0.35);
+  --shadow-glow-accent:  0 0 0 1px rgba(34,211,238,0.25), 0 0 24px rgba(34,211,238,0.25);
 
-  /* Shadows */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
-  --shadow-xl:  0 16px 48px rgba(0,0,0,0.7);
-  --shadow-glow-primary: 0 0 24px rgba(124, 58, 237, 0.4);
-  --shadow-glow-accent:  0 0 24px rgba(6, 182, 212, 0.3);
+  /* ── Glass Morphism ──────────────────────────────── */
+  --glass-bg:     rgba(255, 255, 255, 0.04);
+  --glass-bg-md:  rgba(255, 255, 255, 0.07);
+  --glass-bg-lg:  rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.08);
 
-  /* Animation */
+  /* ── Ambient Background Gradient ─────────────────── */
+  --gradient-ambient:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(124,58,237,0.08) 0%, transparent 60%);
+
+  /* ── Animation Easing ────────────────────────────── */
   --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
   --ease-in:      cubic-bezier(0.4, 0, 1, 1);
   --ease-out:     cubic-bezier(0, 0, 0.2, 1);
+  --ease-expo-out:cubic-bezier(0.16, 1, 0.3, 1);
 
-  --duration-fast:   120ms;
-  --duration-normal: 200ms;
-  --duration-slow:   350ms;
-  --duration-slower: 500ms;
+  --duration-instant: 80ms;
+  --duration-fast:    120ms;
+  --duration-normal:  200ms;
+  --duration-slow:    350ms;
+  --duration-slower:  500ms;
 
-  /* Sidebar dimensions */
+  /* ── Layout Dimensions ───────────────────────────── */
   --sidebar-width:     240px;
   --sidebar-collapsed: 64px;
   --header-height:     56px;
   --input-height:      40px;
+  --thread-width:      320px;
 }
 
 /* --------------------------------------------------------------------------
-   LIGHT MODE — activated by .light class on <html> (via next-themes)
+   LIGHT MODE TOKENS — activated by .light on <html> via next-themes
    -------------------------------------------------------------------------- */
-:root.light, [data-theme="light"] {
+.light, [data-theme="light"] {
   color-scheme: light;
 
-  --color-primary:          #7c3aed;
-  --color-primary-hover:    #6d28d9;
-  --color-primary-light:    #8b5cf6;
-  --color-primary-muted:    rgba(124, 58, 237, 0.10);
+  /* ── Brand ───────────────────────────────────────── */
+  --color-primary:          #6d28d9;   /* violet-700 — slightly deeper for contrast */
+  --color-primary-hover:    #5b21b6;
+  --color-primary-light:    #7c3aed;
+  --color-primary-muted:    rgba(109, 40, 217, 0.10);
   --color-primary-fg:       #ffffff;
 
-  --color-bg:               #f8f8fc;
-  --color-surface:          #ffffff;
-  --color-surface-elevated: #f0f0f8;
-  --color-surface-hover:    #e8e8f0;
+  /* ── 5-Level Surface Elevation System (light) ────── */
+  /* Light mode uses white-based surfaces with increasing warmth */
+  --color-bg:               #f0f0f8;   /* warm off-white canvas */
+  --color-surface-1:        #ffffff;   /* pure white — base panels */
+  --color-surface-2:        #f8f7ff;   /* very slight violet tint — cards */
+  --color-surface-3:        #f1f0fc;   /* modals, popovers */
+  --color-surface-4:        #e9e8f8;   /* dropdowns, tooltips */
+  --color-surface-5:        #e0dff5;   /* selected items, active states */
+  --color-surface-hover:    rgba(109, 40, 217, 0.05);
+  --color-surface-inset:    rgba(0, 0, 0, 0.04);
+
+  /* ── Borders ─────────────────────────────────────── */
   --color-border:           rgba(0, 0, 0, 0.08);
   --color-border-strong:    rgba(0, 0, 0, 0.16);
+  --color-border-subtle:    rgba(0, 0, 0, 0.04);
 
-  --color-fg:               #0f0f13;
-  --color-fg-muted:         #5c5c6e;
-  --color-fg-subtle:        #9898a8;
-  --color-fg-inverse:       #f0f0f5;
+  /* ── Text ────────────────────────────────────────── */
+  --color-fg:               #0d0d14;
+  --color-fg-muted:         #5c5c78;
+  --color-fg-subtle:        #9090aa;
+  --color-fg-inverse:       #f0f0f8;
 
+  /* ── Semantic ────────────────────────────────────── */
   --color-accent:           #0891b2;
   --color-accent-hover:     #0e7490;
   --color-success:          #16a34a;
@@ -160,26 +201,52 @@
   --color-warning-muted:    rgba(217, 119, 6, 0.10);
   --color-info:             #2563eb;
 
-  --color-mention-bg:       rgba(124, 58, 237, 0.10);
-  --color-mention-border:   rgba(124, 58, 237, 0.40);
+  /* ── Mention ─────────────────────────────────────── */
+  --color-mention-bg:       rgba(109, 40, 217, 0.10);
+  --color-mention-border:   rgba(109, 40, 217, 0.35);
 
+  /* ── Presence ────────────────────────────────────── */
   --color-online:           #16a34a;
   --color-away:             #d97706;
   --color-offline:          #9ca3af;
 
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.10);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
-  --shadow-xl:  0 16px 48px rgba(0,0,0,0.15);
-  --shadow-glow-primary: 0 0 24px rgba(124, 58, 237, 0.20);
-  --shadow-glow-accent:  0 0 24px rgba(8, 145, 178, 0.20);
-}
+  /* ── Elevation Shadows (light) — soft, airy ──────── */
+  --shadow-elevation-1:
+    0 1px 2px rgba(0,0,0,0.07),
+    0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-elevation-2:
+    0 2px 8px rgba(0,0,0,0.08),
+    0 1px 2px rgba(0,0,0,0.06),
+    0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-elevation-3:
+    0 4px 16px rgba(0,0,0,0.10),
+    0 2px 4px rgba(0,0,0,0.07),
+    0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-elevation-4:
+    0 8px 32px rgba(0,0,0,0.12),
+    0 4px 8px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-elevation-5:
+    0 16px 48px rgba(0,0,0,0.14),
+    0 8px 16px rgba(0,0,0,0.09),
+    0 0 0 1px rgba(0,0,0,0.06),
+    0 0 32px rgba(109,40,217,0.05);
 
-/* --------------------------------------------------------------------------
-   TAILWIND @theme — expose tokens to Tailwind utility classes
-   -------------------------------------------------------------------------- */
-/* Design tokens are defined as CSS custom properties above.
-   Use them directly via var(--token-name) in components. */
+  /* ── Glow (lighter on white) ─────────────────────── */
+  --shadow-glow-primary: 0 0 0 1px rgba(109,40,217,0.20), 0 0 20px rgba(109,40,217,0.18);
+  --shadow-glow-accent:  0 0 0 1px rgba(8,145,178,0.18), 0 0 16px rgba(8,145,178,0.15);
+
+  /* ── Glass (light) ───────────────────────────────── */
+  --glass-bg:     rgba(255, 255, 255, 0.70);
+  --glass-bg-md:  rgba(255, 255, 255, 0.85);
+  --glass-bg-lg:  rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
+
+  /* ── Ambient Gradient (subtle violet bloom, light) ── */
+  --gradient-ambient:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(109,40,217,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 90% 90%, rgba(124,58,237,0.04) 0%, transparent 60%);
+}
 
 /* --------------------------------------------------------------------------
    BASE RESET
@@ -191,37 +258,41 @@
 }
 
 html {
-  /* Prevent FOUC — dark mode is default */
-  background-color: #0f0f13;
+  /* Prevent FOUC — canvas color applied immediately */
+  background-color: #07070c;
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+.light html {
+  background-color: #f0f0f8;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
+  font-size: 1rem;
+  line-height: 1.625;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'rlig' 1, 'calt' 1, 'ss01' 1;
+  text-rendering: optimizeLegibility;
 }
 
 /* --------------------------------------------------------------------------
-   SCROLLBAR — premium thin dark scrollbar
+   SCROLLBAR — minimal, premium
    -------------------------------------------------------------------------- */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border-strong);
   border-radius: var(--radius-full);
+  transition: background 200ms;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-fg-subtle);
-}
+::-webkit-scrollbar-thumb:hover { background: var(--color-fg-subtle); }
+* { scrollbar-width: thin; scrollbar-color: var(--color-border-strong) transparent; }
 
 /* --------------------------------------------------------------------------
    FOCUS RING — accessible, on-brand
@@ -241,18 +312,97 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   UTILITY CLASSES — premium helpers
+   TYPOGRAPHY BASE
    -------------------------------------------------------------------------- */
-
-/* Glass morphism surface */
-.glass {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid var(--color-border);
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--color-fg);
 }
 
-/* Gradient text */
+a {
+  color: var(--color-primary-light);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-smooth);
+}
+a:hover { color: var(--color-primary); }
+
+p { color: var(--color-fg); line-height: 1.625; }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-surface-inset);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.35em;
+  color: var(--color-accent);
+}
+
+pre {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--color-fg);
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   UTILITY CLASSES — Glass Morphism Surfaces
+   -------------------------------------------------------------------------- */
+
+/* Glass — Level 1: subtle translucency (sidebars, panels) */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
+/* Glass — Level 2: moderate (cards, dropdowns) */
+.glass-md {
+  background: var(--glass-bg-md);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid var(--glass-border);
+}
+
+/* Glass — Level 3: strong (modals, overlays) */
+.glass-lg {
+  background: var(--glass-bg-lg);
+  backdrop-filter: blur(40px) saturate(220%);
+  -webkit-backdrop-filter: blur(40px) saturate(220%);
+  border: 1px solid var(--color-border-strong);
+}
+
+/* --------------------------------------------------------------------------
+   UTILITY CLASSES — Surface Elevations
+   -------------------------------------------------------------------------- */
+.surface-1 { background: var(--color-surface-1); }
+.surface-2 { background: var(--color-surface-2); }
+.surface-3 { background: var(--color-surface-3); }
+.surface-4 { background: var(--color-surface-4); }
+.surface-5 { background: var(--color-surface-5); }
+
+.shadow-e1 { box-shadow: var(--shadow-elevation-1); }
+.shadow-e2 { box-shadow: var(--shadow-elevation-2); }
+.shadow-e3 { box-shadow: var(--shadow-elevation-3); }
+.shadow-e4 { box-shadow: var(--shadow-elevation-4); }
+.shadow-e5 { box-shadow: var(--shadow-elevation-5); }
+
+/* --------------------------------------------------------------------------
+   UTILITY CLASSES — Premium Helpers
+   -------------------------------------------------------------------------- */
+
+/* Gradient text — brand accent */
 .gradient-text {
   background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-accent) 100%);
   -webkit-background-clip: text;
@@ -260,113 +410,175 @@ body {
   background-clip: text;
 }
 
-/* Premium glow button */
-.glow-primary {
-  box-shadow: var(--shadow-glow-primary);
+/* Gradient text — warm gold (premium tier) */
+.gradient-text-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Smooth transitions using our timing tokens */
+/* Ambient glow background layer */
+.ambient-bg {
+  background-image: var(--gradient-ambient);
+  background-attachment: fixed;
+}
+
+/* Glow effects */
+.glow-primary { box-shadow: var(--shadow-glow-primary); }
+.glow-accent  { box-shadow: var(--shadow-glow-accent); }
+
+/* Transition preset */
 .transition-premium {
   transition: all var(--duration-normal) var(--ease-smooth);
 }
+.transition-fast {
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+.transition-spring {
+  transition: all var(--duration-normal) var(--ease-spring);
+}
 
-/* Mention highlight */
+/* --------------------------------------------------------------------------
+   UTILITY CLASSES — Mention / Presence / Badge
+   -------------------------------------------------------------------------- */
 .mention-highlight {
   background: var(--color-mention-bg);
   border: 1px solid var(--color-mention-border);
   border-radius: var(--radius-sm);
   padding: 0 var(--space-1);
   color: var(--color-primary-light);
-  font-weight: var(--font-medium);
+  font-weight: 500;
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-smooth);
+}
+.mention-highlight:hover {
+  background: rgba(124, 58, 237, 0.28);
 }
 
-/* Unread badge */
 .unread-badge {
   background: var(--color-danger);
   color: white;
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  min-width: 18px;
-  height: 18px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 var(--space-1);
+  padding: 0 4px;
   line-height: 1;
+  letter-spacing: 0.01em;
 }
 
-/* Presence dot */
 .presence-dot {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
-  border: 2px solid var(--color-surface);
+  border: 2px solid var(--color-surface-1);
   flex-shrink: 0;
 }
 .presence-dot.online  { background: var(--color-online); }
 .presence-dot.away    { background: var(--color-away); }
 .presence-dot.offline { background: var(--color-offline); }
 
-/* Code blocks */
-code {
-  font-family: var(--font-mono);
-  font-size: 0.875em;
-  background: var(--color-surface-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 0.1em 0.3em;
-}
-
-pre code {
-  background: transparent;
-  border: none;
-  padding: 0;
+/* --------------------------------------------------------------------------
+   UTILITY CLASSES — Skeleton / Loading
+   -------------------------------------------------------------------------- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2) 25%,
+    var(--color-surface-3) 50%,
+    var(--color-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: var(--radius-md);
 }
 
 /* --------------------------------------------------------------------------
    ANIMATION KEYFRAMES
    -------------------------------------------------------------------------- */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(6px); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(16px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes pulse-glow {
+@keyframes pulsGlow {
   0%, 100% { box-shadow: 0 0 8px rgba(124, 58, 237, 0.3); }
-  50%       { box-shadow: 0 0 20px rgba(124, 58, 237, 0.6); }
+  50%      { box-shadow: 0 0 28px rgba(124, 58, 237, 0.7); }
 }
-
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
-
-.animate-fade-in    { animation: fadeIn var(--duration-normal) var(--ease-out) forwards; }
-.animate-slide-in   { animation: slideInRight var(--duration-normal) var(--ease-out) forwards; }
-.animate-scale-in   { animation: scaleIn var(--duration-fast) var(--ease-spring) forwards; }
-.animate-pulse-glow { animation: pulse-glow 2s var(--ease-smooth) infinite; }
-
-/* Skeleton shimmer */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-surface) 25%,
-    var(--color-surface-elevated) 50%,
-    var(--color-surface) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s var(--ease-smooth) infinite;
-  border-radius: var(--radius-md);
+@keyframes bounceDot {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%           { transform: translateY(-6px); }
 }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+@keyframes pingSlw {
+  0%         { transform: scale(1); opacity: 0.8; }
+  75%, 100%  { transform: scale(2.2); opacity: 0; }
+}
+
+/* Utility animation classes */
+.animate-fade-in    { animation: fadeIn    var(--duration-normal) var(--ease-out) forwards; }
+.animate-fade-out   { animation: fadeOut   var(--duration-fast) var(--ease-in) forwards; }
+.animate-scale-in   { animation: scaleIn   var(--duration-fast) var(--ease-spring) forwards; }
+.animate-slide-in   { animation: slideInRight var(--duration-normal) var(--ease-out) forwards; }
+.animate-slide-up   { animation: slideUp   var(--duration-normal) var(--ease-out) forwards; }
+.animate-pulse-glow { animation: pulsGlow  2.5s var(--ease-smooth) infinite; }
+.animate-shimmer    { animation: shimmer   1.6s linear infinite; }
+.animate-bounce-dot { animation: bounceDot 1.2s ease-in-out infinite; }
+.animate-float      { animation: float     3s ease-in-out infinite; }
+.animate-ping-slow  { animation: pingSlw   2s var(--ease-smooth) infinite; }
+
+/* --------------------------------------------------------------------------
+   LAYOUT HELPERS
+   -------------------------------------------------------------------------- */
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Truncate text */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Safe area padding (mobile) */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pt-safe { padding-top:    env(safe-area-inset-top, 0px); }
