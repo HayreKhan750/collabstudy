@@ -234,9 +234,9 @@ export default function ThreadPanel({
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 xl:w-96 flex-shrink-0 bg-white/60 dark:bg-[#0a051e]/40 backdrop-blur-2xl border-l border-gray-200 dark:border-white/[0.04] shadow-[-4px_0_24px_-10px_rgba(0,0,0,0.5)] flex flex-col h-full z-20 text-gray-900 dark:text-violet-50">
+    <div className="w-80 xl:w-96 flex-shrink-0 bg-white/80 backdrop-blur-lg dark:bg-[#131627]/80 dark:backdrop-blur-2xl border-l border-slate-200/50 dark:border-white/[0.08] shadow-[-1px_0_12px_-4px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_24px_-10px_rgba(0,0,0,0.5)] flex flex-col h-full z-20 text-gray-900 dark:text-[#F8F9FA]">
       {/* Header */}
-      <div className="flex-shrink-0 sticky top-0 z-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex justify-between items-center">
+      <div className="flex-shrink-0 sticky top-0 z-10 bg-white/70 backdrop-blur-md dark:bg-[#131627]/80 border-b border-slate-200/60 dark:border-white/[0.08] px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -256,7 +256,7 @@ export default function ThreadPanel({
       {/* Scrollable: parent message + replies */}
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {/* Parent Message */}
-        <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg border border-gray-200 dark:border-white/[0.06]">
+        <div className="bg-white/70 dark:bg-[#131627]/60 p-3 rounded-xl border border-slate-200/60 dark:border-white/[0.08] shadow-sm">
           <div className="flex items-start gap-2">
             {resolveUser(parentMessage).username !== '?' && (parentMessage as any).sender?.avatar || (parentMessage as any).user?.avatar ? (
               <img

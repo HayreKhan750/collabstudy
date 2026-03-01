@@ -1384,7 +1384,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   return (
   <div className="flex h-full flex-1 overflow-hidden">
     <div
-      className={`aurora-canvas-dark flex-1 flex flex-col h-full relative overflow-hidden bg-white ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
+      className={`aurora-canvas-dark flex-1 flex flex-col h-full relative overflow-hidden ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -1674,7 +1674,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Bulk Selection Action Bar */}
       {isSelectionMode && (
-        <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.06] bg-white/60 dark:bg-[#0b0f1e]/70 backdrop-blur-2xl px-4 py-3 flex items-center gap-3 relative z-10">
+        <div className="flex-shrink-0 border-t border-slate-200/60 dark:border-white/[0.06] bg-white/70 backdrop-blur-xl dark:bg-[#0F1220]/80 dark:backdrop-blur-2xl px-4 py-3 flex items-center gap-3 relative z-10">
           <span className="text-sm text-slate-600 dark:text-violet-300/80 font-medium">{selectedMessageIds.size} selected</span>
           <button
             onClick={() => {
@@ -1729,7 +1729,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           </div>
         )}
 
-        <div className="flex items-end gap-2 bg-white/60 dark:bg-gray-800/50 border border-gray-200/80 dark:border-white/[0.06] rounded-2xl px-2 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-sm transition-shadow duration-200 focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_0_0_2px_rgba(139,92,246,0.25)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
+        <div className="flex items-end gap-2 bg-white/70 dark:bg-[#0F1220]/60 border border-slate-200/60 dark:border-white/[0.08] rounded-2xl px-2 py-2 shadow-sm dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-xl dark:backdrop-blur-2xl transition-shadow duration-200 focus-within:shadow-[0_0_0_2px_rgba(91,140,255,0.3)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
           {/* Hidden file input */}
           <input
             ref={fileInputRef}

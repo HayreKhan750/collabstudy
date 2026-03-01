@@ -114,7 +114,7 @@ export function TopBar({
   }, [handleGlobalKey]);
 
   return (
-    <header className="h-14 flex-shrink-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 gap-4 z-10 sticky top-0">
+    <header className="h-14 flex-shrink-0 bg-white/75 backdrop-blur-md dark:bg-[#0F1220]/80 border-b border-slate-200/60 dark:border-white/[0.08] flex items-center justify-between px-4 gap-4 z-10 sticky top-0">
       {/* Left — hamburger (mobile) + breadcrumb */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Mobile hamburger */}

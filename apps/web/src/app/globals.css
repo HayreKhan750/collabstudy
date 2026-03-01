@@ -488,8 +488,20 @@ pre code {
    -------------------------------------------------------------------------- */
 
 /* ─── Chat canvas (channels, DMs, saved messages) ─── */
+/*
+ * Light mode: same palette as aurora-landing-light but slightly tighter
+ * glow radii — airy, premium, NOT flat white.
+ * Dark mode: full blue/purple/cyan aurora over #0F1220 navy base.
+ */
 .aurora-canvas-dark {
   position: relative;
+  overflow: hidden;
+  /* Light mode — premium airy base, barely-visible aurora tint */
+  background-color: #F9FAFF;
+  background-image:
+    radial-gradient(ellipse 65% 45% at 70% 0%,   rgba(120, 140, 255, 0.06), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 5%  85%,  rgba(160, 130, 255, 0.05), transparent 50%),
+    linear-gradient(135deg, rgba(120, 140, 255, 0.03) 0%, transparent 55%);
 }
 
 html.dark .aurora-canvas-dark {

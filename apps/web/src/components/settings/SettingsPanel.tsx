@@ -25,7 +25,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full bg-white dark:bg-gray-800/60 border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-violet-300/30 text-sm focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)] ${props.className ?? ''}`}
+      className={`w-full bg-white/70 dark:bg-[#161A2D] border border-slate-300/60 dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/25 text-sm focus:outline-none focus:border-blue-400/40 focus:ring-2 focus:ring-blue-400/20 dark:focus:border-blue-400/30 dark:focus:ring-violet-500/20 transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)] ${props.className ?? ''}`}
     />
   );
 }
