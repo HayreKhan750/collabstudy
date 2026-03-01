@@ -1618,8 +1618,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                           fileSize: message.fileSize ?? undefined,
                           originalName: message.originalName ?? undefined,
                         } : {}),
-                        // Always track where this came from
-                        forwardedFromId: message.id,
+                        // NOTE: forwardedFromId intentionally omitted for channel messages
+                        // because channel Message IDs cannot be used as DirectMessage forwardedFromId
+                        // (cross-table foreign key would cause a 500). Content is copied directly instead.
                       });
                       setSaveToast(true);
                       setTimeout(() => setSaveToast(false), 2000);

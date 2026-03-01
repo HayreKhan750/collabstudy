@@ -519,6 +519,18 @@ export class DirectService {
       throw new BadRequestException('Message must have content or a file');
     }
 
+    // Validate forwardedFromId — it must point to an existing DirectMessage,
+    // not a channel Message (cross-table FK would cause a Prisma error).
+    // If the ID is invalid or belongs to a channel message, silently drop it.
+    let safeForwardedFromId: string | undefined;
+    if (dto.forwardedFromId) {
+      const dmExists = await this.prisma.directMessage.findUnique({
+        where: { id: dto.forwardedFromId },
+        select: { id: true },
+      });
+      safeForwardedFromId = dmExists ? dto.forwardedFromId : undefined;
+    }
+
     const message = await this.prisma.directMessage.create({
       data: {
         content: dto.content?.trim() || null,
@@ -528,7 +540,7 @@ export class DirectService {
         originalName: dto.originalName,
         senderId: userId,
         conversationId,
-        ...(dto.forwardedFromId ? { forwardedFromId: dto.forwardedFromId } : {}),
+        ...(safeForwardedFromId ? { forwardedFromId: safeForwardedFromId } : {}),
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },

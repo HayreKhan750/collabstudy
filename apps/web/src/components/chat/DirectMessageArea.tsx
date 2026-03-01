@@ -124,11 +124,16 @@ export default function DirectMessageArea({
       if (!token) return;
       try {
         await api.sendSavedMessage(token, {
-          content: message.content ?? undefined,
-          fileUrl: message.fileUrl ?? undefined,
-          fileType: message.fileType ?? undefined,
-          fileSize: message.fileSize ?? undefined,
-          originalName: message.originalName ?? undefined,
+          // Only include content if it is a non-null string
+          ...(message.content ? { content: message.content } : {}),
+          // Only include file fields if a file exists
+          ...(message.fileUrl ? {
+            fileUrl: message.fileUrl,
+            fileType: message.fileType ?? undefined,
+            fileSize: message.fileSize ?? undefined,
+            originalName: message.originalName ?? undefined,
+          } : {}),
+          // Track the source DM message
           forwardedFromId: message.id,
         });
         setSaveToast(true);
