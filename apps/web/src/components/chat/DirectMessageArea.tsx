@@ -472,6 +472,12 @@ export default function DirectMessageArea({
       );
     });
 
+    // ── dm_history_cleared ────────────────────────────────────────────────────
+    // Fired after clear history — clear the other participant's UI too
+    socket.on('dm_history_cleared', ({ conversationId: clearedId }: { conversationId: string }) => {
+      if (clearedId === conversationId) setMessages([]);
+    });
+
     // ── dm_read_receipt — fired when the other participant marks messages read ─
     socket.on('dm_read_receipt', (payload: { conversationId: string; userId: string; lastReadAt: string }) => {
       if (payload.conversationId === conversationId) {
@@ -1421,17 +1427,27 @@ export default function DirectMessageArea({
               <button
                 onClick={async () => {
                   setShowClearConfirm(false);
+                  if (!conversationId || !token) return;
                   try {
-                    await fetch(`${API_URL}/direct/${conversationId}/history`, {
+                    const res = await fetch(`${API_URL}/direct/${conversationId}/history`, {
                       method: 'DELETE',
                       headers: { Authorization: `Bearer ${token}` },
                     });
+                    if (!res.ok) {
+                      const err = await res.json().catch(() => ({}));
+                      console.error('Clear history failed:', res.status, err);
+                      return;
+                    }
+                    // Clear local state immediately on success
                     setMessages([]);
+                    // Notify the socket room so the other participant's UI
+                    // also clears without a page reload
+                    socketRef.current?.emit('dm_history_cleared', { conversationId });
                   } catch (e) {
                     console.error('Clear history failed:', e);
                   }
                 }}
-                className="flex-1 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors"
+                className="flex-1 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 active:scale-95 text-white text-sm font-semibold transition-all duration-150"
               >Clear History</button>
             </div>
           </div>

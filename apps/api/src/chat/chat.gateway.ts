@@ -556,6 +556,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   /**
    * Join the direct conversation room (called after REST start/get).
    */
+  /**
+   * dm_history_cleared — broadcast to all participants in a DM room so every
+   * connected client clears their local message list without a page reload.
+   */
+  @SubscribeMessage('dm_history_cleared')
+  handleDmHistoryCleared(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    const room = `direct:${data.conversationId}`;
+    // Broadcast to ALL sockets in the room (including sender) so every tab clears
+    this.server.to(room).emit('dm_history_cleared', { conversationId: data.conversationId });
+  }
+
   @SubscribeMessage('join_direct')
   async handleJoinDirect(
     @ConnectedSocket() client: Socket,
