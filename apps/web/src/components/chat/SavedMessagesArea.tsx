@@ -340,7 +340,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Message list ───────────────────────────────────────────────────── */}
-      <div className="w-full flex-1 overflow-y-auto">
+      <div className="w-full flex-1 overflow-y-auto flex flex-col">
         <div className="min-h-full w-full max-w-3xl mx-auto flex flex-col justify-end px-4 py-4 space-y-1">
         {nextCursor && (
           <div className="flex justify-center mb-4">

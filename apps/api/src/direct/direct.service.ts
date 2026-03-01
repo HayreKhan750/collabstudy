@@ -515,7 +515,7 @@ export class DirectService {
   async sendSavedMessage(userId: string, dto: SendDirectMessageDto) {
     const { conversationId } = await this.getOrCreateSavedMessagesConversation(userId);
 
-    if (!dto.content?.trim() && !dto.fileUrl) {
+    if (!dto.content?.trim() && !dto.fileUrl && !dto.forwardedFromId) {
       throw new BadRequestException('Message must have content or a file');
     }
 
