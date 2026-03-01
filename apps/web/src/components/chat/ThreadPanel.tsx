@@ -234,19 +234,19 @@ export default function ThreadPanel({
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 xl:w-96 flex-shrink-0 bg-gray-900 border-l border-gray-700 flex flex-col h-full z-20">
+    <div className="w-80 xl:w-96 flex-shrink-0 bg-white/90 dark:bg-black/40 backdrop-blur-xl border-l border-gray-200 dark:border-white/[0.08] flex flex-col h-full z-20 text-gray-900 dark:text-white">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-700 p-4 flex justify-between items-center bg-gray-900">
+      <div className="flex-shrink-0 border-b border-gray-200 dark:border-white/[0.08] p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          <h3 className="font-bold text-white">Thread</h3>
-          {isDm && <span className="text-xs text-slate-400 ml-1">(DM)</span>}
+          <h3 className="font-bold text-gray-900 dark:text-white">Thread</h3>
+          {isDm && <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">(DM)</span>}
         </div>
         <button
           onClick={onClose}
-          className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
+          className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded"
           aria-label="Close thread"
         >
           ✕
@@ -256,7 +256,7 @@ export default function ThreadPanel({
       {/* Scrollable: parent message + replies */}
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {/* Parent Message */}
-        <div className="bg-gray-800 p-3 rounded">
+        <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg border border-gray-200 dark:border-white/[0.06]">
           <div className="flex items-start gap-2">
             {resolveUser(parentMessage).username !== '?' && (parentMessage as any).sender?.avatar || (parentMessage as any).user?.avatar ? (
               <img
@@ -271,25 +271,25 @@ export default function ThreadPanel({
             )}
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
-                <span className="text-white text-sm font-semibold">{getDisplayName(parentMessage)}</span>
-                <span className="text-gray-400 text-xs">{formatTime(parentMessage.createdAt)}</span>
+                <span className="text-gray-900 dark:text-white text-sm font-semibold">{getDisplayName(parentMessage)}</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs">{formatTime(parentMessage.createdAt)}</span>
               </div>
-              <p className="text-gray-300 text-sm break-words">
+              <p className="text-gray-700 dark:text-gray-300 text-sm break-words">
                 {renderMessageContent(parentMessage.content, parentMessage.mentions ?? [])}
               </p>
             </div>
           </div>
         </div>
 
-        <hr className="border-gray-700" />
-        <div className="text-xs text-gray-500 pb-1">
+        <hr className="border-gray-200 dark:border-white/[0.08]" />
+        <div className="text-xs text-gray-500 dark:text-gray-500 pb-1">
           {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
         </div>
 
         {loading ? (
-          <p className="text-slate-400 text-xs text-center py-4">Loading replies…</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs text-center py-4">Loading replies…</p>
         ) : replies.length === 0 ? (
-          <p className="text-slate-400 text-xs text-center py-4">No replies yet. Be the first to reply!</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs text-center py-4">No replies yet. Be the first to reply!</p>
         ) : (
           replies.map((reply) => (
             <div key={reply.id} className="flex items-start gap-2">
@@ -306,13 +306,13 @@ export default function ThreadPanel({
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-white text-xs font-semibold">{getDisplayName(reply)}</span>
-                  <span className="text-slate-400 text-xs">{formatTime(reply.createdAt)}</span>
+                  <span className="text-gray-900 dark:text-white text-xs font-semibold">{getDisplayName(reply)}</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs">{formatTime(reply.createdAt)}</span>
                   {reply.id.startsWith('temp-') && (
-                    <span className="text-xs text-slate-500 italic">Sending…</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 italic">Sending…</span>
                   )}
                 </div>
-                <p className="text-slate-300 text-sm break-words">
+                <p className="text-gray-700 dark:text-slate-300 text-sm break-words">
                   {renderMessageContent(reply.content ?? '', (reply as any).mentions ?? [])}
                 </p>
                 {(reply.reactions?.length ?? 0) > 0 && (
@@ -323,7 +323,7 @@ export default function ThreadPanel({
                         return acc;
                       }, {}),
                     ).map(([emoji, count]) => (
-                      <span key={emoji} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs bg-slate-700 border border-slate-600 text-slate-300">
+                      <span key={emoji} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs bg-gray-200 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300">
                         {emoji} {count}
                       </span>
                     ))}
@@ -337,8 +337,8 @@ export default function ThreadPanel({
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t border-gray-700 p-4 bg-gray-900">
-        {sendError && <p className="text-red-400 text-xs mb-1">{sendError}</p>}
+      <div className="flex-shrink-0 border-t border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50 dark:bg-black/20">
+        {sendError && <p className="text-red-500 dark:text-red-400 text-xs mb-1">{sendError}</p>}
         <MentionInput
           value={replyContent}
           onChange={setReplyContent}
