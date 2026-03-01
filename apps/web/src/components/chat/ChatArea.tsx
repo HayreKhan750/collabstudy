@@ -1608,20 +1608,27 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                   onSave={async () => {
                     if (!token) return;
                     try {
-                      await api.sendSavedMessage(token, {
-                        // Only include content if it is a non-null string
-                        ...(message.content ? { content: message.content } : {}),
-                        // Only include file fields if a file exists
-                        ...(message.fileUrl ? {
-                          fileUrl: message.fileUrl,
-                          fileType: message.fileType ?? undefined,
-                          fileSize: message.fileSize ?? undefined,
-                          originalName: message.originalName ?? undefined,
-                        } : {}),
-                        // NOTE: forwardedFromId intentionally omitted for channel messages
-                        // because channel Message IDs cannot be used as DirectMessage forwardedFromId
-                        // (cross-table foreign key would cause a 500). Content is copied directly instead.
-                      });
+                      // Build payload — at least one of content/fileUrl must be present
+                      const payload: {
+                        content?: string;
+                        fileUrl?: string;
+                        fileType?: string;
+                        fileSize?: number;
+                        originalName?: string;
+                      } = {};
+                      if (message.content) payload.content = message.content;
+                      if (message.fileUrl) {
+                        payload.fileUrl = message.fileUrl;
+                        if (message.fileType) payload.fileType = message.fileType;
+                        if (message.fileSize) payload.fileSize = message.fileSize;
+                        if (message.originalName) payload.originalName = message.originalName;
+                      }
+                      // Bail out if message has no content or file (e.g. poll-only)
+                      if (!payload.content && !payload.fileUrl) {
+                        console.warn('Cannot save a message with no content or file');
+                        return;
+                      }
+                      await api.sendSavedMessage(token, payload);
                       setSaveToast(true);
                       setTimeout(() => setSaveToast(false), 2000);
                     } catch (e) { console.warn('Save failed', e); }
