@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -235,23 +236,16 @@ function AccountTab({ token }: { token: string }) {
 
 // ── Appearance Tab ────────────────────────────────────────────────────────────
 function AppearanceTab() {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const { theme: currentTheme, setTheme: setNextTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    const stored = (localStorage.getItem('theme') as Theme) || 'dark';
-    setTheme(stored);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
+
+  const theme = (mounted ? (currentTheme as Theme) : 'dark') ?? 'dark';
 
   const applyTheme = (t: Theme) => {
-    setTheme(t);
-    localStorage.setItem('theme', t);
-    const root = document.documentElement;
-    if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    setNextTheme(t);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
