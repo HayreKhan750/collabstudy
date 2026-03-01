@@ -892,7 +892,7 @@ export default function DirectMessageArea({
   return (
     <div className="flex flex-1 h-full min-h-0 overflow-hidden">
     <div
-      className={`flex-1 flex flex-col h-full bg-white/60 dark:bg-transparent overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full overflow-hidden relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-50/40 via-white to-slate-50 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-[#130E26]/60 dark:via-[#050505] dark:to-[#000000] ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -1046,7 +1046,7 @@ export default function DirectMessageArea({
 
       {/* Messages + scroll FAB wrapper */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
-        <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-6 pb-2 space-y-1">
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-6 pb-2 space-y-1 relative z-10">
           {hasMore && (
             <div className="flex justify-center pb-2">
               <button
@@ -1271,7 +1271,7 @@ export default function DirectMessageArea({
 
       {/* Input or Selection Mode */}
       {isSelectionMode ? (
-        <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md px-4 py-3 flex items-center gap-3">
+        <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.05] bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl px-4 py-3 flex items-center gap-3 relative z-10">
           <span className="text-sm text-slate-600 dark:text-slate-300">{selectedMessageIds.size} selected</span>
           <button onClick={handleForwardSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white hover:text-white rounded-lg transition-colors">Forward</button>
           <button onClick={handleDeleteSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors">Delete</button>

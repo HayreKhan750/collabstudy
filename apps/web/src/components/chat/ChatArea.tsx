@@ -1384,7 +1384,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   return (
   <div className="flex h-full flex-1 overflow-hidden">
     <div
-      className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full overflow-hidden relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-50/40 via-white to-slate-50 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-[#130E26]/60 dark:via-[#050505] dark:to-[#000000] ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -1583,7 +1583,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Messages + scroll FAB wrapper */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
-      <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-8 pb-4">
+      <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-8 pb-4 relative z-10">
 
         {/* Load older messages button — only shown when more history exists */}
         {hasMore && (
@@ -1674,7 +1674,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Bulk Selection Action Bar */}
       {isSelectionMode && (
-        <div className="flex-shrink-0 border-t border-gray-200 dark:border-white/[0.04] bg-white/80 dark:bg-[#0a051e]/60 backdrop-blur-xl px-4 py-3 flex items-center gap-3">
+        <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.05] bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl px-4 py-3 flex items-center gap-3 relative z-10">
           <span className="text-sm text-slate-600 dark:text-violet-300/80 font-medium">{selectedMessageIds.size} selected</span>
           <button
             onClick={() => {
@@ -1700,7 +1700,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Input */}
       {!isSelectionMode && (
-      <div className="flex-shrink-0 px-4 pb-4 pt-2">
+      <div className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10">
         {sendError && <p className="text-red-400 text-xs mb-1">{sendError}</p>}
         {reactionError && <p className="text-red-400 text-xs mb-1">{reactionError}</p>}
         {uploadError && <p className="text-red-400 text-xs mb-1">{uploadError}</p>}

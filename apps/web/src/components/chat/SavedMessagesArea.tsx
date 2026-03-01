@@ -313,7 +313,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
   return (
     <div
-      className="flex flex-col flex-1 h-full w-full bg-white/90 dark:bg-[#050110]/70 backdrop-blur-md"
+      className="flex flex-col flex-1 h-full w-full overflow-hidden relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-50/40 via-white to-slate-50 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-[#130E26]/60 dark:via-[#050505] dark:to-[#000000]"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
@@ -340,7 +340,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Message list ───────────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center w-full h-full overflow-y-auto pt-8">
+      <div className="flex flex-col items-center w-full h-full overflow-y-auto pt-8 relative z-10">
         <div className="w-full max-w-3xl flex flex-col justify-end px-4 space-y-4">
         {nextCursor && (
           <div className="flex justify-center mb-4">
@@ -477,12 +477,12 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md w-full flex justify-center pb-6 px-4 mt-auto pt-3">
+      <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.05] bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl w-full flex justify-center pb-6 px-4 mt-auto pt-3 relative z-10">
         <div className="w-full max-w-3xl">
-        <div className="flex items-end gap-2 bg-slate-100 dark:bg-white/5 rounded-2xl px-3 py-2">
+        <div className="flex items-end gap-2 bg-white/60 dark:bg-gray-800/50 border border-gray-200/80 dark:border-white/[0.06] rounded-2xl px-2 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-sm transition-shadow duration-200 focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_0_0_2px_rgba(139,92,246,0.25)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors flex-shrink-0 mb-0.5"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 transition-all duration-150 flex-shrink-0 mb-0.5 active:scale-95"
             title="Attach file"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -514,7 +514,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
           <button
             onClick={handleSend}
             disabled={!text.trim() || sending}
-            className="p-1.5 rounded-xl bg-indigo-500 text-white hover:text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
+            className="p-1.5 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex-shrink-0 mb-0.5 shadow-[0_0_12px_rgba(139,92,246,0.35)] mr-1"
             title="Save"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
