@@ -484,6 +484,37 @@ pre code {
 .presence-dot.offline { background: var(--color-offline); }
 
 /* --------------------------------------------------------------------------
+   UTILITY CLASSES — Aurora Canvas (unified chat area background)
+   -------------------------------------------------------------------------- */
+
+/**
+ * .aurora-canvas-dark
+ * Applied in dark mode only via the `dark` class on <html>.
+ * Uses three overlapping radial gradients + a subtle noise texture for depth.
+ * background-attachment:fixed means the aurora stays fixed as messages scroll —
+ * no per-frame repaints from the background itself (GPU composited).
+ */
+.aurora-canvas-dark {
+  position: relative;
+  background-color: #0F1220;
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(92, 103, 255, 0.15), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(140, 82, 255, 0.15), transparent 25%),
+    radial-gradient(circle at 50% 80%, rgba(0, 168, 255, 0.12), transparent 25%);
+  background-attachment: fixed;
+}
+
+.aurora-canvas-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* --------------------------------------------------------------------------
    UTILITY CLASSES — Skeleton / Loading
    -------------------------------------------------------------------------- */
 .skeleton {

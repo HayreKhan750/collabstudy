@@ -755,7 +755,7 @@ export default function DashboardPage() {
       {/* ── Create Workspace Modal ─────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-[#1a1744]/80 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+          <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl max-w-md w-full p-6 shadow-xl shadow-black/10 dark:shadow-black/60">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Create New Workspace</h3>
             {error && <p className="text-red-500 dark:text-red-400 text-sm mb-3">{error}</p>}
             <form onSubmit={handleCreateWorkspace}>
@@ -768,7 +768,7 @@ export default function DashboardPage() {
                 id="ws-name"
                 required
                 maxLength={100}
-                className="block w-full rounded-xl bg-white dark:bg-[#1a1744]/60 border border-slate-200 dark:border-white/[0.08] px-3 py-2.5 text-slate-900 dark:text-[#F8F9FA] placeholder-slate-400 dark:placeholder-indigo-200/40 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all duration-200"
+                className="block w-full rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
                 placeholder="My Study Group"
               />
               <div className="mt-5 flex justify-end gap-3">
@@ -783,7 +783,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 rounded-xl disabled:opacity-50 transition-all duration-200 shadow-[0_0_16px_rgba(139,92,246,0.3)]"
+                  className="px-4 py-2 text-sm font-semibold text-white hover:text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-50 transition-colors"
                 >
                   {createLoading ? 'Creating…' : 'Create'}
                 </button>
@@ -802,7 +802,7 @@ export default function DashboardPage() {
             onClick={() => setShowSettings(false)}
           />
           {/* Panel — slides in from the right */}
-          <div className="relative ml-auto w-full max-w-2xl h-full bg-white/95 dark:bg-[#1a1744]/90 backdrop-blur-2xl shadow-2xl flex flex-col animate-slide-in-right border-l border-white/10 dark:border-white/[0.08]">
+          <div className="relative ml-auto w-full max-w-2xl h-full bg-white/95 dark:bg-[#0A0B10]/95 backdrop-blur-md shadow-2xl flex flex-col animate-slide-in-right">
             <SettingsPanel onClose={() => setShowSettings(false)} />
           </div>
         </div>

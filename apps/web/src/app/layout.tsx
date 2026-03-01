@@ -102,8 +102,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Twilight Indigo — premium deep blue/purple radiant background */}
-        <div className="fixed inset-0 z-[-1] pointer-events-none bg-[#FAFAFA] dark:bg-[#0c0a20] dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-[#322463]/60 dark:via-[#141233] dark:to-[#0c0a20]" />
+        {/* The Radiant Abyss — cyber-purple deep space background */}
+        <div className="fixed inset-0 z-[-1] pointer-events-none bg-[#FAFAFA] dark:bg-[#030014] dark:[background-image:radial-gradient(ellipse_at_top,_#2e1a6566_0%,_#030014_60%),radial-gradient(ellipse_at_bottom-right,_#1a0a3a33_0%,_transparent_70%)]" />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>

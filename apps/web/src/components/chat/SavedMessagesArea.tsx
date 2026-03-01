@@ -313,7 +313,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
   return (
     <div
-      className="flex flex-col flex-1 h-full w-full overflow-hidden relative bg-transparent dark:bg-transparent"
+      className="flex flex-col flex-1 h-full w-full overflow-hidden relative bg-white dark:aurora-canvas-dark"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
@@ -477,9 +477,9 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.05] bg-white/40 dark:bg-[#1a1744]/50 backdrop-blur-2xl w-full flex justify-center pb-6 px-4 mt-auto pt-3 relative z-10">
+      <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.05] bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl w-full flex justify-center pb-6 px-4 mt-auto pt-3 relative z-10">
         <div className="w-full max-w-3xl">
-        <div className="flex items-end gap-2 bg-white/60 dark:bg-[#1a1744]/50 border border-gray-200/80 dark:border-white/[0.08] rounded-2xl px-2 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-2xl transition-shadow duration-200 focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_0_0_2px_rgba(139,92,246,0.25)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
+        <div className="flex items-end gap-2 bg-white/60 dark:bg-gray-800/50 border border-gray-200/80 dark:border-white/[0.06] rounded-2xl px-2 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-sm transition-shadow duration-200 focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_0_0_2px_rgba(139,92,246,0.25)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
           <button
             onClick={() => fileInputRef.current?.click()}
             className="p-1.5 rounded-xl text-slate-400 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 transition-all duration-150 flex-shrink-0 mb-0.5 active:scale-95"
