@@ -1609,11 +1609,16 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
                     if (!token) return;
                     try {
                       await api.sendSavedMessage(token, {
-                        content: message.content ?? undefined,
-                        fileUrl: message.fileUrl ?? undefined,
-                        fileType: message.fileType ?? undefined,
-                        fileSize: message.fileSize ?? undefined,
-                        originalName: message.originalName ?? undefined,
+                        // Only include content if it is a non-null string
+                        ...(message.content ? { content: message.content } : {}),
+                        // Only include file fields if a file exists
+                        ...(message.fileUrl ? {
+                          fileUrl: message.fileUrl,
+                          fileType: message.fileType ?? undefined,
+                          fileSize: message.fileSize ?? undefined,
+                          originalName: message.originalName ?? undefined,
+                        } : {}),
+                        // Always track where this came from
                         forwardedFromId: message.id,
                       });
                       setSaveToast(true);
