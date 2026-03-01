@@ -264,8 +264,26 @@ export class DirectService {
       throw new ForbiddenException('Not a participant of this conversation');
     }
 
-    if (!dto.content?.trim() && !dto.fileUrl) {
+    // forwardedFromId alone is valid — the source message carries the content
+    if (!dto.content?.trim() && !dto.fileUrl && !dto.forwardedFromId) {
       throw new BadRequestException('Message must have content or a file');
+    }
+
+    // Validate forwardedFromId — must be an existing DirectMessage (not a channel message)
+    let safeForwardedFromId: string | undefined;
+    if (dto.forwardedFromId) {
+      const dmExists = await this.prisma.directMessage.findUnique({
+        where: { id: dto.forwardedFromId },
+        select: { id: true, content: true, fileUrl: true },
+      });
+      if (dmExists) {
+        safeForwardedFromId = dto.forwardedFromId;
+        // If no content/file in payload, copy from the source message
+        if (!dto.content?.trim() && !dto.fileUrl) {
+          dto.content = dmExists.content ?? undefined;
+          dto.fileUrl = dmExists.fileUrl ?? undefined;
+        }
+      }
     }
 
     const message = await this.prisma.directMessage.create({
@@ -279,7 +297,7 @@ export class DirectService {
         conversationId,
         // parentId: thread reply support (null for main chat messages)
         ...(dto.parentId ? { parentId: dto.parentId } : {}),
-        ...(dto.forwardedFromId ? { forwardedFromId: dto.forwardedFromId } : {}),
+        ...(safeForwardedFromId ? { forwardedFromId: safeForwardedFromId } : {}),
       },
       include: {
         sender: { select: { id: true, username: true, fullName: true, avatar: true } },
