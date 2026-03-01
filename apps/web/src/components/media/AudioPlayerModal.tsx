@@ -233,7 +233,7 @@ export function AudioPlayerModal({ src, name, onClose }: AudioPlayerModalProps) 
           {/* Play/Pause */}
           <button
             onClick={togglePlay}
-            className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-colors shadow-lg"
+            className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white hover:text-white flex items-center justify-center transition-colors shadow-lg"
             aria-label={playing ? 'Pause' : 'Play'}
           >
             {playing ? (

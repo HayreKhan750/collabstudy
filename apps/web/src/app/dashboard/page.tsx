@@ -783,7 +783,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-white hover:text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-50 transition-colors"
                 >
                   {createLoading ? 'Creating…' : 'Create'}
                 </button>

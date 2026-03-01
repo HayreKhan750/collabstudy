@@ -140,7 +140,7 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
         <div className="px-5 py-3 border-t border-slate-200/80 dark:border-white/[0.08] flex-shrink-0 flex justify-end">
           <button
             onClick={onClose}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
           >
             {loading ? 'Cancel' : 'Close'}
           </button>

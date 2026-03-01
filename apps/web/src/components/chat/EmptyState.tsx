@@ -19,7 +19,7 @@ export function NoWorkspaceState({ onCreate }: { onCreate: () => void }) {
       </p>
       <button
         onClick={onCreate}
-        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
+        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white hover:text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
       >
         + Create Workspace
       </button>

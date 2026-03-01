@@ -103,7 +103,7 @@ export function PromptModal({
               <button
                 onClick={() => value.trim() && onConfirm(value.trim())}
                 disabled={!value.trim()}
-                className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:text-white transition-all hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {confirmLabel}
               </button>

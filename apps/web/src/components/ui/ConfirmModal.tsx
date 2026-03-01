@@ -107,7 +107,7 @@ export function ConfirmModal({
                   'flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all',
                   danger
                     ? 'bg-red-500 hover:bg-red-600 active:bg-red-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white hover:text-white'
                 )}
               >
                 {confirmLabel}

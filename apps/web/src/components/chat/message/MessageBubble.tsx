@@ -676,7 +676,7 @@ const MessageBubbleInner = function MessageBubble({
                 <button
                   onClick={onEditSave}
                   disabled={editSaving}
-                  className="ml-auto px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:opacity-50 transition-colors text-xs font-medium"
+                  className="ml-auto px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white hover:text-white rounded-lg disabled:opacity-50 transition-colors text-xs font-medium"
                 >
                   {editSaving ? 'Saving…' : 'Save'}
                 </button>

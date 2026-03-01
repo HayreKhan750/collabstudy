@@ -1270,7 +1270,7 @@ export default function DirectMessageArea({
       {isSelectionMode ? (
         <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md px-4 py-3 flex items-center gap-3">
           <span className="text-sm text-slate-600 dark:text-slate-300">{selectedMessageIds.size} selected</span>
-          <button onClick={handleForwardSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">Forward</button>
+          <button onClick={handleForwardSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white hover:text-white rounded-lg transition-colors">Forward</button>
           <button onClick={handleDeleteSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors">Delete</button>
           <button onClick={handleCancelSelection} className="ml-auto px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
         </div>
@@ -1349,7 +1349,7 @@ export default function DirectMessageArea({
             <button
               onClick={handleSend}
               disabled={sending || (!input.trim() && !pendingFile)}
-              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0"
+              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0 text-white hover:text-white"
               aria-label="Send message"
               title="Send message"
             >

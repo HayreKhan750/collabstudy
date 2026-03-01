@@ -156,7 +156,7 @@ export default function DiscoverWorkspacesModal({
                       className={`ml-4 flex-shrink-0 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         alreadyJoined
                           ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 cursor-default'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white hover:text-white disabled:opacity-50'
                       }`}
                     >
                       {isJoining ? 'Joining...' : alreadyJoined ? '✓ Joined' : 'Join'}
