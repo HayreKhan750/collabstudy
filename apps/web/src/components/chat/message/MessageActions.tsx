@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface MessageActionsProps {
   messageId: string;
@@ -82,6 +83,41 @@ function ActionButton({
   );
 }
 
+// ─── Picker portal position ───────────────────────────────────────────────────
+interface PickerPos {
+  top: number;
+  left: number;
+  openUpward: boolean;
+  openLeftward: boolean;
+}
+
+const PICKER_W = 176; // px — matches w-[176px] below
+const PICKER_H = 200; // approximate picker height in px
+
+function calcPickerPos(btn: HTMLButtonElement): PickerPos {
+  const r = btn.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const MARGIN = 8;
+
+  // Vertical: prefer above the toolbar button; flip below if not enough room
+  const openUpward = r.top - PICKER_H - MARGIN > 0;
+  const top = openUpward
+    ? r.top - PICKER_H - MARGIN + window.scrollY
+    : r.bottom + MARGIN + window.scrollY;
+
+  // Horizontal: align to right edge of button; flip left if would overflow
+  const openLeftward = r.right - PICKER_W < MARGIN;
+  const left = openLeftward
+    ? r.left + window.scrollX
+    : r.right - PICKER_W + window.scrollX;
+
+  // Clamp within viewport
+  const clampedLeft = Math.max(MARGIN, Math.min(left, vw - PICKER_W - MARGIN));
+
+  return { top, left: clampedLeft, openUpward, openLeftward };
+}
+
 export function MessageActions({
   messageId,
   isOwnMessage,
@@ -99,20 +135,44 @@ export function MessageActions({
   onSave,
 }: MessageActionsProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [pickerPos, setPickerPos] = useState<PickerPos | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Close picker on outside click
+  // Recalculate position on open + on scroll/resize
+  const openPicker = useCallback(() => {
+    if (!emojiButtonRef.current) return;
+    setPickerPos(calcPickerPos(emojiButtonRef.current));
+    setShowEmojiPicker(true);
+  }, []);
+
+  const closePicker = useCallback(() => {
+    setShowEmojiPicker(false);
+    setPickerPos(null);
+  }, []);
+
+  // Close on outside click
   useEffect(() => {
     if (!showEmojiPicker) return;
     const handler = (e: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-        setShowEmojiPicker(false);
+      const target = e.target as Node;
+      if (
+        pickerRef.current && !pickerRef.current.contains(target) &&
+        emojiButtonRef.current && !emojiButtonRef.current.contains(target)
+      ) {
+        closePicker();
       }
     };
+    // Close on scroll too (picker position would be stale)
+    const onScroll = () => closePicker();
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showEmojiPicker]);
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('scroll', onScroll, true);
+    };
+  }, [showEmojiPicker, closePicker]);
 
   return (
     <div
@@ -127,15 +187,16 @@ export function MessageActions({
       "
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Quick emoji picker */}
-      <div className="relative" ref={pickerRef}>
+      {/* Quick emoji picker — portal-based for overflow escape + smart positioning */}
+      <div className="relative">
         <Tooltip label="Add Reaction">
           <button
+            ref={emojiButtonRef}
             onClick={(e) => {
               e.stopPropagation();
-              setShowEmojiPicker((v) => !v);
+              showEmojiPicker ? closePicker() : openPicker();
             }}
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors duration-150"
+            className="p-1.5 rounded-md text-slate-400 hover:text-violet-500 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-all duration-150"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -153,8 +214,31 @@ export function MessageActions({
             </svg>
           </button>
         </Tooltip>
-        {showEmojiPicker && (
-          <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2 shadow-xl z-30 w-[160px]">
+
+        {/* Portal picker — attached to document.body, escapes all overflow constraints */}
+        {showEmojiPicker && pickerPos && typeof document !== 'undefined' && createPortal(
+          <div
+            ref={pickerRef}
+            style={{
+              position: 'fixed',
+              top: pickerPos.top,
+              left: pickerPos.left,
+              zIndex: 9999,
+              width: PICKER_W,
+            }}
+            className="
+              bg-white/95 dark:bg-[#0a051e]/95 backdrop-blur-xl
+              border border-gray-200 dark:border-white/[0.07]
+              rounded-2xl px-2 py-2
+              shadow-[0_8px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]
+              animate-scale-in
+            "
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search hint row */}
+            <p className="text-[10px] text-slate-400 dark:text-violet-300/40 text-center mb-1.5 leading-none select-none">
+              Quick reactions
+            </p>
             <div className="grid grid-cols-5 gap-0.5">
               {QUICK_EMOJIS.map((emoji) => (
                 <button
@@ -162,15 +246,22 @@ export function MessageActions({
                   onClick={(e) => {
                     e.stopPropagation();
                     onReact?.(emoji);
-                    setShowEmojiPicker(false);
+                    closePicker();
                   }}
-                  className="text-lg hover:scale-125 transition-transform duration-100 leading-none p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center"
+                  className="
+                    text-[18px] leading-none p-1.5 rounded-lg
+                    hover:scale-125 hover:bg-violet-50 dark:hover:bg-violet-500/15
+                    active:scale-95
+                    transition-all duration-100
+                    flex items-center justify-center
+                  "
                 >
                   {emoji}
                 </button>
               ))}
             </div>
-          </div>
+          </div>,
+          document.body,
         )}
       </div>
 
