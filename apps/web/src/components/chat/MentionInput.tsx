@@ -185,9 +185,9 @@ export default function MentionInput({
     <div className="relative" data-mention-popover>
       {/* Autocomplete popover */}
       {showPopover && filtered.length > 0 && (
-        <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl overflow-hidden z-50">
-          <div className="px-2 py-1 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-            Members — ↑↓ to navigate, Enter to select
+        <div className="absolute bottom-full left-0 mb-2 w-64 bg-white/90 dark:bg-[#0a051e]/90 backdrop-blur-xl border border-gray-200 dark:border-white/[0.06] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden z-50">
+          <div className="px-3 py-1.5 text-xs text-slate-500 dark:text-violet-300/60 border-b border-gray-100 dark:border-white/[0.06]">
+            Members — ↑↓ navigate · Enter select
           </div>
           <ul>
             {filtered.map((member, idx) => (
@@ -198,19 +198,19 @@ export default function MentionInput({
                     e.preventDefault();
                     selectMember(member);
                   }}
-                  className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm transition-colors ${
+                  className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm transition-all duration-150 ${
                     idx === highlightIndex
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      ? 'bg-violet-500/20 text-violet-100 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.3)]'
+                      : 'text-slate-700 dark:text-violet-100/80 hover:bg-violet-500/10 dark:hover:bg-violet-400/10'
                   }`}
                 >
-                  <span className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 shadow-sm">
                     {(member.fullName || member.username).charAt(0).toUpperCase()}
                   </span>
                   <span className="truncate">
                     <span className="font-medium">@{member.username}</span>
                     {member.fullName && (
-                      <span className={`ml-1 text-xs ${idx === highlightIndex ? 'text-blue-200' : 'text-slate-400 dark:text-slate-400'}`}>{member.fullName}</span>
+                      <span className={`ml-1 text-xs ${idx === highlightIndex ? 'text-violet-300' : 'text-slate-400 dark:text-violet-300/50'}`}>{member.fullName}</span>
                     )}
                   </span>
                 </button>
@@ -235,14 +235,14 @@ export default function MentionInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50 resize-none leading-relaxed"
+          className="flex-1 px-4 py-2.5 bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.05] text-slate-900 dark:text-gray-100 placeholder-slate-400 dark:placeholder-violet-300/30 rounded-2xl focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 dark:focus:ring-violet-500/30 text-sm disabled:opacity-50 resize-none leading-relaxed shadow-inner transition-all duration-300"
           autoComplete="off"
           style={{ minHeight: '40px', maxHeight: '120px', overflowY: 'auto' }}
         />
         <button
           type="submit"
           disabled={(!value.trim() && !hasPendingFile) || disabled}
-          className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0"
+          className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.4)] hover:shadow-[0_0_24px_rgba(139,92,246,0.6)] flex-shrink-0"
           aria-label="Send message"
           title="Send message"
         >

@@ -280,8 +280,8 @@ export function ChannelList({
                 className={`flex-1 min-w-0 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150
                   ${
                     isActive
-                      ? 'bg-indigo-500/15 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 font-medium shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-violet-500/15 dark:bg-violet-500/15 text-violet-700 dark:text-violet-200 font-medium shadow-[0_0_15px_rgba(139,92,246,0.12)]'
+                      : 'text-slate-600 dark:text-violet-100/60 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 hover:text-slate-900 dark:hover:text-violet-50 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all duration-200'
                   }`}
               >
                 <HashIcon />

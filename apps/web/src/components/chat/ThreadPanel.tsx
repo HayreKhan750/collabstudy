@@ -234,7 +234,7 @@ export default function ThreadPanel({
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-80 xl:w-96 flex-shrink-0 bg-white/90 dark:bg-black/40 backdrop-blur-xl border-l border-gray-200 dark:border-white/[0.08] flex flex-col h-full z-20 text-gray-900 dark:text-white">
+    <div className="w-80 xl:w-96 flex-shrink-0 bg-white/60 dark:bg-[#0a051e]/40 backdrop-blur-2xl border-l border-gray-200 dark:border-white/[0.04] shadow-[-4px_0_24px_-10px_rgba(0,0,0,0.5)] flex flex-col h-full z-20 text-gray-900 dark:text-violet-50">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 dark:border-white/[0.08] p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">

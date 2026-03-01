@@ -215,7 +215,7 @@ export function DirectMessageList({
                 <button
                   onClick={() => onConversationSelect(conv)}
                   className={`flex-1 min-w-0 text-left flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150
-                    ${isSelected ? 'bg-violet-500/15 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+                    ${isSelected ? 'bg-violet-500/15 dark:bg-violet-500/15 text-violet-700 dark:text-violet-200 font-medium shadow-[0_0_15px_rgba(139,92,246,0.12)]' : 'text-slate-600 dark:text-violet-100/60 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 hover:text-slate-900 dark:hover:text-violet-50 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all duration-200'}`}
                 >
                   {/* Avatar with online dot */}
                   <div className="relative flex-shrink-0">

@@ -313,7 +313,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
   return (
     <div
-      className="flex flex-col flex-1 h-full w-full bg-white/80 dark:bg-transparent"
+      className="flex flex-col flex-1 h-full w-full bg-white/90 dark:bg-[#050110]/70 backdrop-blur-md"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >

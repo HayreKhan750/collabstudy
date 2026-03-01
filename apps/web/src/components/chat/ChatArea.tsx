@@ -1400,7 +1400,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Search Results Panel — slides in from the right when search is active */}
       {isSearchActive && (
-        <div className="absolute inset-y-0 right-0 w-96 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-white/5 flex flex-col z-30 shadow-2xl">
+        <div className="absolute inset-y-0 right-0 w-96 bg-white/90 dark:bg-[#050110]/80 backdrop-blur-xl border-l border-gray-200 dark:border-white/[0.04] flex flex-col z-30 shadow-2xl">
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 flex-shrink-0">
             <div>
@@ -1675,8 +1675,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Bulk Selection Action Bar */}
       {isSelectionMode && (
-        <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3 flex items-center gap-3">
-          <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">{selectedMessageIds.size} selected</span>
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-white/[0.04] bg-white/80 dark:bg-[#0a051e]/60 backdrop-blur-xl px-4 py-3 flex items-center gap-3">
+          <span className="text-sm text-slate-600 dark:text-violet-300/80 font-medium">{selectedMessageIds.size} selected</span>
           <button
             onClick={() => {
               const ids = Array.from(selectedMessageIds);
@@ -1688,14 +1688,14 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
               }
             }}
             disabled={selectedMessageIds.size === 0}
-            className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+            className="px-3 py-1.5 text-sm bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 disabled:opacity-50 text-white rounded-lg transition-all duration-200 shadow-[0_0_12px_rgba(139,92,246,0.3)]"
           >Forward</button>
           <button
             onClick={handleDeleteSelected}
             disabled={selectedMessageIds.size === 0}
-            className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+            className="px-3 py-1.5 text-sm bg-red-600/80 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors"
           >Delete</button>
-          <button onClick={handleCancelSelection} className="ml-auto px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
+          <button onClick={handleCancelSelection} className="ml-auto px-3 py-1.5 text-sm text-slate-500 dark:text-violet-300/60 hover:text-slate-900 dark:hover:text-violet-100 transition-colors">Cancel</button>
         </div>
       )}
 
@@ -1708,7 +1708,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
         {/* Pending file preview */}
         {pendingFile && (
-          <div className="mb-2 flex items-center gap-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm">
+          <div className="mb-2 flex items-center gap-3 bg-white/80 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2 text-sm backdrop-blur-sm">
             {pendingFile.type.startsWith('image/') ? (
               <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
             ) : (
@@ -1744,7 +1744,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <button
             type="button"
             onClick={() => setShowPollModal(true)}
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-indigo-500 transition-colors"
+            className="p-2 rounded-xl text-slate-500 dark:text-violet-300/50 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200"
             title="Create Poll"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1756,7 +1756,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingFile}
-            className="flex-shrink-0 p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 disabled:opacity-50"
+            className="flex-shrink-0 p-2 text-slate-400 dark:text-violet-300/50 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200 rounded-xl hover:bg-violet-500/10 dark:hover:bg-violet-400/10 disabled:opacity-50"
             title="Attach file"
             aria-label="Attach file"
           >
