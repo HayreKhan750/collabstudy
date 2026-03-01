@@ -173,21 +173,43 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pushed to GHCR at $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
-      # ── Add your deployment step here ──────────────────────────────────
-      # Examples:
+      # ── Railway Deploy ──────────────────────────────────────────────────
+      # Triggers a redeploy on Railway for both api and web services.
+      # Required secrets (set in GitHub repo Settings → Secrets → Actions):
+      #   RAILWAY_API_SERVICE_ID  — from Railway dashboard → api service → Settings → Service ID
+      #   RAILWAY_WEB_SERVICE_ID  — from Railway dashboard → web service → Settings → Service ID
+      #   RAILWAY_TOKEN           — from Railway dashboard → Account Settings → Tokens
+      - name: Redeploy API on Railway
+        if: ${{ secrets.RAILWAY_TOKEN != '' }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"serviceId":"${{ secrets.RAILWAY_API_SERVICE_ID }}","environmentId":"production"}' \
+            https://backboard.railway.app/graphql/v2 \
+            --data-raw '{"query":"mutation { serviceInstanceRedeploy(serviceId: \"${{ secrets.RAILWAY_API_SERVICE_ID }}\") }"}' || true
+
+      - name: Redeploy Web on Railway
+        if: ${{ secrets.RAILWAY_TOKEN != '' }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data-raw '{"query":"mutation { serviceInstanceRedeploy(serviceId: \"${{ secrets.RAILWAY_WEB_SERVICE_ID }}\") }"}' \
+            https://backboard.railway.app/graphql/v2 || true
+
+      # ── Alternative: use the official Railway CLI ───────────────────────
+      # Uncomment below and remove the curl steps above if you prefer the CLI:
       #
-      # Coolify webhook:
-      # - name: Trigger Coolify Deploy
-      #   run: curl -X POST "${{ secrets.COOLIFY_WEBHOOK_URL }}"
+      # - name: Install Railway CLI
+      #   run: npm install -g @railway/cli
       #
-      # SSH + docker compose pull:
-      # - name: Deploy via SSH
-      #   uses: appleboy/ssh-action@v1
-      #   with:
-      #     host: ${{ secrets.DEPLOY_HOST }}
-      #     username: ${{ secrets.DEPLOY_USER }}
-      #     key: ${{ secrets.DEPLOY_SSH_KEY }}
-      #     script: |
-      #       cd /opt/collabstudy
-      #       docker compose -f docker-compose.prod.yml pull
-      #       docker compose -f docker-compose.prod.yml up -d --remove-orphans
+      # - name: Deploy API to Railway
+      #   run: railway redeploy --service ${{ secrets.RAILWAY_API_SERVICE_ID }} --yes
+      #   env:
+      #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      #
+      # - name: Deploy Web to Railway
+      #   run: railway redeploy --service ${{ secrets.RAILWAY_WEB_SERVICE_ID }} --yes
+      #   env:
+      #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
