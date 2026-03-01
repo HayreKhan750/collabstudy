@@ -41,7 +41,7 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 bg-white dark:bg-gray-900/95 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
+    <div className="w-full max-w-md mx-auto p-8 bg-white/85 dark:bg-[#141829]/80 backdrop-blur-2xl border border-slate-200/60 dark:border-white/[0.06] rounded-2xl shadow-xl dark:shadow-2xl">
       <div className="mb-8 text-center">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create your account</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Join CollabStudy today</p>

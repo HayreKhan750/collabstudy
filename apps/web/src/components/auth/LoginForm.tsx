@@ -30,7 +30,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 bg-white dark:bg-gray-900/95 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
+    <div className="w-full max-w-md mx-auto p-8 bg-white/85 dark:bg-[#141829]/80 backdrop-blur-2xl border border-slate-200/60 dark:border-white/[0.06] rounded-2xl shadow-xl dark:shadow-2xl">
       <div className="mb-8 text-center">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Sign in to CollabStudy</p>
@@ -53,7 +53,7 @@ export function LoginForm() {
             required
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
+            className="w-full px-4 py-3 bg-white dark:bg-[#161A2D] text-slate-900 dark:text-white border border-slate-300/60 dark:border-white/[0.07] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400/40 dark:focus:border-blue-400/30 placeholder-slate-400 dark:placeholder-white/25 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]"
             placeholder="you@example.com"
           />
         </div>
@@ -68,7 +68,7 @@ export function LoginForm() {
             required
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
+            className="w-full px-4 py-3 bg-white dark:bg-[#161A2D] text-slate-900 dark:text-white border border-slate-300/60 dark:border-white/[0.07] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400/40 dark:focus:border-blue-400/30 placeholder-slate-400 dark:placeholder-white/25 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]"
             placeholder="••••••••"
             minLength={8}
           />

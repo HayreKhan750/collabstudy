@@ -487,6 +487,7 @@ pre code {
    UTILITY CLASSES — Aurora Canvas
    -------------------------------------------------------------------------- */
 
+/* ─── Chat canvas (channels, DMs, saved messages) ─── */
 .aurora-canvas-dark {
   position: relative;
 }
@@ -508,6 +509,67 @@ html.dark .aurora-canvas-dark::before {
   pointer-events: none;
   z-index: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ─── Auth pages — dark mode ─── */
+/*
+ * Slightly softer than chat aurora (−10% glow opacity).
+ * Adds a vertical depth gradient so the card floats above a darker floor.
+ */
+.aurora-auth-dark {
+  position: relative;
+  overflow: hidden;
+  /* Light mode base — clean, airy */
+  background-color: #F7F8FC;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(120, 140, 255, 0.06), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(180, 150, 255, 0.05), transparent 45%);
+}
+
+html.dark .aurora-auth-dark {
+  /* Vertical depth gradient base */
+  background-color: #0F1220;
+  background-image:
+    linear-gradient(180deg, #0F1220 0%, #12162A 100%),
+    radial-gradient(circle at 15% 50%, rgba(92, 103, 255, 0.135), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(140, 82, 255, 0.135), transparent 25%),
+    radial-gradient(circle at 50% 80%, rgba(0, 168, 255, 0.108), transparent 25%);
+  background-attachment: fixed;
+}
+
+html.dark .aurora-auth-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ─── Landing page — light mode only ─── */
+/*
+ * Cooler base (#F9FAFF), barely-visible radial glows, diagonal wash.
+ * Intentionally minimal — brand-forward, no loud color.
+ */
+.aurora-landing-light {
+  position: relative;
+  overflow: hidden;
+  background-color: #F9FAFF;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 60% 0%, rgba(120, 140, 255, 0.07), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(160, 130, 255, 0.05), transparent 50%),
+    linear-gradient(135deg, rgba(120, 140, 255, 0.04) 0%, transparent 60%);
+}
+
+/* Dark mode landing: match chat aurora exactly */
+html.dark .aurora-landing-light {
+  background-color: #0F1220;
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(92, 103, 255, 0.15), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(140, 82, 255, 0.15), transparent 25%),
+    radial-gradient(circle at 50% 80%, rgba(0, 168, 255, 0.12), transparent 25%);
+  background-attachment: fixed;
 }
 
 /* --------------------------------------------------------------------------

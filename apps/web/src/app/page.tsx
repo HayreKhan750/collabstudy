@@ -309,7 +309,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-slate-50 dark:bg-[#0f0f13] text-slate-900 dark:text-white">
+    <main className="aurora-landing-light relative min-h-screen overflow-x-hidden text-slate-900 dark:text-white">
 
       {/* ── Fixed Nav ──────────────────────────────────────────────────────── */}
       <motion.nav
