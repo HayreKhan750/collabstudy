@@ -20,4 +20,9 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   fullName?: string;
+
+  /** Cloudflare Turnstile challenge token — validated server-side */
+  @IsString()
+  @IsOptional()
+  turnstileToken?: string;
 }

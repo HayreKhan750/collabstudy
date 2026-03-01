@@ -7,11 +7,14 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  register: (data: RegisterData) => Promise<void>;
+  /** Returns the pending email so the caller can redirect to /verify-email */
+  register: (data: RegisterData) => Promise<{ email: string }>;
   login: (data: LoginData) => Promise<void>;
   logout: () => Promise<void>;
   /** Re-fetches the current user profile from the server and updates the context. */
   refreshUser: () => Promise<void>;
+  /** Called after OTP verification succeeds — stores token and user */
+  completeAuth: (token: string, user: User) => void;
   isAuthenticated: boolean;
 }
 
@@ -46,15 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const register = async (data: RegisterData) => {
-    try {
-      const response = await api.register(data);
-      setUser(response.user);
-      setToken(response.token);
-      localStorage.setItem('auth_token', response.token);
-    } catch (error) {
-      throw error;
-    }
+  const register = async (data: RegisterData): Promise<{ email: string }> => {
+    // Registration now returns { message, email } — no token yet.
+    // The caller should redirect to /verify-email?email=...
+    const response = await api.register(data);
+    return { email: response.email };
+  };
+
+  const completeAuth = (token: string, user: User) => {
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('auth_token', token);
   };
 
   const login = async (data: LoginData) => {
@@ -102,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     refreshUser,
+    completeAuth,
     isAuthenticated: !!user && !!token,
   };
 

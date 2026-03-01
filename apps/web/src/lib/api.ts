@@ -7,11 +7,23 @@ export interface RegisterData {
   username: string;
   password: string;
   fullName?: string;
+  turnstileToken?: string;
 }
 
 export interface LoginData {
   email: string;
   password: string;
+  turnstileToken?: string;
+}
+
+export interface RegisterPendingResponse {
+  message: string;
+  email: string;
+}
+
+export interface VerifyEmailData {
+  email: string;
+  otp: string;
 }
 
 export interface User {
@@ -206,7 +218,7 @@ class ApiClient {
     return headers;
   }
 
-  async register(data: RegisterData): Promise<AuthResponse> {
+  async register(data: RegisterData): Promise<RegisterPendingResponse> {
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -221,6 +233,36 @@ class ApiClient {
     return response.json();
   }
 
+  async verifyEmail(data: VerifyEmailData): Promise<AuthResponse> {
+    const response = await fetch(`${API_URL}/auth/verify-email`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Verification failed');
+    }
+
+    return response.json();
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/resend-verification`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to resend verification');
+    }
+
+    return response.json();
+  }
+
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -230,7 +272,14 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Login failed');
+      // Propagate the structured error for EMAIL_NOT_VERIFIED case
+      const message = Array.isArray(error.message)
+        ? error.message.join(', ')
+        : error.message;
+      const err: any = new Error(message || 'Login failed');
+      err.code = error.code;
+      err.email = error.email;
+      throw err;
     }
 
     return response.json();

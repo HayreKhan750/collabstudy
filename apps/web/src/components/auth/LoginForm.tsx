@@ -3,27 +3,47 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import Turnstile, { useTurnstile } from 'react-turnstile';
+
+const TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
 export function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
+  const turnstile = useTurnstile();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!turnstileToken) {
+      setError('Please complete the security check.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(formData);
+      await login({ ...formData, turnstileToken });
       router.push('/dashboard');
     } catch (err: any) {
+      // Handle unverified email — redirect to verify-email page
+      if (err.code === 'EMAIL_NOT_VERIFIED' && err.email) {
+        router.push(`/verify-email?email=${encodeURIComponent(err.email)}`);
+        return;
+      }
       setError(err.message || 'Login failed. Please try again.');
+      turnstile.reset();
+      setTurnstileToken(null);
     } finally {
       setLoading(false);
     }
@@ -74,9 +94,23 @@ export function LoginForm() {
           />
         </div>
 
+        {/* Cloudflare Turnstile */}
+        <div className="flex justify-center">
+          <Turnstile
+            sitekey={TURNSTILE_SITE_KEY}
+            onVerify={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => {
+              setTurnstileToken(null);
+              setError('Security check failed. Please refresh and try again.');
+            }}
+            theme="auto"
+          />
+        </div>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !turnstileToken}
           className="w-full py-3 px-4 bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-[0.98] text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_28px_rgba(139,92,246,0.55)]"
         >
           {loading ? 'Signing in…' : 'Sign in'}

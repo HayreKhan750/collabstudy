@@ -3,97 +3,297 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyEmailDto, ResendVerificationDto } from './dto/verify-email.dto';
 import { UserStatus } from '@prisma/client';
+import { verifyTurnstileToken } from './utils/turnstile.util';
+import { isDisposableEmail } from './utils/disposable-domains';
+import { Resend } from 'resend';
+
+// OTP config
+const OTP_EXPIRY_MINUTES = 15;
+const OTP_DIGITS = 6;
+const BCRYPT_ROUNDS = 12;
 
 @Injectable()
 export class AuthService {
+  private readonly resend: Resend | null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) {
+    this.resend = process.env.RESEND_API_KEY
+      ? new Resend(process.env.RESEND_API_KEY)
+      : null;
+  }
 
-  async register(registerDto: RegisterDto) {
-    const { email, username, password, fullName } = registerDto;
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Check if user already exists
+  private generateOtp(): string {
+    // Cryptographically secure 6-digit OTP
+    const bytes = crypto.randomBytes(4);
+    const num = bytes.readUInt32BE(0) % 1_000_000;
+    return num.toString().padStart(OTP_DIGITS, '0');
+  }
+
+  private otpExpiry(): Date {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() + OTP_EXPIRY_MINUTES);
+    return d;
+  }
+
+  private generateToken(userId: string, email: string): string {
+    const payload = { sub: userId, email };
+    return this.jwtService.sign(payload);
+  }
+
+  private async sendVerificationEmail(email: string, otp: string): Promise<void> {
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL || 'noreply@collabstudy.app';
+    const appName = process.env.APP_NAME || 'CollabStudy';
+
+    if (!this.resend) {
+      // Dev fallback — log OTP to console so local dev still works
+      console.warn(
+        `[Auth] RESEND_API_KEY not set. OTP for ${email}: ${otp}`,
+      );
+      return;
+    }
+
+    await this.resend.emails.send({
+      from: `${appName} <${fromEmail}>`,
+      to: [email],
+      subject: `Your ${appName} verification code: ${otp}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0f1118;color:#e2e8f0;border-radius:12px">
+          <h2 style="margin:0 0 8px;font-size:22px;color:#a78bfa">Verify your email</h2>
+          <p style="margin:0 0 24px;color:#94a3b8;font-size:15px">
+            Thanks for signing up for <strong style="color:#e2e8f0">${appName}</strong>!
+            Enter the code below to activate your account.
+          </p>
+          <div style="background:#1e2235;border-radius:10px;padding:20px 24px;text-align:center;letter-spacing:10px;font-size:36px;font-weight:700;color:#a78bfa;margin-bottom:24px">
+            ${otp}
+          </div>
+          <p style="color:#64748b;font-size:13px;margin:0">
+            This code expires in <strong>${OTP_EXPIRY_MINUTES} minutes</strong>.
+            If you did not create an account, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  // ── Register ──────────────────────────────────────────────────────────────
+
+  async register(registerDto: RegisterDto, remoteIp?: string) {
+    const { email, username, password, fullName, turnstileToken } = registerDto;
+
+    // 1. Cloudflare Turnstile bot check
+    const turnstileOk = await verifyTurnstileToken(turnstileToken, remoteIp);
+    if (!turnstileOk) {
+      throw new BadRequestException('Bot verification failed. Please try again.');
+    }
+
+    // 2. Block disposable email domains
+    if (isDisposableEmail(email)) {
+      throw new BadRequestException(
+        'Disposable email addresses are not allowed. Please use a real email.',
+      );
+    }
+
+    // 3. Check for existing user
     const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { username }],
-      },
+      where: { OR: [{ email }, { username }] },
     });
 
     if (existingUser) {
       if (existingUser.email === email) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException('Email already registered');
       }
-      throw new ConflictException('Username already exists');
+      throw new ConflictException('Username already taken');
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // 4. Hash password
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-    // Create user
-    const user = await this.prisma.user.create({
+    // 5. Generate OTP and store hashed version
+    const otp = this.generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+
+    // 6. Create user — NOT yet verified
+    await this.prisma.user.create({
       data: {
         email,
         username,
         passwordHash: hashedPassword,
         fullName,
-        status: UserStatus.ONLINE,
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        status: true,
-        createdAt: true,
+        status: UserStatus.OFFLINE,
+        emailVerified: false,
+        verificationToken: hashedOtp,
+        verificationExpiry: this.otpExpiry(),
       },
     });
 
-    // Generate JWT token
-    const token = this.generateToken(user.id, user.email);
+    // 7. Send verification email (fire-and-forget; errors logged not thrown)
+    this.sendVerificationEmail(email, otp).catch((err) =>
+      console.error('[Auth] Failed to send verification email:', err),
+    );
 
     return {
-      user,
+      message: 'Account created. Please check your email for a 6-digit verification code.',
+      email,
+    };
+  }
+
+  // ── Verify Email ──────────────────────────────────────────────────────────
+
+  async verifyEmail(dto: VerifyEmailDto) {
+    const { email, otp } = dto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new BadRequestException('Invalid verification request');
+    }
+
+    if (user.emailVerified) {
+      // Already verified — just return a token so the frontend can proceed
+      const token = this.generateToken(user.id, user.email);
+      return {
+        message: 'Email already verified',
+        user: this.safeUser(user),
+        token,
+      };
+    }
+
+    // Check expiry
+    if (!user.verificationToken || !user.verificationExpiry) {
+      throw new BadRequestException('No verification pending. Please register again.');
+    }
+
+    if (new Date() > user.verificationExpiry) {
+      throw new BadRequestException(
+        'Verification code has expired. Please request a new one.',
+      );
+    }
+
+    // Compare OTP
+    const isOtpValid = await bcrypt.compare(otp, user.verificationToken);
+    if (!isOtpValid) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    // Mark verified and clear OTP fields
+    const verifiedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpiry: null,
+        status: UserStatus.ONLINE,
+      },
+    });
+
+    const token = this.generateToken(verifiedUser.id, verifiedUser.email);
+
+    return {
+      message: 'Email verified successfully',
+      user: this.safeUser(verifiedUser),
       token,
     };
   }
 
-  async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
+  // ── Resend Verification ───────────────────────────────────────────────────
 
-    // Find user by email
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+  async resendVerification(dto: ResendVerificationDto) {
+    const { email } = dto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    // Always return 200 to prevent user enumeration
+    if (!user || user.emailVerified) {
+      return { message: 'If that email exists and is unverified, a new code has been sent.' };
+    }
+
+    const otp = this.generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken: hashedOtp,
+        verificationExpiry: this.otpExpiry(),
+      },
     });
+
+    this.sendVerificationEmail(email, otp).catch((err) =>
+      console.error('[Auth] Failed to resend verification email:', err),
+    );
+
+    return { message: 'If that email exists and is unverified, a new code has been sent.' };
+  }
+
+  // ── Login ─────────────────────────────────────────────────────────────────
+
+  async login(loginDto: LoginDto, remoteIp?: string) {
+    const { email, password, turnstileToken } = loginDto;
+
+    // 1. Cloudflare Turnstile bot check
+    const turnstileOk = await verifyTurnstileToken(turnstileToken, remoteIp);
+    if (!turnstileOk) {
+      throw new BadRequestException('Bot verification failed. Please try again.');
+    }
+
+    // 2. Find user
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verify password
+    // 3. Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Update user status to online
+    // 4. Block unverified accounts — resend OTP silently
+    if (!user.emailVerified) {
+      // Quietly refresh the OTP so the user can verify after this error
+      const otp = this.generateOtp();
+      const hashedOtp = await bcrypt.hash(otp, 10);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verificationToken: hashedOtp,
+          verificationExpiry: this.otpExpiry(),
+        },
+      });
+      this.sendVerificationEmail(email, otp).catch((err) =>
+        console.error('[Auth] Failed to resend verification email on login:', err),
+      );
+
+      throw new ForbiddenException({
+        message: 'Please verify your email before signing in. A new code has been sent.',
+        code: 'EMAIL_NOT_VERIFIED',
+        email,
+      });
+    }
+
+    // 5. Set online
     await this.prisma.user.update({
       where: { id: user.id },
       data: { status: UserStatus.ONLINE },
     });
 
-    // Generate JWT token
     const token = this.generateToken(user.id, user.email);
 
     return {
@@ -109,6 +309,8 @@ export class AuthService {
       token,
     };
   }
+
+  // ── Validate User (JWT strategy) ──────────────────────────────────────────
 
   async validateUser(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -131,11 +333,6 @@ export class AuthService {
     return user;
   }
 
-  private generateToken(userId: string, email: string): string {
-    const payload = { sub: userId, email };
-    return this.jwtService.sign(payload);
-  }
-
   async getProfile(userId: string) {
     return this.validateUser(userId);
   }
@@ -148,6 +345,8 @@ export class AuthService {
 
     return { message: 'Logged out successfully' };
   }
+
+  // ── Google OAuth ──────────────────────────────────────────────────────────
 
   async findOrCreateGoogleUser(data: {
     email: string;
@@ -166,11 +365,8 @@ export class AuthService {
     }
 
     if (user) {
-      // UPSERT: always refresh Google avatar URL, but never overwrite a custom (non-Google) avatar
-      // - If user has no avatar: set the Google one
-      // - If user has a Google avatar (lh*.googleusercontent.com): refresh it (prevents stale CDN URLs)
-      // - If user has a custom avatar (uploaded via Settings): preserve it
-      const isCurrentAvatarGoogle = user.avatar?.includes('googleusercontent.com') ?? false;
+      const isCurrentAvatarGoogle =
+        user.avatar?.includes('googleusercontent.com') ?? false;
       const shouldUpdateAvatar = avatar && (!user.avatar || isCurrentAvatarGoogle);
 
       user = await this.prisma.user.update({
@@ -179,11 +375,18 @@ export class AuthService {
           ...(user.googleId !== googleId && { googleId }),
           ...(shouldUpdateAvatar && { avatar }),
           ...(fullName && !user.fullName && { fullName }),
+          // Google verifies the email — mark verified if not already
+          emailVerified: true,
+          verificationToken: null,
+          verificationExpiry: null,
         },
       });
     } else {
       // Create new OAuth user — no password needed
-      const baseUsername = email.split('@')[0].replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+      const baseUsername = email
+        .split('@')[0]
+        .replace(/[^a-z0-9_]/gi, '_')
+        .toLowerCase();
       let username = baseUsername;
       let suffix = 1;
       while (await this.prisma.user.findUnique({ where: { username } })) {
@@ -199,6 +402,8 @@ export class AuthService {
           passwordHash: '',
           googleId,
           status: UserStatus.ONLINE,
+          // Google already verified the email
+          emailVerified: true,
         },
       });
     }
@@ -215,6 +420,20 @@ export class AuthService {
         createdAt: user.createdAt,
       },
       token,
+    };
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  private safeUser(user: any) {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      avatar: user.avatar,
+      status: user.status,
+      createdAt: user.createdAt,
     };
   }
 }

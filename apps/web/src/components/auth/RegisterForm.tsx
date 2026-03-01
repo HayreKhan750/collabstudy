@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import Turnstile, { useTurnstile } from 'react-turnstile';
+
+const TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
 export function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
+  const turnstile = useTurnstile();
+
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -14,6 +20,7 @@ export function RegisterForm() {
     confirmPassword: '',
     fullName: '',
   });
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,9 +28,13 @@ export function RegisterForm() {
     e.preventDefault();
     setError('');
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (!turnstileToken) {
+      setError('Please complete the security check.');
       return;
     }
 
@@ -31,10 +42,17 @@ export function RegisterForm() {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
-      router.push('/dashboard');
+      const { email } = await register({
+        ...registerData,
+        turnstileToken,
+      });
+      // Redirect to the OTP verification page
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
+      // Reset Turnstile so user can retry
+      turnstile.reset();
+      setTurnstileToken(null);
     } finally {
       setLoading(false);
     }
@@ -133,9 +151,23 @@ export function RegisterForm() {
           />
         </div>
 
+        {/* Cloudflare Turnstile */}
+        <div className="flex justify-center">
+          <Turnstile
+            sitekey={TURNSTILE_SITE_KEY}
+            onVerify={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => {
+              setTurnstileToken(null);
+              setError('Security check failed. Please refresh and try again.');
+            }}
+            theme="auto"
+          />
+        </div>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !turnstileToken}
           className="w-full py-3 px-4 bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-[0.98] text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_28px_rgba(139,92,246,0.55)]"
         >
           {loading ? 'Creating account…' : 'Create account'}
