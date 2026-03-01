@@ -545,17 +545,17 @@ const MessageBubbleInner = function MessageBubble({
       }).length
     : 0;
 
-  // Bubble shape: tail on first message in group only
-  // Own messages: tail on right; others: tail on left
+  // Bubble shape: asymmetric corner on first-in-group for tail effect
   const bubbleTailClass = isFirstInGroup
     ? isOwnMessage
-      ? 'rounded-tr-sm' // tail effect via border-radius asymmetry
-      : 'rounded-tl-sm'
+      ? 'rounded-tr-[4px]'
+      : 'rounded-tl-[4px]'
     : '';
 
+  // Premium bubble colors using design token surfaces
   const bubbleColorClass = isOwnMessage
-    ? 'bg-gradient-to-br from-[#5B8CFF] to-[#4DA3FF] text-white shadow-md shadow-blue-500/20'
-    : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-100 dark:border-white/[0.06]';
+    ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25'
+    : 'bg-white dark:bg-[var(--color-surface-3)] text-slate-900 dark:text-[var(--color-fg)] shadow-elevation-1 border border-slate-100 dark:border-[var(--color-border)]';
 
   const hasFileOnly = !!message.fileUrl && !message.content && !(message as any).forwardedFrom;
 
@@ -563,24 +563,24 @@ const MessageBubbleInner = function MessageBubble({
     <div
       id={`msg-${message.id}`}
       className={`
-        group/message relative flex items-end gap-2
+        group/message relative flex items-end gap-2.5
         ${isOwnMessage ? 'flex-row-reverse' : ''}
-        ${isFirstInGroup ? 'mt-3' : 'mt-0.5'}
-        ${isHighlighted ? 'bg-yellow-500/10 rounded-lg -mx-2 px-2' : ''}
-        ${isSelected ? 'bg-blue-500/10 rounded-lg -mx-2 px-2' : ''}
+        ${isFirstInGroup ? 'mt-4' : 'mt-[3px]'}
+        ${isHighlighted ? 'bg-amber-400/10 dark:bg-amber-400/8 rounded-xl -mx-2 px-2 py-0.5' : ''}
+        ${isSelected ? 'bg-indigo-500/10 rounded-xl -mx-2 px-2 py-0.5' : ''}
         ${isSelectionMode ? 'cursor-pointer' : ''}
-        transition-colors duration-700
+        transition-colors duration-500
       `}
       onClick={isSelectionMode ? onSelect : undefined}
     >
-      {/* Avatar area — always reserve space; show avatar only on last in group */}
-      <div className="w-8 flex-shrink-0 flex items-end justify-center self-end mb-0.5">
+      {/* Avatar area — always reserve space; show avatar ONLY on last in group */}
+      <div className="w-8 flex-shrink-0 self-end mb-0.5">
         {isLastInGroup ? (
           message.user.avatar ? (
             <img
               src={message.user.avatar}
               alt={displayName}
-              className="w-8 h-8 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+              className="w-8 h-8 rounded-full object-cover cursor-pointer ring-1 ring-black/5 dark:ring-white/10 hover:ring-2 hover:ring-indigo-400 transition-all duration-150 shadow-sm"
               onClick={onAvatarClick}
             />
           ) : (
@@ -589,32 +589,35 @@ const MessageBubbleInner = function MessageBubble({
             </div>
           )
         ) : (
-          // Placeholder to keep alignment consistent
-          <div className="w-8 h-8" />
+          // Empty placeholder — keeps columns aligned without showing avatar
+          <div className="w-8 h-8" aria-hidden />
         )}
       </div>
 
       {/* Content column */}
       <div
-        className={`flex flex-col max-w-[min(480px,72%)] ${isOwnMessage ? 'items-end' : 'items-start'}`}
+        className={`flex flex-col min-w-0 max-w-[min(520px,75%)] ${isOwnMessage ? 'items-end' : 'items-start'}`}
       >
-        {/* Sender name + timestamp — only on first message in group */}
+        {/* Sender name + timestamp — only on FIRST message in group */}
         {isFirstInGroup && (
           <div
-            className={`flex items-baseline gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+            className={`flex items-baseline gap-1.5 mb-1 px-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
           >
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-              {displayName}
-            </span>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center">
+            {/* Only show name for others' messages — own messages don't need it */}
+            {!isOwnMessage && (
+              <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 leading-none">
+                {displayName}
+              </span>
+            )}
+            <span className="text-[11px] text-slate-400 dark:text-[var(--color-fg-subtle)] leading-none flex items-center gap-1">
               {formatTime(message.createdAt)}
               {isOwnMessage && <SeenTick seenByCount={seenByCount} />}
             </span>
           </div>
         )}
-        {/* For non-first messages in group: show tick inline after bubble */}
+        {/* Seen tick on last message in group for non-first messages */}
         {!isFirstInGroup && isOwnMessage && isLastInGroup && (
-          <div className="flex justify-end">
+          <div className="flex justify-end pr-1 mb-0.5">
             <SeenTick seenByCount={seenByCount} />
           </div>
         )}
@@ -689,23 +692,22 @@ const MessageBubbleInner = function MessageBubble({
             /* Message bubble */
             <div
               className={`
-                relative rounded-2xl text-sm break-words
-                ${hasFileOnly ? '' : `px-3 py-2 ${bubbleColorClass} ${bubbleTailClass}`}
+                relative rounded-2xl text-sm break-words leading-relaxed
+                ${hasFileOnly ? '' : `px-3.5 py-2.5 ${bubbleColorClass} ${bubbleTailClass}`}
               `}
             >
-              {/* Telegram-style tail: a tiny pseudo-element via a clipped div */}
+              {/* Tail: tiny clipped corner to suggest message origin */}
               {isFirstInGroup && !hasFileOnly && (
                 <span
-                  className={`
-                    absolute top-0 w-2 h-2 overflow-hidden
-                    ${isOwnMessage ? '-right-1' : '-left-1'}
-                  `}
+                  className={`absolute top-0 w-2 h-2 overflow-hidden ${isOwnMessage ? '-right-1' : '-left-1'}`}
                   aria-hidden
                 >
                   <span
                     className={`
                       block w-3 h-3 rounded-sm
-                      ${isOwnMessage ? 'bg-[#5B8CFF] -rotate-45 origin-bottom-left' : 'bg-white dark:bg-slate-800 rotate-45 origin-bottom-right'}
+                      ${isOwnMessage
+                        ? 'bg-indigo-500 -rotate-45 origin-bottom-left'
+                        : 'bg-white dark:bg-[var(--color-surface-3)] rotate-45 origin-bottom-right'}
                     `}
                   />
                 </span>
@@ -765,12 +767,18 @@ const MessageBubbleInner = function MessageBubble({
                 />
               )}
 
-              {/* Edited tag */}
-              {message.isEdited && (
-                <span className="text-[10px] opacity-50 ml-1 select-none">(edited)</span>
-              )}
-              {(message as any).isPinned && (
-                <span title="Pinned" className="ml-1 text-amber-400 text-xs select-none" aria-label="Pinned">📌</span>
+              {/* Edited tag + pinned badge */}
+              {(message.isEdited || (message as any).isPinned) && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {message.isEdited && (
+                    <span className={`text-[10px] select-none ${isOwnMessage ? 'text-white/50' : 'text-slate-400 dark:text-[var(--color-fg-subtle)]'}`}>
+                      edited
+                    </span>
+                  )}
+                  {(message as any).isPinned && (
+                    <span title="Pinned" className="text-amber-400 text-[10px] select-none" aria-label="Pinned">📌 pinned</span>
+                  )}
+                </div>
               )}
             </div>
           )}

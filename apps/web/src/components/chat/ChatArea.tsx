@@ -1496,7 +1496,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Messages + scroll FAB wrapper */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
-      <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-6 pb-2 space-y-1">
+      <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 pt-8 pb-4">
 
         {/* Load older messages button — only shown when more history exists */}
         {hasMore && (
