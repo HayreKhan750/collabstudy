@@ -308,38 +308,66 @@ export class MessagesService {
     // When a cursor IS provided (loading older history), sort ASC from cursor.
     const isInitialLoad = !cursor;
 
-    const whereClause = { channelId, parentId: parentId ?? null };
+    // Efficient cursor: resolve pivot row's createdAt once, then use
+    // lt/tie-break instead of cursor+skip=1 (avoids an extra index seek).
+    let cursorFilter: Prisma.MessageWhereInput = {};
+    if (cursor) {
+      const pivot = await this.prisma.message.findUnique({
+        where: { id: cursor },
+        select: { createdAt: true },
+      });
+      if (pivot) {
+        cursorFilter = {
+          OR: [
+            { createdAt: { lt: pivot.createdAt } },
+            { createdAt: { equals: pivot.createdAt }, id: { lt: cursor } },
+          ],
+        };
+      }
+    }
+
+    const whereClause: Prisma.MessageWhereInput = {
+      channelId,
+      parentId: parentId ?? null,
+      ...cursorFilter,
+    };
+
+    // Minimal select — only fields consumed by the frontend.
+    // Reactions: id/emoji/userId only (no user join; avatars shown via emoji
+    // groups, not per-reaction avatars in the message list).
     const include = {
       user: { select: { id: true, username: true, fullName: true, avatar: true } },
       reactions: {
-        include: {
-          user: { select: { id: true, username: true, fullName: true, avatar: true } },
-        },
+        select: { id: true, emoji: true, userId: true },
       },
       mentions: { select: { id: true, username: true, fullName: true, avatar: true } },
       _count: { select: { replies: true } },
       forwardedFrom: {
-        select: { id: true, content: true, user: { select: { id: true, username: true, fullName: true } } },
+        select: {
+          id: true,
+          content: true,
+          fileUrl: true,
+          fileType: true,
+          user: { select: { id: true, username: true, fullName: true, avatar: true } },
+        },
       },
       poll: {
         include: {
           options: {
             include: { votes: { select: { userId: true } } },
+            orderBy: { order: 'asc' as const },
           },
         },
       },
     } as const;
 
-    // Both initial load and paginated load use DESC so we always walk
-    // backwards in time from the anchor point.
-    // - Initial load: no cursor → newest `limit` messages.
-    // - Paginated load: cursor = oldest message currently on screen →
-    //   `limit` messages older than that, skipping the cursor itself.
+    // Both initial and paginated load walk DESC so we always land on the
+    // most-recent messages. We use a composite orderBy [createdAt DESC, id DESC]
+    // so the sort is deterministic even when two messages share the same timestamp.
     const raw = await this.prisma.message.findMany({
       where: whereClause,
       take: limit,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include,
     });
 

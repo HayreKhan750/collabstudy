@@ -166,7 +166,13 @@ model Message {
   @@index([channelId])
   @@index([userId])
   @@index([createdAt])
-  @@index([channelId, createdAt])
+  // Primary query index: filters channelId+parentId, sorts by createdAt DESC
+  // Covers: WHERE channelId=? AND parentId IS NULL ORDER BY createdAt DESC
+  @@index([channelId, parentId, createdAt(sort: Desc)])
+  // Cursor pagination: id lookup within a channel
+  @@index([channelId, id])
+  // Pinned message queries
+  @@index([channelId, isPinned])
   @@index([parentId])
   @@index([forwardedFromId])
   @@map("messages")
@@ -206,6 +212,8 @@ model Reaction {
   @@unique([userId, messageId, emoji])
   @@index([messageId])
   @@index([userId])
+  // Covering index for emoji grouping per message
+  @@index([messageId, emoji])
   @@map("reactions")
 }
 
