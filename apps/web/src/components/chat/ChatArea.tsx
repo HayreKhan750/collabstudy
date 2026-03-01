@@ -1384,7 +1384,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   return (
   <div className="flex h-full flex-1 overflow-hidden">
     <div
-      className={`flex-1 flex flex-col h-full overflow-hidden relative bg-white dark:aurora-canvas-dark ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:aurora-canvas ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -1674,7 +1674,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Bulk Selection Action Bar */}
       {isSelectionMode && (
-        <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.05] bg-white/40 dark:bg-[#0A0A0A]/50 backdrop-blur-2xl px-4 py-3 flex items-center gap-3 relative z-10">
+        <div className="flex-shrink-0 border-t border-black/5 dark:border-white/[0.06] bg-white/60 dark:bg-[#0b0f1e]/70 backdrop-blur-2xl px-4 py-3 flex items-center gap-3 relative z-10">
           <span className="text-sm text-slate-600 dark:text-violet-300/80 font-medium">{selectedMessageIds.size} selected</span>
           <button
             onClick={() => {

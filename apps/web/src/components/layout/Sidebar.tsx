@@ -337,7 +337,7 @@ export default function Sidebar({
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <motion.aside
-        className="hidden md:flex flex-col h-full bg-white/80 dark:bg-[#0B0D17] border-r border-gray-200 dark:border-white/[0.04] shadow-[4px_0_24px_-10px_rgba(0,0,0,0.4)] flex-shrink-0 z-20"
+        className="hidden md:flex flex-col h-full bg-white/60 dark:bg-[#0a051e]/40 backdrop-blur-2xl border-r border-gray-200 dark:border-white/[0.04] shadow-[4px_0_24px_-10px_rgba(0,0,0,0.5)] flex-shrink-0 z-20"
         animate={{ width: collapsed ? 60 : 240 }}
         transition={{ type: 'spring', stiffness: 320, damping: 32, mass: 0.8 }}
         style={{ minWidth: collapsed ? 60 : 240, overflow: 'hidden' }}
@@ -366,7 +366,7 @@ export default function Sidebar({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-72 bg-white/80 dark:bg-[#0B0D17] border-r border-gray-200 dark:border-white/[0.04] shadow-[4px_0_24px_-10px_rgba(0,0,0,0.4)] z-50 md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-72 bg-white/60 dark:bg-[#0a051e]/40 backdrop-blur-2xl border-r border-gray-200 dark:border-white/[0.04] shadow-[4px_0_24px_-10px_rgba(0,0,0,0.5)] z-50 md:hidden flex flex-col"
             >
               {sidebarContent}
             </motion.aside>
