@@ -17,6 +17,7 @@ import { io, Socket } from 'socket.io-client';
 import CallModal, { IncomingCallPayload } from '@/components/chat/CallModal';
 import { SearchModal } from '@/components/chat/SearchModal';
 import SettingsPanel from '@/components/settings/SettingsPanel';
+import { logger } from '@/lib/logger';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -111,7 +112,7 @@ export default function DashboardPage() {
         const audio = new Audio('/ringtone.mp3');
         audio.loop = true;
         audio.volume = 0.6;
-        audio.play().catch((err) => console.warn('[Ringtone] Could not auto-play:', err));
+        audio.play().catch((err) => logger.warn('[Ringtone] Could not auto-play:', err));
         ringAudioRef.current = audio;
       }
     } else {
@@ -149,7 +150,7 @@ export default function DashboardPage() {
       const convs = await api.getDirectConversations(token);
       setDirectConversations(convs);
     } catch (e) {
-      console.warn('[DM] failed to load conversations', e);
+      logger.warn('[DM] failed to load conversations', e);
     }
   };
 
@@ -400,7 +401,7 @@ export default function DashboardPage() {
     try {
       await api.hideDmConversation(token, conv.id);
     } catch (e) {
-      console.warn('[DM] hide error', e);
+      logger.warn('[DM] hide error', e);
     }
     setDirectConversations(prev => prev.filter(c => c.id !== conv.id));
     setSelectedConversation(cur => cur?.id === conv.id ? null : cur);
@@ -718,7 +719,7 @@ export default function DashboardPage() {
                           setSelectedConversation(conv);
                           setSelectedChannel(null);
                         } catch (e) {
-                          console.warn('[DM] start error', e);
+                          logger.warn('[DM] start error', e);
                         }
                       }}
                     >

@@ -1,4 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { logger } from './logger';
 if (!API_URL) console.error('🚨 CRITICAL: API_URL is undefined! Check your .env file.');
 
 export interface RegisterData {
@@ -445,7 +446,7 @@ class ApiClient {
 
     if (!response.ok) {
       // Non-fatal — silently ignore read-receipt errors so they never break the UI
-      console.warn('[api] markChannelAsRead failed:', response.status);
+      logger.warn('[api] markChannelAsRead failed:', response.status);
     }
   }
 
@@ -647,7 +648,7 @@ class ApiClient {
       method: 'POST',
       headers: this.getHeaders(token),
     });
-    if (!res.ok) console.warn('[api] markChannelRead failed:', res.status);
+    if (!res.ok) logger.warn('[api] markChannelRead failed:', res.status);
   }
 
   /**
@@ -704,7 +705,7 @@ class ApiClient {
       method: 'POST',
       headers: this.getHeaders(token),
     });
-    if (!res.ok) console.warn('[api] markDmRead failed:', res.status);
+    if (!res.ok) logger.warn('[api] markDmRead failed:', res.status);
   }
 
   // ── User Profile ──────────────────────────────────────────────────────────

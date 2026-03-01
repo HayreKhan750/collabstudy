@@ -175,7 +175,7 @@ export function validateEnv(): void {
 
   const divider = '─'.repeat(60);
 
-  if (warnings.length > 0 && process.env.NODE_ENV !== 'test') {
+  if (warnings.length > 0 && process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'production') {
     console.warn(`\n${divider}`);
     console.warn('⚠  CollabStudy API — Environment Warnings');
     console.warn(divider);
@@ -195,7 +195,7 @@ export function validateEnv(): void {
     process.exit(1);
   }
 
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'production') {
     console.log(`✅ Environment validation passed (${isProduction ? 'production' : process.env.NODE_ENV ?? 'development'} mode)`);
   }
 }

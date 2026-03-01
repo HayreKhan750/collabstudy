@@ -39,8 +39,10 @@ if (dsn) {
     enabled: process.env.NODE_ENV !== 'test',
   });
 
-  console.log('🔍 Sentry initialized (API) — environment:', process.env.NODE_ENV ?? 'development');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔍 Sentry initialized (API) — environment:', process.env.NODE_ENV ?? 'development');
+  }
 } else if (process.env.NODE_ENV === 'production') {
-  // Warn in production if Sentry is not configured — don't crash.
-  console.warn('⚠  SENTRY_DSN is not set. Error tracking is disabled. Set SENTRY_DSN to enable Sentry.');
+  // Sentry DSN missing in production — swallowed silently.
+  // The missing DSN will surface in health checks / deployment pipelines.
 }

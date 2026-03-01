@@ -16,6 +16,7 @@ import { PinnedMessageBar } from './PinnedMessageBar';
 import UserProfileModal from './UserProfileModal';
 import CreatePollModal from './CreatePollModal';
 import type { Message } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -139,7 +140,7 @@ export default function DirectMessageArea({
         setSaveToast(true);
         setTimeout(() => setSaveToast(false), 2000);
       } catch (e) {
-        console.warn('[Save DM] Failed:', e);
+        logger.warn('[Save DM] Failed:', e);
       }
     },
     [token]
@@ -246,7 +247,7 @@ export default function DirectMessageArea({
         setOtherUserLastReadAt(data.otherParticipantLastReadAt);
       }
     } catch (e) {
-      console.warn('[DM] fetch error:', e);
+      logger.warn('[DM] fetch error:', e);
     } finally {
       setLoading(false);
     }
@@ -376,11 +377,11 @@ export default function DirectMessageArea({
     });
 
     socket.on('connect_error', (err) => {
-      console.warn(`[DM WS] ⚠️ Connect error: ${err.message}`);
+      logger.warn(`[DM WS] ⚠️ Connect error: ${err.message}`);
     });
 
     socket.on('disconnect', (reason) => {
-      console.warn(`[DM WS] ⚠️ Disconnected: ${reason}`);
+      logger.warn(`[DM WS] ⚠️ Disconnected: ${reason}`);
     });
 
     socket.on('reconnect', () => {
@@ -597,7 +598,7 @@ export default function DirectMessageArea({
       // On success: the WS echo (new_direct_message) will replace the temp- placeholder
       // with the real server message. We do NOT update state here to avoid double render.
     } catch (e) {
-      console.warn('[DM] send error:', e);
+      logger.warn('[DM] send error:', e);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       if (content) setInput(content);
       if (file) setPendingFile(file);
@@ -642,7 +643,7 @@ export default function DirectMessageArea({
           size: result.size,
         });
       } catch (e) {
-        console.warn('[DM] upload error:', e);
+        logger.warn('[DM] upload error:', e);
       } finally {
         setUploadingFile(false);
       }
@@ -765,7 +766,7 @@ export default function DirectMessageArea({
           setMessages(previousMessages);
         }
       } catch (err) {
-        console.warn('[DM] reaction error:', err);
+        logger.warn('[DM] reaction error:', err);
         setMessages(previousMessages);
       }
     },
@@ -790,7 +791,7 @@ export default function DirectMessageArea({
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
-      console.warn('[DM] delete error:', err);
+      logger.warn('[DM] delete error:', err);
       // Re-fetch on failure to restore the message
       fetchMessages();
     }
@@ -862,7 +863,7 @@ export default function DirectMessageArea({
       });
       setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
     } catch (err) {
-      console.warn('[DM bulk delete] error:', err);
+      logger.warn('[DM bulk delete] error:', err);
     }
     handleCancelSelection();
   }, [selectedMessageIds, conversationId, token]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -881,7 +882,7 @@ export default function DirectMessageArea({
       setPinnedMessage(currentlyPinned ? null : msg);
       setShowPinnedBar(!currentlyPinned);
     } catch (err) {
-      console.warn('[DM] pin error:', err);
+      logger.warn('[DM] pin error:', err);
     }
   }, [conversationId, token, messages, pinnedMessage]);
 
@@ -1183,7 +1184,7 @@ export default function DirectMessageArea({
                           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                           body: JSON.stringify({ optionId: optId }),
                         });
-                      } catch(e) { console.warn('DM Vote failed', e); }
+                      } catch(e) { logger.warn('DM Vote failed', e); }
                     }}
                     onSelect={() => handleSelectMessage(msg.id)}
                     onSave={() => handleSaveDmMessage(msg)}

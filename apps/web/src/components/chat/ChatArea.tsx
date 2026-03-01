@@ -18,6 +18,7 @@ import ForwardModal from './ForwardModal';
 import { PinnedMessageBar } from './PinnedMessageBar';
 import UserProfileModal from './UserProfileModal';
 import CreatePollModal from './CreatePollModal';
+import { logger } from '@/lib/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -217,7 +218,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
-      console.warn('[Pin] Failed:', err);
+      logger.warn('[Pin] Failed:', err);
     }
   }, [channelId, token]);
 
@@ -273,7 +274,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       });
       setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
     } catch (err) {
-      console.warn('[Bulk delete] error:', err);
+      logger.warn('[Bulk delete] error:', err);
     }
     handleCancelSelection();
   }, [selectedMessageIds, channelId, token]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -431,7 +432,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         setNextCursor(data.nextCursor ?? null);
         setHasMore(!!data.nextCursor);
       } catch (err) {
-        console.warn('[Search] Failed to load messages for jump:', err);
+        logger.warn('[Search] Failed to load messages for jump:', err);
       } finally {
         setLoading(false);
         // Scroll to the target message after loading
@@ -483,7 +484,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       setReadReceipts(initialReceipts);
       // receipts loaded — no logging in production
     } catch (error) {
-      console.warn('[WS] ⚠️ Error fetching channel data:', error);
+      logger.warn('[WS] ⚠️ Error fetching channel data:', error);
     } finally {
       setLoading(false);
     }
@@ -532,7 +533,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         });
       }
     } catch (err) {
-      console.warn('[WS] ⚠️ Error loading older messages:', err);
+      logger.warn('[WS] ⚠️ Error loading older messages:', err);
     } finally {
       setLoadingOlder(false);
     }
@@ -677,11 +678,11 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     socket.on('connect_error', (err) => {
       // Use warn not error — Next.js dev overlay intercepts console.error
       // and halts the UI, but socket connection hiccups are transient and normal.
-      console.warn(`[WS] ⚠️ SOCKET CONNECT ERROR: ${err.message}`);
+      logger.warn(`[WS] ⚠️ SOCKET CONNECT ERROR: ${err.message}`);
     });
 
     socket.on('disconnect', (reason) => {
-      console.warn(`%c[WS] ⚠️  SOCKET DISCONNECTED: ${reason}  socket=${socket.id}  channel=${channelId}`, 'color: #fb923c; font-weight: bold');
+      logger.warn(`%c[WS] ⚠️  SOCKET DISCONNECTED: ${reason}  socket=${socket.id}  channel=${channelId}`, 'color: #fb923c; font-weight: bold');
     });
 
     socket.on('reconnect_attempt', (attempt: number) => {
@@ -698,7 +699,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     });
 
     socket.on('reconnect_failed', () => {
-      console.warn(`[WS] ⚠️ RECONNECT FAILED after all attempts for channel=${channelId}`);
+      logger.warn(`[WS] ⚠️ RECONNECT FAILED after all attempts for channel=${channelId}`);
     });
 
     // ── new_message ─────────────────────────────────────────────────────────
@@ -978,7 +979,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         fileToSend?.name,
       );
     } catch (error) {
-      console.warn('[WS] ⚠️ Error sending message:', error);
+      logger.warn('[WS] ⚠️ Error sending message:', error);
       setSendError(error instanceof Error ? error.message : 'Failed to send. Please try again.');
       if (content) setNewMessage(content);
       if (fileToSend) setPendingFile(fileToSend);
@@ -1049,7 +1050,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         // 4. Revert to exact pre-click snapshot
         const errorMessage =
           err instanceof Error ? err.message : 'Could not update reaction. Please try again.';
-        console.warn('[Reaction] ⚠️ error, reverting optimistic update:', errorMessage);
+        logger.warn('[Reaction] ⚠️ error, reverting optimistic update:', errorMessage);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === message.id ? { ...m, reactions: previousReactions } : m,
@@ -1104,7 +1105,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       await api.deleteMessage(channelId, messageId, token);
       // The deletion propagates via socket message_deleted
     } catch (err) {
-      console.warn('[Delete] Failed:', err);
+      logger.warn('[Delete] Failed:', err);
     }
   }, [channelId, token, deleteConfirm]);
 
@@ -1193,7 +1194,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ optionId: optId }),
       });
-    } catch (e) { console.warn('Vote failed', e); }
+    } catch (e) { logger.warn('Vote failed', e); }
   }, [token, channelId]);
 
   const handleMsgClosePoll = useCallback(async (msgId: string) => {
@@ -1203,7 +1204,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       });
-    } catch (e) { console.warn('Close poll failed', e); }
+    } catch (e) { logger.warn('Close poll failed', e); }
   }, [token, channelId]);
 
   const handleMsgSave = useCallback(async (message: MessageData) => {
@@ -1221,7 +1222,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
       await api.sendSavedMessage(token, payload);
       setSaveToast(true);
       setTimeout(() => setSaveToast(false), 2000);
-    } catch (e) { console.warn('Save failed', e); }
+    } catch (e) { logger.warn('Save failed', e); }
   }, [token]);
 
   const handleMsgAvatarClick = useCallback((user: MessageData['user']) => {
