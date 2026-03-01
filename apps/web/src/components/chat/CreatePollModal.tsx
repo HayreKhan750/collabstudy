@@ -37,10 +37,10 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
     <button
       type="button"
       onClick={onChange}
-      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98] transition-all duration-200"
     >
       <span className="text-sm text-slate-700 dark:text-slate-200 font-medium">{label}</span>
-      <div className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${checked ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+      <div className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${checked ? 'bg-violet-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
         <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`} />
       </div>
     </button>
@@ -48,15 +48,15 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        className="bg-white dark:bg-gray-900/95 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-scale-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -80,7 +80,7 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
               onChange={e => setQuestion(e.target.value)}
               placeholder="Ask a question..."
               maxLength={200}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-gray-800/60 border border-slate-200 dark:border-white/[0.08] rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all duration-200"
               autoFocus
             />
           </div>
@@ -98,7 +98,7 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
                     onChange={e => updateOption(idx, e.target.value)}
                     placeholder={`Option ${idx + 1}`}
                     maxLength={100}
-                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-gray-800/60 border border-slate-200 dark:border-white/[0.08] rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all duration-200"
                   />
                   {options.length > 2 && (
                     <button
@@ -136,11 +136,11 @@ export default function CreatePollModal({ onClose, onCreatePoll }: CreatePollMod
 
         {/* Footer */}
         <div className="flex gap-3 px-5 pb-5">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-95 transition-all duration-200">Cancel</button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white hover:text-white text-sm font-semibold transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all duration-200 shadow-[0_0_16px_rgba(139,92,246,0.3)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)]"
           >Create Poll</button>
         </div>
       </div>

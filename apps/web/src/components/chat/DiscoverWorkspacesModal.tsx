@@ -52,14 +52,14 @@ export default function DiscoverWorkspacesModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]">
+    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-white dark:bg-gray-900/95 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-blue-500"
+              className="h-6 w-6 text-violet-500"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -75,7 +75,7 @@ export default function DiscoverWorkspacesModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+            className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all duration-150 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.06] active:scale-95"
             aria-label="Close"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -131,10 +131,10 @@ export default function DiscoverWorkspacesModal({
                 return (
                   <li
                     key={workspace.id}
-                    className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3"
+                    className="flex items-center justify-between bg-slate-50 dark:bg-gray-800/60 border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-3 transition-colors hover:bg-slate-100 dark:hover:bg-white/[0.06]"
                   >
                     <div className="flex items-center space-x-3 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(139,92,246,0.3)]">
                         <span className="text-white font-bold text-sm uppercase">
                           {workspace.name.charAt(0)}
                         </span>
@@ -155,8 +155,8 @@ export default function DiscoverWorkspacesModal({
                       disabled={isJoining || alreadyJoined}
                       className={`ml-4 flex-shrink-0 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         alreadyJoined
-                          ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 cursor-default'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white hover:text-white disabled:opacity-50'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 cursor-default'
+                          : 'bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 text-white disabled:opacity-50 shadow-[0_0_12px_rgba(139,92,246,0.3)] hover:shadow-[0_0_20px_rgba(139,92,246,0.5)]'
                       }`}
                     >
                       {isJoining ? 'Joining...' : alreadyJoined ? '✓ Joined' : 'Join'}
@@ -169,10 +169,10 @@ export default function DiscoverWorkspacesModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-gray-800 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-all duration-150 active:scale-95"
           >
             Close
           </button>

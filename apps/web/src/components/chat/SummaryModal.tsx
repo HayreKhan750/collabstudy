@@ -71,13 +71,13 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
       role="dialog"
       aria-modal="true"
       aria-label="AI Summary"
     >
-      <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/60 w-full max-w-lg flex flex-col max-h-[80vh]">
+      <div className="bg-white dark:bg-gray-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh] animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/80 dark:border-white/[0.08] flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
         <div className="px-5 py-3 border-t border-slate-200/80 dark:border-white/[0.08] flex-shrink-0 flex justify-end">
           <button
             onClick={onClose}
-            className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200 shadow-[0_0_16px_rgba(139,92,246,0.3)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)]"
           >
             {loading ? 'Cancel' : 'Close'}
           </button>

@@ -9,6 +9,7 @@ import SummaryModal from './SummaryModal';
 import VoiceChannelBar from './VoiceChannelBar';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { MessageBubble, MessageData } from './message/MessageBubble';
+import { MessageList } from './message/MessageList';
 import { TypingIndicator } from './message/TypingIndicator';
 import { UnreadDivider } from './message/UnreadDivider';
 import { ScrollToBottomFAB } from './message/ScrollToBottomFAB';
@@ -1141,6 +1142,92 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   }, [doUpload]);
 
 
+  // ─── Stable per-message action callbacks (prevent MessageBubble re-renders) ──
+
+  // Keep a stable ref to messages so callbacks don't need messages in their
+  // dependency array (avoids re-creating them on every new message).
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  const handleMsgAddReaction = useCallback((messageId: string, emoji: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId);
+    if (msg) handleReactionClick(msg, emoji);
+  }, [handleReactionClick]);
+
+  const handleMsgRemoveReaction = useCallback((messageId: string, _reactionId: string, emoji: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId);
+    if (msg) handleReactionClick(msg, emoji);
+  }, [handleReactionClick]);
+
+  const handleMsgOpenThread = useCallback((messageId: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId);
+    if (msg) onOpenThread?.(msg as unknown as ApiMessage);
+  }, [onOpenThread]);
+
+  const handleMsgStartEdit = useCallback((messageId: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId);
+    if (msg) handleStartEdit(msg);
+  }, [handleStartEdit]);
+
+  const handleMsgFindSimilar = useCallback((message: MessageData) => {
+    setRelatedSource(message as any);
+  }, []);
+
+  const handleMsgForward = useCallback((message: MessageData) => {
+    setForwardMessage(message as any);
+    setBulkForwardMessages([]);
+  }, []);
+
+  const handleMsgPin = useCallback((messageId: string) => {
+    handlePinMessage(messageId);
+    const msg = messagesRef.current.find(m => m.id === messageId);
+    setPinnedMessage((prev) => prev?.id === messageId ? null : (msg ?? null) as any);
+    setShowPinnedBar(true);
+  }, [handlePinMessage]);
+
+  const handleMsgVotePoll = useCallback(async (msgId: string, optId: string) => {
+    if (!token) return;
+    try {
+      await fetch(`${API_URL}/channels/${channelId}/messages/${msgId}/poll/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ optionId: optId }),
+      });
+    } catch (e) { console.warn('Vote failed', e); }
+  }, [token, channelId]);
+
+  const handleMsgClosePoll = useCallback(async (msgId: string) => {
+    if (!token) return;
+    try {
+      await fetch(`${API_URL}/channels/${channelId}/messages/${msgId}/poll/close`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (e) { console.warn('Close poll failed', e); }
+  }, [token, channelId]);
+
+  const handleMsgSave = useCallback(async (message: MessageData) => {
+    if (!token) return;
+    try {
+      const payload: { content?: string; fileUrl?: string; fileType?: string; fileSize?: number; originalName?: string } = {};
+      if (message.content) payload.content = message.content;
+      if (message.fileUrl) {
+        payload.fileUrl = message.fileUrl;
+        if (message.fileType) payload.fileType = message.fileType;
+        if (message.fileSize) payload.fileSize = message.fileSize;
+        if (message.originalName) payload.originalName = message.originalName;
+      }
+      if (!payload.content && !payload.fileUrl) return;
+      await api.sendSavedMessage(token, payload);
+      setSaveToast(true);
+      setTimeout(() => setSaveToast(false), 2000);
+    } catch (e) { console.warn('Save failed', e); }
+  }, [token]);
+
+  const handleMsgAvatarClick = useCallback((user: MessageData['user']) => {
+    setProfileUser(user as any);
+  }, []);
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -1521,126 +1608,38 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           </div>
         )}
 
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              No messages yet. Start the conversation!
-            </p>
-          </div>
-        ) : (
-          messages.map((message, i) => {
-            const isMine = message.user.id === user?.id;
-
-            // ── Telegram-style grouping ───────────────────────────────────
-            const prevMsg = messages[i - 1];
-            const nextMsg = messages[i + 1];
-            const isFirstInGroup = !prevMsg ||
-              prevMsg.user.id !== message.user.id ||
-              (new Date(message.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) >= 5 * 60 * 1000;
-            const isLastInGroup = !nextMsg ||
-              nextMsg.user.id !== message.user.id ||
-              (new Date(nextMsg.createdAt).getTime() - new Date(message.createdAt).getTime()) >= 5 * 60 * 1000;
-
-            // ── Unread divider ────────────────────────────────────────────
-            const lastReadAt = lastReadAtRef.current;
-            const isFirstUnread = !!lastReadAt &&
-              new Date(message.createdAt) > new Date(lastReadAt) &&
-              (!prevMsg || new Date(prevMsg.createdAt) <= new Date(lastReadAt));
-
-            return (
-              <div key={message.id}>
-                {/* New Messages divider */}
-                {isFirstUnread && (
-                  <UnreadDivider ref={unreadDividerRef} />
-                )}
-                <MessageBubble
-                  message={message as MessageData}
-                  isFirstInGroup={isFirstInGroup}
-                  isLastInGroup={isLastInGroup}
-                  isOwnMessage={isMine}
-                  isHighlighted={highlightedMessageId === message.id}
-                  currentUserId={user?.id ?? ''}
-                  readReceipts={readReceipts}
-                  onAddReaction={(msgId, emoji) => {
-                    const msg = messages.find(m => m.id === msgId);
-                    if (msg) handleReactionClick(msg, emoji);
-                  }}
-                  onRemoveReaction={(msgId, reactionId, emoji) => {
-                    const msg = messages.find(m => m.id === msgId);
-                    if (msg) handleReactionClick(msg, emoji);
-                  }}
-                  onOpenThread={() => onOpenThread?.(message as unknown as ApiMessage)}
-                  onStartEdit={() => handleStartEdit(message)}
-                  onDeleteRequest={() => handleDeleteMessage(message.id)}
-                  isEditing={editingMessageId === message.id}
-                  editContent={editContent}
-                  editError={editError}
-                  editSaving={editSaving}
-                  onEditChange={setEditContent}
-                  onEditSave={() => handleSaveEdit(message.id)}
-                  onEditCancel={handleCancelEdit}
-                  onFindSimilar={message.content ? () => setRelatedSource(message) : undefined}
-                  onCopy={message.content ? () => handleCopyMessage(message.content!) : undefined}
-                  onForward={message.content ? () => { setForwardMessage(message); setBulkForwardMessages([]); } : undefined}
-                  onPin={() => {
-                    handlePinMessage(message.id);
-                    setPinnedMessage((prev) => prev?.id === message.id ? null : message);
-                    setShowPinnedBar(true);
-                  }}
-                  onVotePoll={async (msgId: string, optId: string) => {
-                    try {
-                      await fetch(`${API_URL}/channels/${channelId}/messages/${msgId}/poll/vote`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({ optionId: optId }),
-                      });
-                    } catch(e) { console.warn('Vote failed', e); }
-                  }}
-                  onClosePoll={async (msgId: string) => {
-                    try {
-                      await fetch(`${API_URL}/channels/${channelId}/messages/${msgId}/poll/close`, {
-                        method: 'PATCH',
-                        headers: { Authorization: `Bearer ${token}` },
-                      });
-                    } catch(e) { console.warn('Close poll failed', e); }
-                  }}
-                  onSelect={() => handleSelectMessage(message.id)}
-                  onSave={async () => {
-                    if (!token) return;
-                    try {
-                      // Build payload — at least one of content/fileUrl must be present
-                      const payload: {
-                        content?: string;
-                        fileUrl?: string;
-                        fileType?: string;
-                        fileSize?: number;
-                        originalName?: string;
-                      } = {};
-                      if (message.content) payload.content = message.content;
-                      if (message.fileUrl) {
-                        payload.fileUrl = message.fileUrl;
-                        if (message.fileType) payload.fileType = message.fileType;
-                        if (message.fileSize) payload.fileSize = message.fileSize;
-                        if (message.originalName) payload.originalName = message.originalName;
-                      }
-                      // Bail out if message has no content or file (e.g. poll-only)
-                      if (!payload.content && !payload.fileUrl) {
-                        console.warn('Cannot save a message with no content or file');
-                        return;
-                      }
-                      await api.sendSavedMessage(token, payload);
-                      setSaveToast(true);
-                      setTimeout(() => setSaveToast(false), 2000);
-                    } catch (e) { console.warn('Save failed', e); }
-                  }}
-                  onAvatarClick={() => setProfileUser(message.user as any)}
-                  isSelected={selectedMessageIds.has(message.id)}
-                  isSelectionMode={isSelectionMode}
-                />
-              </div>
-            );
-          })
-        )}
+        <MessageList
+          messages={messages as MessageData[]}
+          currentUserId={user?.id ?? ''}
+          lastReadAt={lastReadAtRef.current}
+          highlightedMessageId={highlightedMessageId}
+          editingMessageId={editingMessageId}
+          editContent={editContent}
+          editError={editError}
+          editSaving={editSaving}
+          isSelectionMode={isSelectionMode}
+          selectedMessageIds={selectedMessageIds}
+          readReceipts={readReceipts}
+          unreadDividerRef={unreadDividerRef}
+          scrollRef={scrollContainerRef}
+          onAddReaction={handleMsgAddReaction}
+          onRemoveReaction={handleMsgRemoveReaction}
+          onOpenThread={handleMsgOpenThread}
+          onStartEdit={handleMsgStartEdit}
+          onDeleteRequest={handleDeleteMessage}
+          onEditChange={setEditContent}
+          onEditSave={handleSaveEdit}
+          onEditCancel={handleCancelEdit}
+          onFindSimilar={handleMsgFindSimilar}
+          onCopy={handleCopyMessage}
+          onForward={handleMsgForward}
+          onPin={handleMsgPin}
+          onVotePoll={handleMsgVotePoll}
+          onClosePoll={handleMsgClosePoll}
+          onSelect={handleSelectMessage}
+          onSave={handleMsgSave}
+          onAvatarClick={handleMsgAvatarClick}
+        />
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
@@ -1701,14 +1700,14 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
 
       {/* Input */}
       {!isSelectionMode && (
-      <div className="flex-shrink-0 px-4 pb-4">
+      <div className="flex-shrink-0 px-4 pb-4 pt-2">
         {sendError && <p className="text-red-400 text-xs mb-1">{sendError}</p>}
         {reactionError && <p className="text-red-400 text-xs mb-1">{reactionError}</p>}
         {uploadError && <p className="text-red-400 text-xs mb-1">{uploadError}</p>}
 
         {/* Pending file preview */}
         {pendingFile && (
-          <div className="mb-2 flex items-center gap-3 bg-white/80 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2 text-sm backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-3 bg-white/90 dark:bg-gray-800/60 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2 text-sm backdrop-blur-sm shadow-sm">
             {pendingFile.type.startsWith('image/') ? (
               <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
             ) : (
@@ -1730,7 +1729,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           </div>
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 bg-white/60 dark:bg-gray-800/50 border border-gray-200/80 dark:border-white/[0.06] rounded-2xl px-2 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-sm transition-shadow duration-200 focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_0_0_2px_rgba(139,92,246,0.25)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
           {/* Hidden file input */}
           <input
             ref={fileInputRef}
@@ -1744,7 +1743,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <button
             type="button"
             onClick={() => setShowPollModal(true)}
-            className="p-2 rounded-xl text-slate-500 dark:text-violet-300/50 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200"
+            className="p-2 rounded-xl text-slate-500 dark:text-violet-300/50 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200 active:scale-95"
             title="Create Poll"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1756,7 +1755,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingFile}
-            className="flex-shrink-0 p-2 text-slate-400 dark:text-violet-300/50 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200 rounded-xl hover:bg-violet-500/10 dark:hover:bg-violet-400/10 disabled:opacity-50"
+            className="flex-shrink-0 p-2 text-slate-400 dark:text-violet-300/50 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200 rounded-xl hover:bg-violet-500/10 dark:hover:bg-violet-400/10 disabled:opacity-50 active:scale-95"
             title="Attach file"
             aria-label="Attach file"
           >

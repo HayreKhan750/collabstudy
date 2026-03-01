@@ -235,14 +235,14 @@ export default function MentionInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 px-4 py-2.5 bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.05] text-slate-900 dark:text-gray-100 placeholder-slate-400 dark:placeholder-violet-300/30 rounded-2xl focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 dark:focus:ring-violet-500/30 text-sm disabled:opacity-50 resize-none leading-relaxed shadow-inner transition-all duration-300"
+          className="flex-1 px-3 py-2 bg-transparent border-0 text-slate-900 dark:text-gray-100 placeholder-slate-400 dark:placeholder-violet-300/30 focus:outline-none text-sm disabled:opacity-50 resize-none leading-relaxed transition-all duration-200"
           autoComplete="off"
           style={{ minHeight: '40px', maxHeight: '120px', overflowY: 'auto' }}
         />
         <button
           type="submit"
           disabled={(!value.trim() && !hasPendingFile) || disabled}
-          className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.4)] hover:shadow-[0_0_24px_rgba(139,92,246,0.6)] flex-shrink-0"
+          className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.4)] hover:shadow-[0_0_24px_rgba(139,92,246,0.6)] flex-shrink-0 mr-1 mb-0.5"
           aria-label="Send message"
           title="Send message"
         >

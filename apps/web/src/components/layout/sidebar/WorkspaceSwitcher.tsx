@@ -115,8 +115,8 @@ export function WorkspaceSwitcher({
               className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
                 ${
                   selectedWorkspace?.id === ws.id
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 rounded-2xl'
-                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-200 hover:bg-indigo-500/80 hover:text-white hover:rounded-2xl'
+                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30 rounded-2xl'
+                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-200 hover:bg-violet-500/80 hover:text-white hover:rounded-2xl'
                 }`}
             >
               {ws.name.charAt(0).toUpperCase()}
@@ -177,7 +177,7 @@ export function WorkspaceSwitcher({
             const ws = workspaces.find((w) => w.id === e.target.value);
             if (ws) onWorkspaceSelect(ws);
           }}
-          className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+          className="w-full bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-violet-500/50 appearance-none cursor-pointer transition-all duration-200"
         >
           <option value="" className="bg-white dark:bg-slate-800">
             Select workspace…

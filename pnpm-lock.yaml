@@ -248,6 +248,9 @@ importers:
       '@sentry/nextjs':
         specifier: ^10.40.0
         version: 10.40.0(@opentelemetry/context-async-hooks@2.5.1)(@opentelemetry/core@2.5.1)(@opentelemetry/sdk-trace-base@2.5.1)(next@16.1.6)(react@19.2.3)(webpack@5.105.2)
+      '@tanstack/react-virtual':
+        specifier: ^3.13.4
+        version: 3.13.19(react-dom@19.2.3)(react@19.2.3)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -4590,6 +4593,21 @@ packages:
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
     dependencies:
       tslib: 2.8.1
+    dev: false
+
+  /@tanstack/react-virtual@3.13.19(react-dom@19.2.3)(react@19.2.3):
+    resolution: {integrity: sha512-KzwmU1IbE0IvCZSm6OXkS+kRdrgW2c2P3Ho3NC+zZXWK6oObv/L+lcV/2VuJ+snVESRlMJ+w/fg4WXI/JzoNGQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    dependencies:
+      '@tanstack/virtual-core': 3.13.19
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+    dev: false
+
+  /@tanstack/virtual-core@3.13.19:
+    resolution: {integrity: sha512-/BMP7kNhzKOd7wnDeB8NrIRNLwkf5AhCYCvtfZV2GXWbBieFm/el0n6LOAXlTi6ZwHICSNnQcIxRCWHrLzDY+g==}
     dev: false
 
   /@tokenizer/inflate@0.4.1:

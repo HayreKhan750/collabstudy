@@ -160,7 +160,7 @@ function ChannelEmptyState({
         {canCreate && (
           <button
             onClick={onCreateChannel}
-            className="text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
+            className="text-xs text-violet-500 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors"
           >
             + Create one
           </button>
@@ -197,8 +197,8 @@ export function ChannelList({
               className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 mx-auto
                 ${
                   selectedChannel?.id === channel.id
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-white/[0.07] hover:text-slate-900 dark:hover:text-white'
                 }`}
             >
               <HashIcon />
@@ -221,7 +221,7 @@ export function ChannelList({
           <SidebarTooltip label="Create channel">
             <button
               onClick={onCreateChannel}
-              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/20 text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 flex items-center justify-center transition-all duration-150 mx-auto"
+              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-violet-500/20 text-slate-500 dark:text-slate-400 hover:text-violet-500 dark:hover:text-violet-400 flex items-center justify-center transition-all duration-150 mx-auto active:scale-95"
             >
               <PlusIcon />
             </button>
@@ -252,7 +252,7 @@ export function ChannelList({
 
       {loading ? (
         <div className="px-3 py-4 flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-slate-300 dark:border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-slate-300 dark:border-slate-600 border-t-violet-400 rounded-full animate-spin" />
           <span className="text-xs text-slate-500 dark:text-slate-400">Loading…</span>
         </div>
       ) : channels.length === 0 ? (
@@ -271,7 +271,7 @@ export function ChannelList({
               {isActive && (
                 <motion.span
                   layoutId="channel-active-bar"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.8)]"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}

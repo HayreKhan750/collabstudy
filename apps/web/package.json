@@ -13,6 +13,7 @@
     "@collabstudy/db": "workspace:*",
     "@collabstudy/shared": "workspace:*",
     "@sentry/nextjs": "^10.40.0",
+    "@tanstack/react-virtual": "^3.13.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "framer-motion": "^12.34.3",

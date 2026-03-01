@@ -211,9 +211,9 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
   const showSavedMessages = 'saved messages'.includes(search.toLowerCase()) || search === '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/60 w-full max-w-md flex flex-col max-h-[80vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white dark:bg-gray-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">Forward Message</h2>

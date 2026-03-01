@@ -41,7 +41,7 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
+    <div className="w-full max-w-md mx-auto p-8 bg-white dark:bg-gray-900/95 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
       <div className="mb-8 text-center">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create your account</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Join CollabStudy today</p>
@@ -64,7 +64,7 @@ export function RegisterForm() {
             required
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500 text-sm transition"
+            className="w-full px-3 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
             placeholder="you@example.com"
           />
         </div>
@@ -79,7 +79,7 @@ export function RegisterForm() {
             required
             value={formData.username}
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-            className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500 text-sm transition"
+            className="w-full px-3 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
             placeholder="johndoe"
             minLength={3}
             maxLength={30}
@@ -95,7 +95,7 @@ export function RegisterForm() {
             type="text"
             value={formData.fullName}
             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-            className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500 text-sm transition"
+            className="w-full px-3 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
             placeholder="John Doe"
           />
         </div>
@@ -110,7 +110,7 @@ export function RegisterForm() {
             required
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500 text-sm transition"
+            className="w-full px-3 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
             placeholder="••••••••"
             minLength={8}
           />
@@ -127,7 +127,7 @@ export function RegisterForm() {
             required
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500 text-sm transition"
+            className="w-full px-3 py-3 bg-white dark:bg-gray-800/60 text-slate-900 dark:text-white border border-slate-200 dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 placeholder-slate-400 dark:placeholder-violet-300/30 text-sm transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
             placeholder="••••••••"
             minLength={8}
           />
@@ -136,7 +136,7 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 bg-blue-600 text-white hover:text-white font-semibold rounded-lg hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+          className="w-full py-3 px-4 bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-[0.98] text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_28px_rgba(139,92,246,0.55)]"
         >
           {loading ? 'Creating account…' : 'Create account'}
         </button>
@@ -154,7 +154,7 @@ export function RegisterForm() {
           onClick={() => {
             window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/google`;
           }}
-          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors shadow-sm"
+          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-slate-200 dark:border-white/[0.08] rounded-xl bg-white dark:bg-gray-800/60 hover:bg-slate-50 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 text-sm font-medium transition-all duration-150 shadow-sm active:scale-[0.98]"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

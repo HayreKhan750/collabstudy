@@ -78,8 +78,8 @@ export function DirectMessageList({
             onClick={onSavedMessagesSelect}
             className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
               ${savedMessagesSelected
-                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
-                : 'bg-gradient-to-br from-indigo-500/20 to-purple-600/20 text-indigo-500 dark:text-indigo-400 hover:from-indigo-500/40 hover:to-purple-600/40'}`}
+                ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
+                : 'bg-gradient-to-br from-violet-500/20 to-purple-600/20 text-violet-500 dark:text-violet-400 hover:from-violet-500/40 hover:to-purple-600/40'}`}
           >
             <BookmarkIcon />
           </button>
@@ -96,7 +96,7 @@ export function DirectMessageList({
               <button
                 onClick={() => onConversationSelect(conv)}
                 className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-150 mx-auto
-                  ${isSelected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-indigo-500/60 hover:text-white'}`}
+                  ${isSelected ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-violet-500/60 hover:text-white'}`}
               >
                 {displayName.charAt(0).toUpperCase()}
                 {/* Online dot */}
@@ -123,7 +123,7 @@ export function DirectMessageList({
         <SidebarTooltip label="New direct message">
           <button
             onClick={onNewDM}
-            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-purple-500/20 text-slate-500 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 flex items-center justify-center transition-all duration-150 mx-auto"
+            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-violet-500/20 text-slate-500 dark:text-slate-400 hover:text-violet-500 dark:hover:text-violet-400 flex items-center justify-center transition-all duration-150 mx-auto active:scale-95"
           >
             <PlusIcon />
           </button>
@@ -154,13 +154,13 @@ export function DirectMessageList({
           onClick={onSavedMessagesSelect}
           className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-100
             ${savedMessagesSelected
-              ? 'bg-indigo-500/20 dark:bg-indigo-500/30 text-indigo-600 dark:text-indigo-300'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
+              ? 'bg-violet-500/15 dark:bg-violet-500/15 text-violet-700 dark:text-violet-200 font-medium shadow-[0_0_15px_rgba(139,92,246,0.12)]'
+              : 'text-slate-600 dark:text-violet-100/60 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 hover:text-slate-900 dark:hover:text-violet-50'}`}
         >
           <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
             ${savedMessagesSelected
-              ? 'bg-indigo-500 text-white'
-              : 'bg-gradient-to-br from-indigo-500/80 to-purple-600/80 text-white'}`}>
+              ? 'bg-violet-600 text-white'
+              : 'bg-gradient-to-br from-violet-500/80 to-purple-600/80 text-white'}`}>
             <BookmarkIcon />
           </div>
           <span className="text-xs font-semibold truncate flex-1 text-left">Saved Messages</span>
@@ -187,7 +187,7 @@ export function DirectMessageList({
           <p className="text-xs text-slate-500 dark:text-slate-400">No direct messages yet</p>
           <button
             onClick={onNewDM}
-            className="text-xs text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+            className="text-xs text-violet-500 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors"
           >
             + Start a conversation
           </button>
@@ -208,7 +208,7 @@ export function DirectMessageList({
                 {isSelected && (
                   <motion.span
                     layoutId="dm-active-bar"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.8)]"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,0.9)]"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}

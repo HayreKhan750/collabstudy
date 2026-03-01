@@ -25,7 +25,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full bg-black/5 dark:bg-black/40 border border-transparent dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-300 ease-out ${props.className ?? ''}`}
+      className={`w-full bg-white dark:bg-gray-800/60 border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-violet-300/30 text-sm focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 shadow-sm dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)] ${props.className ?? ''}`}
     />
   );
 }
@@ -35,7 +35,7 @@ function SaveButton({ loading, label = 'Save changes' }: { loading: boolean; lab
     <button
       type="submit"
       disabled={loading}
-      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white hover:text-white text-sm font-semibold rounded-xl transition-colors"
+      className="px-5 py-2.5 bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-[0_0_16px_rgba(139,92,246,0.3)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)]"
     >
       {loading ? 'Saving…' : label}
     </button>
@@ -269,7 +269,7 @@ function AppearanceTab() {
             onClick={() => applyTheme(t.value)}
             className={`relative flex flex-col items-start gap-2 p-4 rounded-2xl border transition-all text-left ${
               theme === t.value
-                ? 'bg-indigo-600/20 border-indigo-500/50 ring-2 ring-indigo-500/30'
+                ? 'bg-violet-600/20 border-violet-500/50 ring-2 ring-violet-500/30'
                 : 'bg-white/60 dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100/80 dark:hover:bg-white/10'
             }`}
           >
@@ -278,7 +278,7 @@ function AppearanceTab() {
               <p className="text-sm font-semibold text-slate-900 dark:text-white">{t.label}</p>
               <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">{t.desc}</p>
             </div>
-            {theme === t.value && <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-indigo-400" />}
+            {theme === t.value && <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-violet-400" />}
           </button>
         ))}
       </div>
@@ -333,7 +333,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
                 onClick={() => setTab(t.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                   tab === t.id
-                    ? 'bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white'
+                    ? 'bg-violet-500/10 dark:bg-white/10 text-violet-600 dark:text-white'
                     : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >

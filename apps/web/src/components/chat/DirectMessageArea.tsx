@@ -1239,7 +1239,7 @@ export default function DirectMessageArea({
       {/* Pending file preview */}
       {pendingFile && (
         <div className="px-4 pb-2 flex-shrink-0">
-          <div className="flex items-center gap-3 bg-slate-200 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 w-fit">
+          <div className="flex items-center gap-3 bg-white/90 dark:bg-gray-800/60 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 w-fit shadow-sm backdrop-blur-sm">
             {pendingFile.type.startsWith('image/') ? (
               <img
                 src={pendingFile.url}
@@ -1279,13 +1279,13 @@ export default function DirectMessageArea({
         </div>
       ) : (
         <div className="px-4 pb-4 flex-shrink-0">
-          <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
+          <div className="flex items-end gap-2 bg-white/60 dark:bg-gray-800/50 border border-gray-200/80 dark:border-white/[0.06] rounded-2xl px-2 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)] backdrop-blur-sm transition-shadow duration-200 focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_0_0_2px_rgba(139,92,246,0.25)] dark:focus-within:shadow-[inset_0_1px_4px_rgba(0,0,0,0.3),0_0_0_2px_rgba(139,92,246,0.3)]">
             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
             {/* Poll button */}
             <button
               type="button"
               onClick={() => setShowPollModal(true)}
-              className="flex-shrink-0 p-2 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600"
+              className="flex-shrink-0 p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200 rounded-xl hover:bg-violet-500/10 dark:hover:bg-violet-400/10 active:scale-95"
               title="Create Poll"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1296,7 +1296,7 @@ export default function DirectMessageArea({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingFile}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors disabled:opacity-50 flex-shrink-0"
+              className="text-slate-400 hover:text-violet-600 dark:hover:text-violet-300 transition-all duration-200 rounded-xl p-2 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 disabled:opacity-50 flex-shrink-0 active:scale-95"
               title="Attach file"
             >
               {uploadingFile ? (
@@ -1346,13 +1346,13 @@ export default function DirectMessageArea({
                 // Shift+Enter: browser inserts newline naturally — do nothing
               }}
               placeholder={`Message ${displayName}`}
-              className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 text-sm focus:outline-none resize-none leading-relaxed"
+              className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-violet-300/30 text-sm focus:outline-none resize-none leading-relaxed transition-all duration-200 px-1"
               style={{ minHeight: '24px', maxHeight: '120px', overflowY: 'auto' }}
             />
             <button
               onClick={handleSend}
               disabled={sending || (!input.trim() && !pendingFile)}
-              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-lg flex-shrink-0 text-white hover:text-white"
+              className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.4)] hover:shadow-[0_0_24px_rgba(139,92,246,0.6)] flex-shrink-0 mr-1 mb-0.5"
               aria-label="Send message"
               title="Send message"
             >

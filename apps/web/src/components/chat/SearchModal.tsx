@@ -244,17 +244,17 @@ export function SearchModal({ isOpen, onClose, workspaceId, token, onSelectResul
       aria-label="Search messages"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm animate-fade-in" />
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-2xl bg-white dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col animate-scale-in"
         style={{ maxHeight: '75vh' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Search input row */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 dark:border-white/[0.06]">
-          <svg className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]">
+          <svg className="w-5 h-5 text-slate-400 dark:text-violet-300/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
           </svg>
 
@@ -264,7 +264,7 @@ export function SearchModal({ isOpen, onClose, workspaceId, token, onSelectResul
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             placeholder={mode === 'semantic' ? 'Ask anything about your messages…' : 'Search messages…'}
-            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-base focus:outline-none"
+            className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-violet-300/30 text-lg font-normal focus:outline-none"
             autoComplete="off"
             spellCheck={false}
           />
@@ -369,7 +369,7 @@ export function SearchModal({ isOpen, onClose, workspaceId, token, onSelectResul
                 return (
                   <div key={channelId}>
                     {/* Channel group header */}
-                    <div className="flex items-center gap-2 px-4 py-2 sticky top-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm z-10">
+                    <div className="flex items-center gap-2 px-4 py-2 sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-10">
                       <svg className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                       </svg>
@@ -395,7 +395,7 @@ export function SearchModal({ isOpen, onClose, workspaceId, token, onSelectResul
                           className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors duration-100 ${
                             isActive
                               ? 'bg-violet-50 dark:bg-violet-500/10 border-l-2 border-l-violet-500'
-                              : 'hover:bg-slate-50 dark:hover:bg-white/[0.04] border-l-2 border-l-transparent'
+                              : 'hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl border-l-2 border-l-transparent transition-colors duration-100'
                           }`}
                           onMouseEnter={() => setActiveIndex(idx)}
                         >
