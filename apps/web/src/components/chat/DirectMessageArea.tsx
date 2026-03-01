@@ -892,7 +892,7 @@ export default function DirectMessageArea({
   return (
     <div className="flex flex-1 h-full min-h-0 overflow-hidden">
     <div
-      className={`aurora-canvas flex-1 flex flex-col h-full overflow-hidden ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
+      className={`aurora-canvas-dark flex-1 flex flex-col h-full relative overflow-hidden bg-white ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

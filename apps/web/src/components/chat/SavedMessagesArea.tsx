@@ -313,7 +313,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
   return (
     <div
-      className="aurora-canvas flex flex-col flex-1 h-full w-full overflow-hidden"
+      className="aurora-canvas-dark flex flex-col flex-1 h-full w-full relative overflow-hidden bg-white"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
