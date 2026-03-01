@@ -42,9 +42,11 @@ model User {
   googleId     String?    @unique
   avatar       String?
   status       UserStatus @default(OFFLINE)
-  emailVerified      Boolean   @default(false)
-  verificationToken  String?
-  verificationExpiry DateTime?
+  emailVerified       Boolean   @default(false)
+  verificationToken   String?
+  verificationExpiry  DateTime?
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

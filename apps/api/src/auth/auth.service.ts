@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto, ResendVerificationDto } from './dto/verify-email.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/forgot-password.dto';
 import { UserStatus } from '@prisma/client';
 import { verifyTurnstileToken } from './utils/turnstile.util';
 import { isDisposableEmail } from './utils/disposable-domains';
@@ -55,40 +56,51 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  private async sendVerificationEmail(email: string, otp: string): Promise<void> {
-    const fromEmail =
-      process.env.RESEND_FROM_EMAIL || 'noreply@collabstudy.app';
+  private async sendEmail(
+    to: string,
+    subject: string,
+    html: string,
+  ): Promise<void> {
     const appName = process.env.APP_NAME || 'CollabStudy';
+    // Use Resend's built-in onboarding address when no verified domain is configured.
+    // This works on any Resend account without domain verification.
+    // For production: set RESEND_FROM_EMAIL to a verified domain address.
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const from = `${appName} <${fromEmail}>`;
 
     if (!this.resend) {
-      // Dev fallback — log OTP to console so local dev still works
-      console.warn(
-        `[Auth] RESEND_API_KEY not set. OTP for ${email}: ${otp}`,
-      );
+      console.warn(`[Auth] RESEND_API_KEY not set. Email to ${to}:\n${subject}`);
       return;
     }
 
-    await this.resend.emails.send({
-      from: `${appName} <${fromEmail}>`,
-      to: [email],
-      subject: `Your ${appName} verification code: ${otp}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0f1118;color:#e2e8f0;border-radius:12px">
-          <h2 style="margin:0 0 8px;font-size:22px;color:#a78bfa">Verify your email</h2>
-          <p style="margin:0 0 24px;color:#94a3b8;font-size:15px">
-            Thanks for signing up for <strong style="color:#e2e8f0">${appName}</strong>!
-            Enter the code below to activate your account.
-          </p>
-          <div style="background:#1e2235;border-radius:10px;padding:20px 24px;text-align:center;letter-spacing:10px;font-size:36px;font-weight:700;color:#a78bfa;margin-bottom:24px">
-            ${otp}
-          </div>
-          <p style="color:#64748b;font-size:13px;margin:0">
-            This code expires in <strong>${OTP_EXPIRY_MINUTES} minutes</strong>.
-            If you did not create an account, you can safely ignore this email.
-          </p>
+    const result = await this.resend.emails.send({ from, to: [to], subject, html });
+    if (result.error) {
+      throw new Error(`Resend error: ${result.error.message}`);
+    }
+    console.log(`[Auth] Email sent to ${to} (id=${result.data?.id})`);
+  }
+
+  private async sendVerificationEmail(email: string, otp: string): Promise<void> {
+    const appName = process.env.APP_NAME || 'CollabStudy';
+    const subject = `Your ${appName} verification code: ${otp}`;
+    const html = `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0f1118;color:#e2e8f0;border-radius:12px">
+        <h2 style="margin:0 0 8px;font-size:22px;color:#a78bfa">Verify your email</h2>
+        <p style="margin:0 0 24px;color:#94a3b8;font-size:15px">
+          Thanks for signing up for <strong style="color:#e2e8f0">${appName}</strong>!
+          Enter the code below to activate your account.
+        </p>
+        <div style="background:#1e2235;border-radius:10px;padding:20px 24px;text-align:center;letter-spacing:10px;font-size:36px;font-weight:700;color:#a78bfa;margin-bottom:24px">
+          ${otp}
         </div>
-      `,
-    });
+        <p style="color:#64748b;font-size:13px;margin:0">
+          This code expires in <strong>${OTP_EXPIRY_MINUTES} minutes</strong>.
+          If you did not create an account, you can safely ignore this email.
+        </p>
+      </div>
+    `;
+    await this.sendEmail(email, subject, html);
   }
 
   // ── Register ──────────────────────────────────────────────────────────────
@@ -421,6 +433,100 @@ export class AuthService {
       },
       token,
     };
+  }
+
+  // ── Forgot Password ───────────────────────────────────────────────────────
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const { email } = dto;
+    const genericResponse = {
+      message: 'If that email is registered, a password reset code has been sent.',
+    };
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    // Always return 200 — prevents user enumeration
+    if (!user) return genericResponse;
+
+    // Generate a 6-digit reset OTP
+    const otp = this.generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+
+    // Store with 15-minute expiry
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: hashedOtp,
+        passwordResetExpiry: this.otpExpiry(),
+      },
+    });
+
+    const appName = process.env.APP_NAME || 'CollabStudy';
+    const subject = `Your ${appName} password reset code: ${otp}`;
+    const html = `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0f1118;color:#e2e8f0;border-radius:12px">
+        <h2 style="margin:0 0 8px;font-size:22px;color:#a78bfa">Reset your password</h2>
+        <p style="margin:0 0 24px;color:#94a3b8;font-size:15px">
+          We received a password reset request for your <strong style="color:#e2e8f0">${appName}</strong> account.
+          Enter the code below to set a new password.
+        </p>
+        <div style="background:#1e2235;border-radius:10px;padding:20px 24px;text-align:center;letter-spacing:10px;font-size:36px;font-weight:700;color:#a78bfa;margin-bottom:24px">
+          ${otp}
+        </div>
+        <p style="color:#64748b;font-size:13px;margin:0">
+          This code expires in <strong>${OTP_EXPIRY_MINUTES} minutes</strong>.
+          If you did not request a password reset, you can safely ignore this email.
+        </p>
+      </div>
+    `;
+
+    this.sendEmail(email, subject, html).catch((err) =>
+      console.error('[Auth] Failed to send password reset email:', err),
+    );
+
+    return genericResponse;
+  }
+
+  // ── Reset Password ────────────────────────────────────────────────────────
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const { email, token, newPassword } = dto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user || !user.passwordResetToken || !user.passwordResetExpiry) {
+      throw new BadRequestException('Invalid or expired password reset request.');
+    }
+
+    // Check expiry
+    if (new Date() > user.passwordResetExpiry) {
+      throw new BadRequestException('Reset code has expired. Please request a new one.');
+    }
+
+    // Compare token
+    const isTokenValid = await bcrypt.compare(token, user.passwordResetToken);
+    if (!isTokenValid) {
+      throw new BadRequestException('Invalid reset code.');
+    }
+
+    // Hash new password and clear reset fields
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+        // Ensure the account is marked verified (covers edge case where someone
+        // resets without ever verifying — they proved email ownership via this flow)
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpiry: null,
+      },
+    });
+
+    return { message: 'Password reset successfully. You can now sign in with your new password.' };
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

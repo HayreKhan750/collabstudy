@@ -263,6 +263,32 @@ class ApiClient {
     return response.json();
   }
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to send reset code');
+    }
+    return response.json();
+  }
+
+  async resetPassword(data: { email: string; token: string; newPassword: string }): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to reset password');
+    }
+    return response.json();
+  }
+
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -272,13 +298,19 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json();
-      // Propagate the structured error for EMAIL_NOT_VERIFIED case
-      const message = Array.isArray(error.message)
-        ? error.message.join(', ')
-        : error.message;
-      const err: any = new Error(message || 'Login failed');
-      err.code = error.code;
-      err.email = error.email;
+      // NestJS ForbiddenException with an object payload nests it as:
+      // { statusCode: 403, message: { message, code, email }, error: 'Forbidden' }
+      // We need to unwrap the inner object.
+      const inner =
+        error.message && typeof error.message === 'object'
+          ? error.message
+          : error;
+      const message = Array.isArray(inner.message)
+        ? inner.message.join(', ')
+        : inner.message || error.message || 'Login failed';
+      const err: any = new Error(message);
+      err.code = inner.code ?? error.code;
+      err.email = inner.email ?? error.email;
       throw err;
     }
 
