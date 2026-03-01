@@ -46,7 +46,7 @@ export default function UserProfileModal({
     >
       {/* Card */}
       <div
-        className="relative w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-80 bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/60 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header gradient banner */}
@@ -71,10 +71,10 @@ export default function UserProfileModal({
                 <img
                   src={user.avatar}
                   alt={displayName}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-white/20 shadow-lg"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full border-4 border-white dark:border-slate-800 shadow-lg overflow-hidden">
+                <div className="w-20 h-20 rounded-full border-4 border-white dark:border-white/20 shadow-lg overflow-hidden">
                   <AvatarPlaceholder name={displayName} size={20} />
                 </div>
               )}
@@ -89,7 +89,7 @@ export default function UserProfileModal({
               <div className="flex items-center gap-2">
                 <h2 className="text-slate-900 dark:text-white font-bold text-lg truncate">{displayName}</h2>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm truncate">@{user.username}</p>
+              <p className="text-slate-500 dark:text-slate-300 text-sm truncate">@{user.username}</p>
             </div>
           </div>
 

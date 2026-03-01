@@ -77,14 +77,14 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
       aria-modal="true"
       aria-label="AI Summary"
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]">
+      <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/60 w-full max-w-lg flex flex-col max-h-[80vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/80 dark:border-white/[0.08] flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xl">{loading ? '⏳' : isError ? '⚠️' : '✨'}</span>
             <div>
               <h2 className="text-slate-900 dark:text-white font-semibold text-sm">AI Summary</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-xs truncate max-w-[18rem]">{channelName}</p>
+              <p className="text-slate-500 dark:text-slate-300 text-xs truncate max-w-[18rem]">{channelName}</p>
             </div>
           </div>
           <button
@@ -137,7 +137,7 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex-shrink-0 flex justify-end">
+        <div className="px-5 py-3 border-t border-slate-200/80 dark:border-white/[0.08] flex-shrink-0 flex justify-end">
           <button
             onClick={onClose}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"

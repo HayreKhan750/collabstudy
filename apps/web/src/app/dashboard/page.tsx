@@ -696,7 +696,7 @@ export default function DashboardPage() {
       {/* ── New DM Modal ──────────────────────────────────────────────────── */}
       {showNewDMModal && token && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+          <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl max-w-sm w-full p-6 shadow-xl shadow-black/10 dark:shadow-black/60">
             <h3 className="text-slate-900 dark:text-white font-semibold text-lg mb-4">New Direct Message</h3>
             {dmUsers.length === 0 ? (
               <p className="text-slate-500 dark:text-slate-400 text-sm">No other members in this workspace.</p>
@@ -727,7 +727,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <p className="text-slate-900 dark:text-white text-sm font-medium">{u.fullName || u.username}</p>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs">@{u.username}</p>
+                        <p className="text-slate-500 dark:text-slate-300 text-xs">@{u.username}</p>
                       </div>
                     </button>
                   </li>
@@ -755,7 +755,7 @@ export default function DashboardPage() {
       {/* ── Create Workspace Modal ─────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+          <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl max-w-md w-full p-6 shadow-xl shadow-black/10 dark:shadow-black/60">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Create New Workspace</h3>
             {error && <p className="text-red-500 dark:text-red-400 text-sm mb-3">{error}</p>}
             <form onSubmit={handleCreateWorkspace}>
@@ -802,7 +802,7 @@ export default function DashboardPage() {
             onClick={() => setShowSettings(false)}
           />
           {/* Panel — slides in from the right */}
-          <div className="relative ml-auto w-full max-w-2xl h-full bg-slate-50 dark:bg-slate-900 shadow-2xl flex flex-col animate-slide-in-right">
+          <div className="relative ml-auto w-full max-w-2xl h-full bg-white/95 dark:bg-[#0A0B10]/95 backdrop-blur-md shadow-2xl flex flex-col animate-slide-in-right">
             <SettingsPanel onClose={() => setShowSettings(false)} />
           </div>
         </div>

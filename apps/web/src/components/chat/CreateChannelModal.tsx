@@ -44,7 +44,7 @@ export default function CreateChannelModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
+      <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-xl max-w-md w-full p-6 shadow-xl shadow-black/10 dark:shadow-black/60">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Create Channel</h3>
@@ -59,7 +59,7 @@ export default function CreateChannelModal({
           </button>
         </div>
 
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        <p className="text-sm text-slate-500 dark:text-slate-300 mb-4">
           Channels are where conversations happen. Use lowercase letters, numbers, and hyphens.
         </p>
 
@@ -67,7 +67,7 @@ export default function CreateChannelModal({
           <label htmlFor="channelName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Channel Name
           </label>
-          <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+          <div className="flex items-center bg-black/5 dark:bg-black/40 border border-transparent dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] rounded-lg px-3 py-2 focus-within:border-indigo-500/50 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all duration-300">
             <span className="text-slate-400 mr-1">#</span>
             <input
               id="channelName"
@@ -91,7 +91,7 @@ export default function CreateChannelModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-200 bg-slate-100/80 dark:bg-white/[0.06] hover:bg-slate-200/80 dark:hover:bg-white/[0.10] border border-slate-200/80 dark:border-white/[0.08] rounded-lg transition-all duration-300 ease-out disabled:opacity-50"
             >
               Cancel
             </button>

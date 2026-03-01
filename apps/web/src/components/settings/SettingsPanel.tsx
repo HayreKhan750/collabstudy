@@ -16,7 +16,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
     <div className="space-y-1.5">
       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
       {children}
-      {hint && <p className="text-xs text-slate-500 dark:text-slate-500">{hint}</p>}
+      {hint && <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
     </div>
   );
 }
@@ -25,7 +25,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all ${props.className ?? ''}`}
+      className={`w-full bg-black/5 dark:bg-black/40 border border-transparent dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] rounded-xl px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-300 ease-out ${props.className ?? ''}`}
     />
   );
 }
@@ -118,7 +118,7 @@ function ProfileTab({ token, onSaved }: { token: string; onSaved?: () => void })
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Profile</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Update your name, username, and avatar.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-300">Update your name, username, and avatar.</p>
       </div>
       <Field label="Avatar">
         <div className="flex items-center gap-4">
@@ -199,7 +199,7 @@ function AccountTab({ token }: { token: string }) {
       <div className="space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Account</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Manage your email and password.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300">Manage your email and password.</p>
         </div>
         <Field label="Email address" hint="Contact support to change your email address.">
           <Input value={email} disabled className="opacity-50 cursor-not-allowed" />
@@ -208,7 +208,7 @@ function AccountTab({ token }: { token: string }) {
       <form onSubmit={handlePasswordSubmit} className="space-y-5">
         <div className="border-t border-slate-200 dark:border-white/5 pt-8">
           <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Change password</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">Choose a strong password of at least 8 characters.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300 mb-5">Choose a strong password of at least 8 characters.</p>
         </div>
         <Field label="Current password">
           <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Enter current password" required />
@@ -260,7 +260,7 @@ function AppearanceTab() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Appearance</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Choose how CollabStudy looks for you.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-300">Choose how CollabStudy looks for you.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {themes.map(t => (
@@ -270,13 +270,13 @@ function AppearanceTab() {
             className={`relative flex flex-col items-start gap-2 p-4 rounded-2xl border transition-all text-left ${
               theme === t.value
                 ? 'bg-indigo-600/20 border-indigo-500/50 ring-2 ring-indigo-500/30'
-                : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
+                : 'bg-white/60 dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100/80 dark:hover:bg-white/10'
             }`}
           >
             <span className="text-2xl">{t.icon}</span>
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">{t.label}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t.desc}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">{t.desc}</p>
             </div>
             {theme === t.value && <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-indigo-400" />}
           </button>
@@ -307,12 +307,12 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
+    <div className="flex flex-col h-full bg-white/80 dark:bg-transparent text-slate-900 dark:text-white">
       {/* Top bar */}
-      <div className="h-14 flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-white/5 flex items-center px-6 gap-4">
+      <div className="h-14 flex-shrink-0 bg-white/70 dark:bg-[#12131A]/70 backdrop-blur-2xl border-b border-white/20 dark:border-white/[0.08] shadow-lg shadow-black/5 dark:shadow-black/40 flex items-center px-6 gap-4">
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300 ease-out"
           aria-label="Go back"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -334,7 +334,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                   tab === t.id
                     ? 'bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                    : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <span>{t.icon}</span>
@@ -344,7 +344,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           </nav>
 
           {/* Content */}
-          <div className="flex-1 min-w-0 bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 rounded-2xl p-8">
+          <div className="flex-1 min-w-0 bg-white/95 dark:bg-[#0A0B10]/80 backdrop-blur-md border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-8">
             {tab === 'profile' && <ProfileTab token={token} onSaved={refreshUser} />}
             {tab === 'account' && <AccountTab token={token} />}
             {tab === 'appearance' && <AppearanceTab />}

@@ -213,7 +213,7 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+      <div className="relative bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/60 w-full max-w-md flex flex-col max-h-[80vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">Forward Message</h2>
@@ -224,7 +224,7 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
 
         {/* Message preview */}
         <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-white/10">
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+          <p className="text-xs text-slate-500 dark:text-slate-300 mb-1">
             Forwarding {messages.length > 1 ? `${messages.length} messages` : ''}:
           </p>
           <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">
@@ -240,7 +240,7 @@ export default function ForwardModal({ messages, workspaces, onClose, onForwarde
             placeholder="Search channels or DMs…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-slate-100 dark:bg-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            className="w-full bg-black/5 dark:bg-black/40 border border-transparent dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-300"
             autoFocus
           />
         </div>

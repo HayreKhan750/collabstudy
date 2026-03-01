@@ -116,7 +116,7 @@ export function WorkspaceSwitcher({
                 ${
                   selectedWorkspace?.id === ws.id
                     ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 rounded-2xl'
-                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-indigo-500/80 hover:text-white hover:rounded-2xl'
+                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-200 hover:bg-indigo-500/80 hover:text-white hover:rounded-2xl'
                 }`}
             >
               {ws.name.charAt(0).toUpperCase()}
@@ -148,21 +148,21 @@ export function WorkspaceSwitcher({
     <div className="px-3 pt-4 pb-3 border-b border-slate-200 dark:border-white/10">
       {/* Header row */}
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-widest">
           Workspaces
         </span>
         <div className="flex items-center gap-1">
           <button
             onClick={onDiscoverWorkspaces}
             title="Discover workspaces"
-            className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            className="p-1 rounded-md text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300 ease-out"
           >
             <CompassIcon />
           </button>
           <button
             onClick={onCreateWorkspace}
             title="Create workspace"
-            className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            className="p-1 rounded-md text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300 ease-out"
           >
             <PlusIcon size={4} />
           </button>
@@ -208,7 +208,7 @@ export function WorkspaceSwitcher({
             <>
               <button
                 onClick={onRenameWorkspace}
-                className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300 ease-out"
               >
                 <PencilIcon /> Rename
               </button>

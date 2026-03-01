@@ -879,15 +879,15 @@ export default function DirectMessageArea({
 
   if (loading)
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-        <p className="text-slate-500 dark:text-slate-400">Loading…</p>
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-slate-500 dark:text-slate-300">Loading…</p>
       </div>
     );
 
   return (
     <div className="flex flex-1 h-full min-h-0 overflow-hidden">
     <div
-      className={`flex-1 flex flex-col h-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      className={`flex-1 flex flex-col h-full bg-white/60 dark:bg-transparent overflow-hidden relative ${isDragging ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -911,12 +911,12 @@ export default function DirectMessageArea({
       />
 
       {/* ── Premium DM Header ───────────────────────────────────────────────── */}
-      <div className="h-16 w-full bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200 dark:border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-10">
+      <div className="h-16 w-full bg-white/70 dark:bg-[#12131A]/70 backdrop-blur-2xl border-b border-white/20 dark:border-white/[0.08] shadow-lg shadow-black/5 dark:shadow-black/40 flex items-center px-4 gap-3 flex-shrink-0 z-10">
         {/* Back button (mobile) */}
         {onBack && (
           <button
             onClick={onBack}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            className="text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex-shrink-0 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300 ease-out"
             aria-label="Back"
           >
             <svg
@@ -959,7 +959,7 @@ export default function DirectMessageArea({
           <p className="text-slate-900 dark:text-white font-semibold text-sm leading-tight truncate">
             {displayName}
           </p>
-          <p className="text-slate-500 dark:text-slate-400 text-xs leading-tight truncate flex items-center gap-1">
+          <p className="text-slate-500 dark:text-slate-300 text-xs leading-tight truncate flex items-center gap-1">
             <span
               className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineUserIds.has(recipient.id) ? 'bg-emerald-400' : 'bg-slate-400'}`}
             />
@@ -1011,7 +1011,7 @@ export default function DirectMessageArea({
               </svg>
             </button>
             {showHeaderMenu && (
-              <div className="absolute right-0 top-10 z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 py-1 overflow-hidden">
+              <div className="absolute right-0 top-10 z-50 w-44 bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl rounded-xl shadow-xl border border-white/20 dark:border-white/[0.08] py-1 overflow-hidden">
                 <button
                   onClick={() => { setShowHeaderMenu(false); setShowClearConfirm(true); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -1263,8 +1263,8 @@ export default function DirectMessageArea({
 
       {/* Input or Selection Mode */}
       {isSelectionMode ? (
-        <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3 flex items-center gap-3">
-          <span className="text-sm text-slate-600 dark:text-slate-400">{selectedMessageIds.size} selected</span>
+        <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md px-4 py-3 flex items-center gap-3">
+          <span className="text-sm text-slate-600 dark:text-slate-300">{selectedMessageIds.size} selected</span>
           <button onClick={handleForwardSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors">Forward</button>
           <button onClick={handleDeleteSelected} disabled={selectedMessageIds.size === 0} className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors">Delete</button>
           <button onClick={handleCancelSelection} className="ml-auto px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
@@ -1395,7 +1395,7 @@ export default function DirectMessageArea({
       {/* Clear History Confirmation */}
       {showClearConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowClearConfirm(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-80 mx-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white/90 dark:bg-[#12131A]/90 backdrop-blur-2xl border border-white/20 dark:border-white/[0.08] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/60 p-6 w-80 mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
