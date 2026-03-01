@@ -122,7 +122,7 @@ function PricingCard({ tier, price, description, features, highlight, badge, cta
         className={cn(
           'block w-full rounded-xl py-3 text-center text-sm font-semibold transition-all duration-200',
           highlight
-            ? 'bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:opacity-90 shadow-lg'
+            ? 'bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white hover:text-white shadow-lg transition-colors duration-200'
             : 'border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80 hover:border-violet-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5',
         )}
       >
@@ -335,7 +335,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/register"
-            className="rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-lg shadow-violet-900/30"
+            className="rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 px-4 py-2 text-sm font-semibold text-white hover:text-white transition-all duration-200 shadow-lg shadow-violet-900/30"
           >
             Get started
           </Link>
@@ -535,7 +535,7 @@ export default function LandingPage() {
               <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 dark:shadow-none hover:opacity-90 transition-all duration-200 hover:scale-[1.02]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 px-8 py-3.5 text-sm font-semibold text-white hover:text-white shadow-lg shadow-violet-200 dark:shadow-none transition-all duration-200 hover:scale-[1.02]"
                 >
                   Create your workspace →
                 </Link>
