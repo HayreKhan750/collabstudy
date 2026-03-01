@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
@@ -65,6 +65,36 @@ export class UploadService {
    * read via getPresignedUrl().
    * Falls back gracefully when S3 is not configured (local-disk path).
    */
+  // Server-side MIME type whitelist
+  private static readonly ALLOWED_MIME_TYPES = new Set([
+    'image/jpeg','image/png','image/gif','image/webp','image/svg+xml',
+    'video/mp4','video/webm','video/quicktime','video/x-msvideo',
+    'audio/mpeg','audio/wav','audio/ogg','audio/webm','audio/mp4',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/zip','application/x-rar-compressed','application/x-7z-compressed',
+    'text/plain','text/csv',
+  ]);
+
+  validateFile(file: Express.Multer.File): void {
+    const maxSize = parseInt(process.env.MAX_FILE_SIZE || String(50 * 1024 * 1024), 10);
+    if (file.size > maxSize) {
+      throw new BadRequestException(`File too large — max ${maxSize / 1024 / 1024} MB`);
+    }
+    if (!UploadService.ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException(`File type '${file.mimetype}' is not permitted`);
+    }
+    // Sanitize filename — strip path-traversal chars
+    file.originalname = file.originalname
+      .replace(/[^a-zA-Z0-9._\-\s]/g, '_')
+      .slice(0, 255);
+  }
+
   async uploadFile(
     buffer: Buffer,
     originalName: string,

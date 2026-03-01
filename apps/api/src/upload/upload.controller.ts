@@ -21,6 +21,8 @@ export class UploadController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided');
+    // Server-side MIME type + size + filename sanitization
+    this.uploadService.validateFile(file);
 
     let fileUrl: string;
     let filename: string;

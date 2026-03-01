@@ -4,6 +4,8 @@ import { Queue } from 'bullmq';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { AddReactionDto } from './dto/add-reaction.dto';
+import { PollVoteDto } from './dto/poll-vote.dto';
+import { BulkDeleteDto } from './dto/bulk-delete.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatGateway } from '../chat/chat.gateway';

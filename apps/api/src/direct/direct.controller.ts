@@ -17,6 +17,9 @@ import { Queue } from 'bullmq';
 import { DirectService } from './direct.service';
 import { StartConversationDto } from './dto/start-conversation.dto';
 import { SendDirectMessageDto } from './dto/send-direct-message.dto';
+import { EditDirectMessageDto } from './dto/edit-direct-message.dto';
+import { AddDirectReactionDto } from './dto/add-direct-reaction.dto';
+import { BulkDeleteDto } from '../messages/dto/bulk-delete.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SUMMARY_QUEUE, DmSummaryJobData } from '../ai/summary.queue';
 
@@ -101,9 +104,9 @@ export class DirectController {
   editSavedMessage(
     @Request() req: any,
     @Param('messageId') messageId: string,
-    @Body() body: { content: string },
+    @Body() dto: EditDirectMessageDto,
   ) {
-    return this.directService.editSavedMessage(req.user.userId, messageId, body.content);
+    return this.directService.editSavedMessage(req.user.userId, messageId, dto.content);
   }
 
   /**
@@ -218,11 +221,11 @@ export class DirectController {
   async bulkDeleteDmMessages(
     @Request() req: any,
     @Param('id') conversationId: string,
-    @Body() body: { messageIds: string[] },
+    @Body() dto: BulkDeleteDto,
   ) {
     const userId = req.user.userId;
     const deleted: string[] = [];
-    for (const messageId of body.messageIds ?? []) {
+    for (const messageId of dto.messageIds ?? []) {
       try {
         await this.directService.deleteDmMessage(userId, conversationId, messageId);
         deleted.push(messageId);
@@ -242,9 +245,9 @@ export class DirectController {
     @Request() req: any,
     @Param('id') conversationId: string,
     @Param('messageId') messageId: string,
-    @Body() body: { content: string },
+    @Body() dto: EditDirectMessageDto,
   ) {
-    return this.directService.editDmMessage(req.user.userId, conversationId, messageId, body.content);
+    return this.directService.editDmMessage(req.user.userId, conversationId, messageId, dto.content);
   }
 
   /**
@@ -271,9 +274,9 @@ export class DirectController {
     @Request() req: any,
     @Param('id') conversationId: string,
     @Param('messageId') messageId: string,
-    @Body() body: { emoji: string },
+    @Body() dto: AddDirectReactionDto,
   ) {
-    return this.directService.toggleDmReaction(req.user.userId, conversationId, messageId, body.emoji);
+    return this.directService.toggleDmReaction(req.user.userId, conversationId, messageId, dto.emoji);
   }
 
   /**

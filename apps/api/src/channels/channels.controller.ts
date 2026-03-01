@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, 
 import { WorkspaceRole } from '@prisma/client';
 import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
+import { RenameChannelDto } from './dto/rename-channel.dto';
 import { UpdateReadReceiptDto } from './dto/update-read-receipt.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
