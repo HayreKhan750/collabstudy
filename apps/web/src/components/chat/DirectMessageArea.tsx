@@ -118,6 +118,28 @@ export default function DirectMessageArea({
   const [saveToast, setSaveToast] = useState(false);
   const [bulkForwardMessages, setBulkForwardMessages] = useState<any[]>([]);
 
+  // ── Save DM handler (stable callback) ──────────────────────────────────────
+  const handleSaveDmMessage = useCallback(
+    async (message: DirectMessage) => {
+      if (!token) return;
+      try {
+        await api.sendSavedMessage(token, {
+          content: message.content ?? undefined,
+          fileUrl: message.fileUrl ?? undefined,
+          fileType: message.fileType ?? undefined,
+          fileSize: message.fileSize ?? undefined,
+          originalName: message.originalName ?? undefined,
+          forwardedFromId: message.id,
+        });
+        setSaveToast(true);
+        setTimeout(() => setSaveToast(false), 2000);
+      } catch (e) {
+        console.warn('[Save DM] Failed:', e);
+      }
+    },
+    [token]
+  );
+
   // ── Copy toast state ──────────────────────────────────────────────────────
   const [copyToast, setCopyToast] = useState(false);
 
@@ -1150,21 +1172,7 @@ export default function DirectMessageArea({
                       } catch(e) { console.warn('DM Vote failed', e); }
                     }}
                     onSelect={() => handleSelectMessage(msg.id)}
-                    onSave={async () => {
-                      if (!token) return;
-                      try {
-                        await api.sendSavedMessage(token, {
-                          content: msg.content ?? undefined,
-                          fileUrl: msg.fileUrl ?? undefined,
-                          fileType: msg.fileType ?? undefined,
-                          fileSize: msg.fileSize ?? undefined,
-                          originalName: msg.originalName ?? undefined,
-                          forwardedFromId: msg.id,
-                        });
-                        setSaveToast(true);
-                        setTimeout(() => setSaveToast(false), 2000);
-                      } catch (e) { console.warn('Save DM failed', e); }
-                    }}
+                    onSave={() => handleSaveDmMessage(msg)}
                     onAvatarClick={() => setProfileUser({ id: msg.senderId, username: msg.sender.username, fullName: msg.sender.fullName, avatar: msg.sender.avatar })}
                     isSelected={selectedMessageIds.has(msg.id)}
                     isSelectionMode={isSelectionMode}

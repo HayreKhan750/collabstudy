@@ -313,12 +313,12 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
   return (
     <div
-      className="flex flex-col h-full bg-white dark:bg-slate-900"
+      className="flex flex-col h-full bg-white/80 dark:bg-transparent"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex-shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md flex-shrink-0">
         {onBack && (
           <button
             onClick={onBack}
@@ -335,7 +335,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
         </div>
         <div>
           <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Saved Messages</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Your private cloud storage</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300">Your private cloud storage</p>
         </div>
       </div>
 
@@ -377,7 +377,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
               {/* Date divider */}
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-slate-200 dark:bg-white/10" />
-                <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 px-2">
+                <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 px-2">
                   {group.label}
                 </span>
                 <div className="flex-1 h-px bg-slate-200 dark:bg-white/10" />
@@ -431,7 +431,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
                     {renderAttachment(msg)}
 
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{formatTime(msg.createdAt)}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-0.5">{formatTime(msg.createdAt)}</p>
                   </div>
 
                   {/* Actions — visible on hover */}
@@ -477,7 +477,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-4 py-3">
+      <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md px-4 py-3">
         <div className="max-w-3xl mx-auto w-full">
         <div className="flex items-end gap-2 bg-slate-100 dark:bg-white/5 rounded-2xl px-3 py-2">
           <button
@@ -522,7 +522,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
             </svg>
           </button>
         </div>
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-1.5">
+        <p className="text-[10px] text-slate-400 dark:text-slate-400 text-center mt-1.5">
           Only visible to you · Drop files to attach
         </p>
         </div>{/* end max-w-3xl */}
