@@ -493,34 +493,41 @@ pre code {
  * Three radial gradients at fixed viewport positions create a blue/purple/
  * cyan aurora mesh. background-attachment:fixed means the browser paints
  * this once on the GPU and NEVER repaints it as messages scroll — zero
- * per-frame cost. The ::before adds a barely-visible film-grain noise
- * overlay (3% opacity) for the ultra-premium texture feel.
+ * per-frame cost.
  *
- * Applied in dark mode only via `dark:aurora-canvas` (Tailwind dark class).
- * Light mode stays clean white — aurora does not apply.
+ * NOTE: .aurora-canvas is the base class (applied in JSX always).
+ * Dark mode styles live under html.dark — Tailwind's class-based dark mode.
+ * Light mode gets clean bg-slate-50, dark mode gets the full aurora.
  */
 .aurora-canvas {
   position: relative;
   overflow: hidden;
+  /* Light mode: clean slate */
+  background-color: #f8fafc;
+}
 
-  /* Deep space navy base — not pure black, rich and dimensional */
+/* Dark mode aurora — activated by Tailwind's `html.dark` class */
+html.dark .aurora-canvas {
+  /* Deep navy base — rich indigo-blue, NOT pure black */
   background-color: #0b0f1e;
 
-  /* Layer 1: Blue aurora node — left-centre */
-  /* Layer 2: Purple aurora node — top-right */
-  /* Layer 3: Cyan aurora node — bottom-centre */
+  /* 4-layer aurora gradient system:
+     Layer 1: Electric blue — left-centre bloom
+     Layer 2: Deep violet  — top-right bloom
+     Layer 3: Cyan         — bottom bloom
+     Layer 4: Dark indigo  — centre depth vignette */
   background-image:
     radial-gradient(ellipse 60% 50% at 10% 55%, rgba(79, 70, 229, 0.28) 0%, transparent 60%),
     radial-gradient(ellipse 55% 45% at 88% 20%, rgba(147, 51, 234, 0.30) 0%, transparent 55%),
     radial-gradient(ellipse 50% 40% at 50% 90%, rgba(6, 182, 212, 0.18) 0%, transparent 55%),
     radial-gradient(ellipse 70% 60% at 50% 50%, rgba(30, 27, 75, 0.60) 0%, transparent 80%);
 
-  /* Fixed to viewport — no repaint on scroll (GPU layer) */
+  /* Fixed to viewport — GPU composited, ZERO repaint on scroll */
   background-attachment: fixed;
 }
 
-/* Ultra-light noise grain overlay — 3% opacity, pure CSS, zero JS cost */
-.aurora-canvas::before {
+/* Film grain noise overlay — 3.5% opacity, zero JS cost */
+html.dark .aurora-canvas::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -532,8 +539,8 @@ pre code {
   background-size: 200px 200px;
 }
 
-/* Subtle radial vignette — darkens edges to make centre glow pop */
-.aurora-canvas::after {
+/* Edge vignette — pulls focus to centre glow */
+html.dark .aurora-canvas::after {
   content: "";
   position: absolute;
   inset: 0;

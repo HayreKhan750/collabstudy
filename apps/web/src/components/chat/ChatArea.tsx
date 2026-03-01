@@ -1384,7 +1384,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   return (
   <div className="flex h-full flex-1 overflow-hidden">
     <div
-      className={`flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:aurora-canvas ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
+      className={`aurora-canvas flex-1 flex flex-col h-full overflow-hidden ${isDragging ? 'ring-2 ring-violet-500 ring-inset' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
