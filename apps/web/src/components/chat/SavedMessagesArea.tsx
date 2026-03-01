@@ -313,7 +313,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
   return (
     <div
-      className="flex flex-col h-full bg-white/80 dark:bg-transparent"
+      className="flex flex-col flex-1 h-full w-full bg-white/80 dark:bg-transparent"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
@@ -340,8 +340,8 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Message list ───────────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center w-full flex-1 overflow-y-auto pt-8">
-        <div className="w-full max-w-4xl flex flex-col justify-end space-y-4 px-4 pb-4">
+      <div className="flex flex-col items-center w-full h-full overflow-y-auto pt-8">
+        <div className="w-full max-w-3xl flex flex-col justify-end px-4 space-y-4">
         {nextCursor && (
           <div className="flex justify-center mb-4">
             <button
@@ -477,8 +477,8 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md w-full flex justify-center pb-6 px-4 pt-3">
-        <div className="w-full max-w-4xl">
+      <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md w-full flex justify-center pb-6 px-4 mt-auto pt-3">
+        <div className="w-full max-w-3xl">
         <div className="flex items-end gap-2 bg-slate-100 dark:bg-white/5 rounded-2xl px-3 py-2">
           <button
             onClick={() => fileInputRef.current?.click()}
