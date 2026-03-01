@@ -102,6 +102,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Premium radial gradient background — fixed, behind all content */}
+        <div className="fixed inset-0 z-[-1] pointer-events-none bg-[#05050A] dark:bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] dark:from-indigo-900/20 dark:via-[#05050A] dark:to-[#05050A]" />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>

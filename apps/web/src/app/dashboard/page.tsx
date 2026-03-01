@@ -446,7 +446,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
           <div className="w-5 h-5 border-2 border-slate-200 dark:border-slate-600 border-t-indigo-500 rounded-full animate-spin" />
           <span>Loading…</span>
@@ -459,7 +459,7 @@ export default function DashboardPage() {
 
   if (loadingWorkspaces) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
           <div className="w-5 h-5 border-2 border-slate-200 dark:border-slate-600 border-t-indigo-500 rounded-full animate-spin" />
           <span>Loading workspaces…</span>
@@ -469,7 +469,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-slate-50 dark:bg-transparent text-slate-900 dark:text-slate-100">
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <Sidebar
         workspaces={workspaces}
@@ -643,11 +643,11 @@ export default function DashboardPage() {
               )}
             </div>
           ) : selectedWorkspace ? (
-            <div className="flex-1 min-h-0 flex flex-col bg-slate-100 dark:bg-slate-800">
+            <div className="flex-1 min-h-0 flex flex-col bg-slate-100/80 dark:bg-black/40 backdrop-blur-2xl dark:border-white/[0.08]">
               <NoChannelState workspaceName={selectedWorkspace.name} />
             </div>
           ) : (
-            <div className="flex-1 min-h-0 flex flex-col bg-slate-100 dark:bg-slate-800">
+            <div className="flex-1 min-h-0 flex flex-col bg-slate-100/80 dark:bg-black/40 backdrop-blur-2xl dark:border-white/[0.08]">
               <NoWorkspaceState onCreate={() => setShowCreateModal(true)} />
             </div>
           )}

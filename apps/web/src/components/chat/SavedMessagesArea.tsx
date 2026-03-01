@@ -340,8 +340,8 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
       </div>
 
       {/* ── Message list ───────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto py-4">
-        <div className="max-w-4xl mx-auto w-full px-4 space-y-1">
+      <div className="w-full h-full flex flex-col items-center overflow-y-auto py-4">
+        <div className="w-full max-w-3xl flex flex-col px-4 space-y-1">
         {nextCursor && (
           <div className="flex justify-center mb-4">
             <button
@@ -478,7 +478,7 @@ export default function SavedMessagesArea({ onBack, socket }: SavedMessagesAreaP
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 border-t border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0A0B10]/80 backdrop-blur-md px-4 py-3">
-        <div className="max-w-4xl mx-auto w-full">
+        <div className="max-w-3xl mx-auto w-full">
         <div className="flex items-end gap-2 bg-slate-100 dark:bg-white/5 rounded-2xl px-3 py-2">
           <button
             onClick={() => fileInputRef.current?.click()}

@@ -337,7 +337,7 @@ export default function Sidebar({
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col h-full bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-white/10 transition-all duration-300 ease-in-out flex-shrink-0 z-20
+        className={`hidden md:flex flex-col h-full bg-white/40 dark:bg-black/20 backdrop-blur-xl border-r border-white/30 dark:border-white/[0.05] shadow-lg transition-all duration-300 ease-in-out flex-shrink-0 z-20
           ${collapsed ? 'w-[60px]' : 'w-60'}`}
         style={{ minWidth: collapsed ? 60 : 240 }}
       >
@@ -365,7 +365,7 @@ export default function Sidebar({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-72 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-white/10 z-50 md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-72 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-r border-white/30 dark:border-white/[0.05] shadow-lg z-50 md:hidden flex flex-col"
             >
               {sidebarContent}
             </motion.aside>
