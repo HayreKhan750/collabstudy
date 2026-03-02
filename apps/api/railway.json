@@ -5,7 +5,6 @@
     "dockerfilePath": "apps/api/Dockerfile"
   },
   "deploy": {
-    "startCommand": "node /app/packages/db/node_modules/prisma/build/index.js migrate deploy --schema=/app/packages/db/prisma/schema.prisma && node /app/apps/api/dist/main.js",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
