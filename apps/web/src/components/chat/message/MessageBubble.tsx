@@ -170,8 +170,8 @@ function FileAttachment({
           decoding="async"
           width={320}
           height={240}
-          className="max-w-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity shadow-md mt-1 object-cover"
-          style={{ aspectRatio: '4/3', maxHeight: '240px', width: 'auto' }}
+          className="max-w-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity shadow-md mt-1 object-cover block"
+          style={{ aspectRatio: '4/3', maxHeight: '240px', minHeight: '120px', width: 'auto', minWidth: '160px' }}
           onClick={() => setViewerOpen(true)}
         />
       );

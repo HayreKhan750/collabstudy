@@ -165,6 +165,9 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<{ url: string; type: string; name: string; size: number } | null>(null);
+  // Local blob: URL used ONLY for the preview strip — never sent to the server.
+  // Avoids a 404 when the web domain differs from the API domain.
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -958,6 +961,8 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     const fileToSend = pendingFile;
     setNewMessage('');
     setPendingFile(null);
+    // Revoke the blob preview URL now that the message is being sent
+    if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); setPreviewObjectUrl(null); }
     // Reset textarea auto-grow height so it returns to one row after send
     if (mentionInputRef.current) {
       mentionInputRef.current.style.height = 'auto';
@@ -1114,12 +1119,18 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
     if (!token) return;
     setUploadingFile(true);
     setUploadError(null);
+    // Create a local blob URL immediately for instant preview — no server round-trip needed.
+    // This avoids the 404 that occurs when the web domain differs from the API domain.
+    const localPreview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+    if (localPreview) setPreviewObjectUrl(localPreview);
     try {
       const result = await api.uploadFile(token, file);
       setPendingFile({ url: result.url, type: result.mimeType, name: result.originalName, size: result.size });
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed');
       setTimeout(() => setUploadError(null), 4000);
+      // Revoke blob URL on error
+      if (localPreview) { URL.revokeObjectURL(localPreview); setPreviewObjectUrl(null); }
     } finally {
       setUploadingFile(false);
     }
@@ -1710,7 +1721,7 @@ export default function ChatArea({ channelId, channelName, workspaceId, onOpenTh
         {pendingFile && (
           <div className="mb-2 flex items-center gap-3 bg-white/90 dark:bg-gray-800/60 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2 text-sm backdrop-blur-sm shadow-sm">
             {pendingFile.type.startsWith('image/') ? (
-              <img src={pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
+              <img src={previewObjectUrl ?? pendingFile.url} alt={pendingFile.name} className="h-20 w-auto object-contain rounded-md flex-shrink-0" />
             ) : (
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 min-w-0">
                 <span className="text-xl flex-shrink-0">{pendingFile.type.startsWith('video/') ? '🎬' : pendingFile.type.startsWith('audio/') ? '🎵' : '📎'}</span>

@@ -96,6 +96,8 @@ export default function DirectMessageArea({
     name: string;
     size: number;
   } | null>(null);
+  // Local blob: URL used ONLY for the preview strip — never sent to the server.
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
@@ -567,6 +569,8 @@ export default function DirectMessageArea({
     const file = pendingFile;
     setInput('');
     setPendingFile(null);
+    // Revoke the blob preview URL now that the message is being sent
+    if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); setPreviewObjectUrl(null); }
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setSending(true);
 
@@ -653,6 +657,9 @@ export default function DirectMessageArea({
     async (file: File) => {
       if (!token) return;
       setUploadingFile(true);
+      // Create a local blob URL immediately for instant, cross-domain-safe preview.
+      const localPreview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+      if (localPreview) setPreviewObjectUrl(localPreview);
       try {
         const result = await api.uploadFile(token, file);
         setPendingFile({
@@ -663,6 +670,7 @@ export default function DirectMessageArea({
         });
       } catch (e) {
         logger.warn('[DM] upload error:', e);
+        if (localPreview) { URL.revokeObjectURL(localPreview); setPreviewObjectUrl(null); }
       } finally {
         setUploadingFile(false);
       }
@@ -1272,7 +1280,7 @@ export default function DirectMessageArea({
           <div className="flex items-center gap-3 bg-white/90 dark:bg-gray-800/60 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 w-fit shadow-sm backdrop-blur-sm">
             {pendingFile.type.startsWith('image/') ? (
               <img
-                src={pendingFile.url}
+                src={previewObjectUrl ?? pendingFile.url}
                 alt={pendingFile.name}
                 className="h-20 w-auto object-contain rounded-md flex-shrink-0"
               />
