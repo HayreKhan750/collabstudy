@@ -42,6 +42,7 @@ SCHEMA="--schema=/app/packages/db/prisma/schema.prisma"
 FAILED_MIGRATIONS="
   20260220000000_init
   20260221000000_add_pg_trgm_and_gin_index
+  20260227000000_add_direct_message_reactions
 "
 
 if [ -n "$DATABASE_URL" ]; then
