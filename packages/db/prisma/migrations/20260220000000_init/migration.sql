@@ -85,10 +85,18 @@ CREATE TABLE "messages" (
     "fileType" TEXT,
     "fileSize" INTEGER,
     "originalName" TEXT,
-    "embedding" vector(768),
 
     CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
 );
+
+-- Add embedding column only if pgvector extension is available
+DO $$
+BEGIN
+  ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "embedding" vector(768);
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'Could not add embedding column (pgvector not available): %. Skipping.', SQLERRM;
+END;
+$$;
 
 -- CreateTable
 CREATE TABLE "read_receipts" (
