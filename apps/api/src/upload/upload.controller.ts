@@ -55,8 +55,11 @@ export class UploadController {
         await writeFile(dest, file.buffer);
         file.filename = fname;
       }
-      const API_URL = process.env.API_URL || 'http://localhost:4000';
-      fileUrl = `${API_URL}/uploads/${file.filename}`;
+      // Construct the full URL for local file serving
+      // In production: use API_URL env var (e.g., https://api.yourdomain.com)
+      // In development: default to http://localhost:4000
+      const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 4000}`;
+      fileUrl = `${apiUrl}/uploads/${file.filename}`;
       filename = file.filename;
     }
 
