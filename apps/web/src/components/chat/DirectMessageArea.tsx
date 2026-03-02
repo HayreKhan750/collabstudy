@@ -231,10 +231,15 @@ export default function DirectMessageArea({
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/direct/${conversationId}/messages?limit=50`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const [msgRes, pinRes] = await Promise.all([
+        fetch(`${API_URL}/direct/${conversationId}/messages?limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/direct/${conversationId}/pinned`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      const data = await msgRes.json();
       setMessages(data.messages ?? []);
       setNextCursor(data.nextCursor ?? null);
       setHasMore(!!data.nextCursor);
@@ -245,6 +250,12 @@ export default function DirectMessageArea({
       // Capture other participant's lastReadAt for "seen" ticks
       if (data.otherParticipantLastReadAt) {
         setOtherUserLastReadAt(data.otherParticipantLastReadAt);
+      }
+      // Load pinned message for this conversation
+      if (pinRes.ok) {
+        const pinData = await pinRes.json();
+        setPinnedMessage(pinData.pinnedMessage ?? null);
+        setShowPinnedBar(!!pinData.pinnedMessage);
       }
     } catch (e) {
       logger.warn('[DM] fetch error:', e);
@@ -477,6 +488,14 @@ export default function DirectMessageArea({
     // Fired after clear history — clear the other participant's UI too
     socket.on('dm_history_cleared', ({ conversationId: clearedId }: { conversationId: string }) => {
       if (clearedId === conversationId) setMessages([]);
+    });
+
+    // ── dm_message_pinned ─────────────────────────────────────────────────────
+    // Fired after any participant pins or unpins a message — sync state for all.
+    socket.on('dm_message_pinned', (payload: { conversationId: string; pinnedMessage: DirectMessage | null }) => {
+      if (payload.conversationId !== conversationId) return;
+      setPinnedMessage(payload.pinnedMessage);
+      setShowPinnedBar(!!payload.pinnedMessage);
     });
 
     // ── dm_read_receipt — fired when the other participant marks messages read ─
@@ -870,21 +889,25 @@ export default function DirectMessageArea({
 
   const handlePinMessage = useCallback(async (messageId: string) => {
     if (!token) return;
-    const msg = messages.find(m => m.id === messageId);
-    if (!msg) return;
-    // Toggle: if already pinned, unpin; else pin
-    const currentlyPinned = pinnedMessage?.id === messageId;
     try {
-      await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}/pin`, {
+      const res = await fetch(`${API_URL}/direct/${conversationId}/messages/${messageId}/pin`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
-      setPinnedMessage(currentlyPinned ? null : msg);
-      setShowPinnedBar(!currentlyPinned);
+      if (res.ok) {
+        const data = await res.json();
+        // Server returns { pinnedMessage: DirectMessage | null }
+        // The WS event dm_message_pinned will also update state for all participants,
+        // but we update locally too for instant feedback in case WS is slow.
+        setPinnedMessage(data.pinnedMessage ?? null);
+        setShowPinnedBar(!!data.pinnedMessage);
+      } else {
+        logger.warn('[DM] pin failed:', res.status, res.statusText);
+      }
     } catch (err) {
       logger.warn('[DM] pin error:', err);
     }
-  }, [conversationId, token, messages, pinnedMessage]);
+  }, [conversationId, token]);
 
   const displayName = recipient.fullName || recipient.username;
   const initial = displayName.charAt(0).toUpperCase();

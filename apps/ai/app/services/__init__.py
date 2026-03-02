@@ -34,19 +34,28 @@ class GeminiService:
         self._model = genai.GenerativeModel(self.CHAT_MODEL)
 
     async def summarise(self, text: str) -> str:
-        """Return a concise bullet-point summary of *text*."""
-        prompt = (
-            "Summarise the following conversation in clear, concise bullet points. "
-            "Focus on key decisions, action items, and important information. "
-            "Use markdown bullet points (- ).\n\n"
-            f"{text}"
-        )
-        # google-generativeai is sync; run in thread pool to avoid blocking
+        """Return a summary of *text*, preserving any structure in the prompt."""
+        # The NestJS layer already builds a fully-structured prompt (Overview,
+        # Key Topics, Participants, Action Items) — pass it through unchanged.
+        # google-generativeai is sync; run in thread pool to avoid blocking.
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None, partial(self._model.generate_content, prompt)
-        )
-        return response.text.strip()
+        try:
+            response = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None, partial(self._model.generate_content, text)
+                ),
+                timeout=30.0,
+            )
+        except asyncio.TimeoutError:
+            raise RuntimeError("Gemini API call timed out after 30 seconds")
+
+        # Gemini can return a response with no text (e.g. safety filter blocked it)
+        result = getattr(response, "text", None)
+        if not result or not result.strip():
+            raise RuntimeError(
+                "Gemini returned an empty response — the content may have been blocked by safety filters"
+            )
+        return result.strip()
 
     async def embed(self, text: str) -> list[float]:
         """Return a text embedding vector for *text*."""

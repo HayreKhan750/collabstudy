@@ -265,6 +265,32 @@ export class DirectController {
   }
 
   /**
+   * GET /direct/:id/pinned
+   * Get the currently pinned message for a conversation (null if none).
+   */
+  @Get(':id/pinned')
+  getPinnedMessage(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+  ) {
+    return this.directService.getPinnedMessage(req.user.userId, conversationId);
+  }
+
+  /**
+   * POST /direct/:id/messages/:messageId/pin
+   * Toggle the pinned message in a DM conversation (pin or unpin).
+   */
+  @Post(':id/messages/:messageId/pin')
+  @HttpCode(HttpStatus.OK)
+  pinDmMessage(
+    @Request() req: any,
+    @Param('id') conversationId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.directService.pinDmMessage(req.user.userId, conversationId, messageId);
+  }
+
+  /**
    * POST /direct/:id/messages/:messageId/reactions
    * Toggle an emoji reaction on a DM message
    */

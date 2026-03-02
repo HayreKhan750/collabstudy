@@ -640,6 +640,95 @@ export class DirectService {
   }
 
   /**
+   * GET /direct/:id/pinned
+   * Return the currently pinned message for a conversation, or null.
+   *
+   * Uses a raw query because the Prisma client is generated from the previous
+   * schema snapshot and won't be regenerated until the next deployment. The
+   * migration adds pinnedMessageId to direct_conversations; we query it directly.
+   */
+  async getPinnedMessage(userId: string, conversationId: string) {
+    const participant = await this.prisma.directParticipant.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!participant) throw new ForbiddenException('Not a participant of this conversation');
+
+    type ConvRow = { pinnedMessageId: string | null };
+    const rows = await this.prisma.$queryRaw<ConvRow[]>`
+      SELECT "pinnedMessageId" FROM "direct_conversations" WHERE id = ${conversationId}::uuid LIMIT 1
+    `;
+    const pinnedMessageId = rows[0]?.pinnedMessageId ?? null;
+    if (!pinnedMessageId) return { pinnedMessage: null };
+
+    const pinnedMessage = await this.prisma.directMessage.findUnique({
+      where: { id: pinnedMessageId },
+      include: { sender: { select: { id: true, username: true, fullName: true, avatar: true } } },
+    });
+    return { pinnedMessage: pinnedMessage ?? null };
+  }
+
+  /**
+   * POST /direct/:id/messages/:messageId/pin
+   * Toggle the pinned message in a DM conversation.
+   * Only participants can pin/unpin. Stores the pinned message on DirectConversation.
+   * Broadcasts dm_message_pinned via WebSocket.
+   *
+   * Uses raw SQL for the update because Prisma client types don't include
+   * pinnedMessageId until the client is regenerated after migration.
+   */
+  async pinDmMessage(userId: string, conversationId: string, messageId: string) {
+    // Verify participant
+    const participant = await this.prisma.directParticipant.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!participant) throw new ForbiddenException('Not a participant of this conversation');
+
+    // Verify message belongs to this conversation
+    const msg = await this.prisma.directMessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new NotFoundException('Message not found');
+    if (msg.conversationId !== conversationId) throw new ForbiddenException('Message does not belong to this conversation');
+
+    // Fetch current pinned state via raw query
+    type ConvRow = { pinnedMessageId: string | null };
+    const rows = await this.prisma.$queryRaw<ConvRow[]>`
+      SELECT "pinnedMessageId" FROM "direct_conversations" WHERE id = ${conversationId}::uuid LIMIT 1
+    `;
+    const currentPinnedId = rows[0]?.pinnedMessageId ?? null;
+
+    // Toggle: if the same message is already pinned, unpin it; else pin the new one
+    const newPinnedId = currentPinnedId === messageId ? null : messageId;
+
+    // Update via raw SQL — avoids the stale Prisma client type issue.
+    // Cast NULL explicitly to avoid PostgreSQL type-inference errors.
+    if (newPinnedId === null) {
+      await this.prisma.$executeRaw`
+        UPDATE "direct_conversations"
+        SET "pinnedMessageId" = NULL
+        WHERE id = ${conversationId}::uuid
+      `;
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE "direct_conversations"
+        SET "pinnedMessageId" = ${newPinnedId}::uuid
+        WHERE id = ${conversationId}::uuid
+      `;
+    }
+
+    // Fetch the pinned message with sender info to return and broadcast
+    const pinnedMessage = newPinnedId
+      ? await this.prisma.directMessage.findUnique({
+          where: { id: newPinnedId },
+          include: { sender: { select: { id: true, username: true, fullName: true, avatar: true } } },
+        })
+      : null;
+
+    // Broadcast to all participants in the DM room
+    this.chatGateway.emitDmMessagePinned(conversationId, pinnedMessage);
+
+    return { pinnedMessage: pinnedMessage ?? null };
+  }
+
+  /**
    * POST /direct/:id/messages/:messageId/reactions
    * Toggle an emoji reaction on a DM message. Broadcasts dm_reaction_updated via WebSocket.
    */

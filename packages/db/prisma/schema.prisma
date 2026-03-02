@@ -227,13 +227,15 @@ model Reaction {
 // ============================================================================
 
 model DirectConversation {
-  id              String   @id @default(uuid()) @db.Uuid
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  isSavedMessages Boolean  @default(false)
+  id               String   @id @default(uuid()) @db.Uuid
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  isSavedMessages  Boolean  @default(false)
+  pinnedMessageId  String?  @db.Uuid
 
-  participants DirectParticipant[]
-  messages     DirectMessage[]
+  participants  DirectParticipant[]
+  messages      DirectMessage[]
+  pinnedMessage DirectMessage?      @relation("DmPinnedMessage", fields: [pinnedMessageId], references: [id], onDelete: SetNull)
 
   @@map("direct_conversations")
 }
@@ -293,6 +295,8 @@ model DirectMessage {
 
   forwardedFrom   DirectMessage?  @relation("DmForwardedMessages", fields: [forwardedFromId], references: [id], onDelete: SetNull)
   forwardedCopies DirectMessage[] @relation("DmForwardedMessages")
+
+  pinnedInConversations DirectConversation[] @relation("DmPinnedMessage")
 
   @@index([conversationId, createdAt])
   @@index([conversationId, parentId])

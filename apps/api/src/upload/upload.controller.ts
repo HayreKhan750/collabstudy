@@ -30,6 +30,9 @@ export class UploadController {
     if (this.uploadService.isS3Enabled()) {
       // ── S3 / R2 / MinIO path ───────────────────────────────────────────────
       // Multer is in memoryStorage mode; file.buffer contains the raw bytes.
+      if (!file.buffer) {
+        throw new BadRequestException('File buffer is missing — ensure S3 credentials are configured correctly');
+      }
       fileUrl = await this.uploadService.uploadFile(
         file.buffer,
         file.originalname,
@@ -38,8 +41,20 @@ export class UploadController {
       // Use the last path segment as the "filename" for convenience
       filename = fileUrl.split('/').pop() ?? file.originalname;
     } else {
-      // ── Local disk fallback (development) ─────────────────────────────────
+      // ── Local disk fallback (development / no S3 configured) ──────────────
       // Multer diskStorage already wrote the file; file.filename is the UUID name.
+      // In production without S3, we still serve uploads via the static files route.
+      if (!file.filename && file.buffer) {
+        // memoryStorage was used but S3 is not configured — write buffer to disk manually
+        const { randomUUID } = await import('crypto');
+        const { extname, join } = await import('path');
+        const { writeFile } = await import('fs/promises');
+        const ext = extname(file.originalname) || '';
+        const fname = `${randomUUID()}${ext}`;
+        const dest = join(process.cwd(), 'uploads', fname);
+        await writeFile(dest, file.buffer);
+        file.filename = fname;
+      }
       const API_URL = process.env.API_URL || 'http://localhost:4000';
       fileUrl = `${API_URL}/uploads/${file.filename}`;
       filename = file.filename;

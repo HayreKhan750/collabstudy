@@ -675,6 +675,16 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   /**
+   * Broadcast a pinned/unpinned DM message to all participants in the conversation room.
+   * pinnedMessage is null when a message is unpinned.
+   */
+  emitDmMessagePinned(conversationId: string, pinnedMessage: unknown): void {
+    const room = `direct:${conversationId}`;
+    this.server.to(room).emit('dm_message_pinned', { conversationId, pinnedMessage });
+    this.logger.debug(`[Socket] Emitted dm_message_pinned to ${room}`);
+  }
+
+  /**
    * Broadcast a DM typing indicator to the conversation room.
    */
   @SubscribeMessage('dm_typing')

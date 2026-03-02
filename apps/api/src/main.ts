@@ -10,6 +10,13 @@ import helmet from 'helmet';
 import { validateEnv } from './config/env.validation';
 
 async function bootstrap() {
+  // ── Ensure uploads directory exists (for local disk fallback) ────────────
+  // On ephemeral filesystems (Railway, Heroku) the directory may not exist.
+  // This is a no-op when S3 is configured since files go to the bucket instead.
+  const { mkdir } = await import('fs/promises');
+  const { join } = await import('path');
+  await mkdir(join(process.cwd(), 'uploads'), { recursive: true });
+
   // ── Environment Validation (Phase 12.1) ──────────────────────────────────
   // Fail fast if required env vars are missing or invalid.
   // Must run before anything else so misconfiguration is caught at boot time.
