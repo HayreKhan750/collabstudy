@@ -11,9 +11,7 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "@prisma/client": "^5.8.1"
-  },
-  "devDependencies": {
+    "@prisma/client": "^5.8.1",
     "prisma": "^5.8.1"
   }
 }
