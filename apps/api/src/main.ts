@@ -118,11 +118,14 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin only in development (curl, Postman, mobile apps)
+      // Allow requests with no origin in development (curl, Postman, mobile apps)
+      // AND allow origin-less requests in production for Railway healthcheck probes
+      // (Railway's /health probe has no Origin header — blocking it causes false "failed" deployments)
       if (!origin) {
         if (!isProduction) return callback(null, true);
-        // In production, reject origin-less requests for API security
-        return callback(new Error('CORS: requests without an Origin header are not allowed in production'));
+        // In production, allow origin-less requests only — CORS still blocks
+        // cross-origin browser requests that send a wrong origin below.
+        return callback(null, true);
       }
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin "${origin}" is not allowed`));
