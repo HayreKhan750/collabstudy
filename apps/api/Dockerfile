@@ -53,13 +53,15 @@ FROM node:20-alpine AS production
 
 # Install openssl for Prisma binary compatibility + dumb-init for proper signal handling
 RUN apk add --no-cache openssl dumb-init
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001 -G nodejs
 
 WORKDIR /app
 
-# ── Copy production artifacts from builder ────────────────────────────────────
+# ── Copy production artifacts from builder
+────────────────────────────────────
 # Production node_modules (pruned)
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
