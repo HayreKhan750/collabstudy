@@ -1,25 +1,19 @@
 'use client';
 
 /**
- * MessageList — virtualized, memoized chat message list.
+ * MessageList — memoized chat message list.
  *
- * Uses @tanstack/react-virtual (dynamic height mode) so only the ~20-30
- * messages visible in the viewport are mounted in the DOM, giving smooth
- * 60 fps scrolling on channels with thousands of messages.
+ * Renders messages in a simple flex-column so each message naturally pushes
+ * the next one down. This avoids all the position:absolute + translateY
+ * overlap issues that virtualizers introduce when dynamic-height content
+ * (images, polls, thread previews) loads asynchronously after initial render.
  *
- * Key decisions:
- * - `overscan: 5` keeps a small buffer above/below the viewport so fast
- *   scrolling never shows blank space.
- * - `estimateSize` returns 72px (a typical collapsed message height).
- *   The virtualizer measures actual heights after mount and corrects itself.
- * - The scroll element is passed in via `scrollRef` so ChatArea keeps full
- *   control of scroll-to-bottom / jump-to-message logic.
- * - The component is wrapped in React.memo — it only re-renders when the
- *   `messages` array reference or any stable callback changes.
+ * Performance note: at 50-100 messages per page this is perfectly smooth.
+ * If we ever need virtualisation for 1000+ message history we can re-add it,
+ * but it must use a scroll-anchor strategy (not estimateSize) to handle images.
  */
 
 import { memo, useEffect, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { MessageBubble, MessageData } from './MessageBubble';
 import { UnreadDivider } from './UnreadDivider';
 
@@ -89,43 +83,17 @@ function MessageListInner({
   onSave,
   onAvatarClick,
 }: MessageListProps) {
-  const parentRef = scrollRef as React.RefObject<HTMLDivElement>;
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const virtualizer = useVirtualizer({
-    count: messages.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 72,
-    overscan: 5,
-    // Use the message id as stable key so the virtualizer keeps item
-    // positions stable when new messages are prepended (load older).
-    getItemKey: (index) => messages[index]?.id ?? index,
-  });
-
-  const items = virtualizer.getVirtualItems();
-
-  // When a new message arrives at the bottom, the total height grows but the
-  // scroll position stays fixed — measure immediately so layout is correct.
+  // When a new message is added, scroll the container to the bottom so the
+  // sender always sees their message without any manual scroll.
+  const prevLengthRef = useRef(messages.length);
   useEffect(() => {
-    virtualizer.measure();
-  }, [messages.length, virtualizer]);
-
-  // Re-measure a specific virtualizer item when its content changes height
-  // (e.g. an image finishes loading). We expose this as a stable callback
-  // so MessageBubble can call it from an <img onLoad> handler.
-  const remeasureItem = useRef((index: number) => {
-    // measureElement re-reads the DOM node's offsetHeight and updates the item.
-    const el = parentRef.current?.querySelector<HTMLElement>(
-      `[data-index="${index}"]`
-    );
-    if (el) virtualizer.measureElement(el);
-  });
-  // Keep the ref body current without changing its identity.
-  remeasureItem.current = (index: number) => {
-    const el = parentRef.current?.querySelector<HTMLElement>(
-      `[data-index="${index}"]`
-    );
-    if (el) virtualizer.measureElement(el);
-  };
+    if (messages.length > prevLengthRef.current) {
+      bottomRef.current?.scrollIntoView({ block: 'end' });
+    }
+    prevLengthRef.current = messages.length;
+  }, [messages.length]);
 
   if (messages.length === 0) {
     return (
@@ -138,17 +106,10 @@ function MessageListInner({
   }
 
   return (
-    /* Outer div has the total virtualizer height so the scrollbar reflects
-       the real content length even though most nodes are unmounted. */
-    <div
-      style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}
-    >
-      {items.map((virtualItem) => {
-        const i = virtualItem.index;
-        const message = messages[i];
-        if (!message) return null;
-
-        const isMine = message.user.id === currentUserId;
+    // Simple flex column — every message is in normal document flow.
+    // No position:absolute, no translateY, no virtualiser math.
+    <div className="flex flex-col">
+      {messages.map((message, i) => {
         const prevMsg = messages[i - 1];
         const nextMsg = messages[i + 1];
 
@@ -170,25 +131,13 @@ function MessageListInner({
           (!prevMsg || new Date(prevMsg.createdAt) <= new Date(lastReadAt));
 
         return (
-          <div
-            key={message.id}
-            data-index={virtualItem.index}
-            ref={virtualizer.measureElement}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualItem.start}px)`,
-            }}
-          >
+          <div key={message.id}>
             {isFirstUnread && <UnreadDivider ref={unreadDividerRef} />}
             <MessageBubble
-              onImageLoad={() => remeasureItem.current(virtualItem.index)}
               message={message}
               isFirstInGroup={isFirstInGroup}
               isLastInGroup={isLastInGroup}
-              isOwnMessage={isMine}
+              isOwnMessage={message.user.id === currentUserId}
               isHighlighted={highlightedMessageId === message.id}
               currentUserId={currentUserId}
               readReceipts={readReceipts}
@@ -219,6 +168,8 @@ function MessageListInner({
           </div>
         );
       })}
+      {/* Invisible anchor — scrolled into view when new messages arrive */}
+      <div ref={bottomRef} />
     </div>
   );
 }
