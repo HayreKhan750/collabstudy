@@ -42,11 +42,9 @@ RUN pnpm --filter @collabstudy/db exec prisma generate
 WORKDIR /app/apps/api
 RUN pnpm run build
 
-# ── Prune to production-only dependencies
-# Re-install with --prod flag to get a clean, minimal node_modules for the runner stage
-# prisma CLI is in packages/db dependencies (not devDependencies) so it survives this step
-WORKDIR /app
-RUN pnpm install --frozen-lockfile --prod
+# NOTE: We intentionally skip the --prod prune step to avoid pnpm hoisting
+# complexity with the prisma CLI binary. The image is slightly larger but
+# guaranteed to work. node_modules/.bin/prisma will always be available.
 
 
 # ── Stage 2: Production Runner
