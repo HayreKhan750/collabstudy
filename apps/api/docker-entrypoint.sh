@@ -30,27 +30,37 @@ SCHEMA="--schema=/app/packages/db/prisma/schema.prisma"
 # leaving a row in _prisma_migrations with applied_steps_count < steps_count.
 # Prisma refuses to run new migrations until failed ones are resolved.
 #
-# Strategy: mark each known-failed migration as "rolled back" so Prisma will
-# re-attempt it on the next `migrate deploy`. The SQL in each migration is
-# written with IF NOT EXISTS / IF EXISTS guards so re-running is safe.
+# Strategy: directly DELETE the failed migration row from _prisma_migrations
+# so that `migrate deploy` re-applies it from scratch. The migration SQL uses
+# IF NOT EXISTS guards so re-running is fully idempotent and safe.
 #
-# To add more migrations to this list in future, append their directory name.
+# We use psql (available via the DATABASE_URL env var) to run the SQL directly,
+# bypassing the Prisma CLI which itself errors out (P3009) when resolving.
+#
+# To add more migrations to this list in future, append their names below.
 # ---------------------------------------------------------------------------
 FAILED_MIGRATIONS="
   20260221000000_add_pg_trgm_and_gin_index
 "
 
-for migration in $FAILED_MIGRATIONS; do
-  echo "🔍 Checking migration: $migration"
-  # `migrate resolve --rolled-back` exits non-zero if the migration is not in a
-  # failed state (e.g. already applied or doesn't exist). That is expected and
-  # safe — we suppress stderr for that case and continue.
-  if $PRISMA migrate resolve $SCHEMA --rolled-back "$migration" 2>/dev/null; then
-    echo "↩️  Marked $migration as rolled back (will be re-applied by migrate deploy)"
-  else
-    echo "ℹ️  $migration is not in a failed state — nothing to resolve"
-  fi
-done
+if [ -n "$DATABASE_URL" ]; then
+  for migration in $FAILED_MIGRATIONS; do
+    echo "🔍 Checking for failed migration: $migration"
+    # Delete the failed migration row so migrate deploy re-applies it.
+    # This is equivalent to `prisma migrate resolve --rolled-back` but done
+    # directly in SQL to avoid the P3009 chicken-and-egg problem in the CLI.
+    RESULT=$(psql "$DATABASE_URL" -tAc \
+      "DELETE FROM _prisma_migrations WHERE migration_name = '$migration' AND finished_at IS NULL RETURNING migration_name;" \
+      2>/dev/null || true)
+    if [ -n "$RESULT" ]; then
+      echo "↩️  Removed failed migration record: $RESULT (will be re-applied)"
+    else
+      echo "ℹ️  No failed record found for $migration — already resolved or not present"
+    fi
+  done
+else
+  echo "⚠️  DATABASE_URL not set — skipping failed migration resolution"
+fi
 
 echo "⏳ Running Prisma database migrations..."
 

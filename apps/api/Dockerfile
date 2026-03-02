@@ -51,7 +51,8 @@ RUN pnpm run build
 FROM node:20-alpine AS production
 
 # Install openssl for Prisma binary compatibility + dumb-init for proper signal handling
-RUN apk add --no-cache openssl dumb-init
+# postgresql-client provides psql, used in docker-entrypoint.sh to resolve stuck migrations
+RUN apk add --no-cache openssl dumb-init postgresql-client
 RUN corepack enable && corepack prepare pnpm@latest --activate
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001 -G nodejs
@@ -78,7 +79,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/packages/db/node_modules ./packag
 RUN mkdir -p /app/apps/api/uploads && chown nestjs:nodejs /app/apps/api/uploads
 
 # Copy and configure the entrypoint script that runs migrations then starts the app
-# cache-bust: v3
+# cache-bust: v4
 COPY --chown=nestjs:nodejs apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
