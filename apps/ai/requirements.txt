@@ -3,9 +3,7 @@ uvicorn[standard]
 pydantic
 pydantic-settings
 redis
-openai
-langchain
-langchain-openai
+google-generativeai
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
