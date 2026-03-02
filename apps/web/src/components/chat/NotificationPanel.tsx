@@ -122,23 +122,26 @@ export default function NotificationPanel({
       </button>
 
       {/* Panel — rendered via Portal into document.body so it escapes all
-          parent stacking contexts (backdrop-blur, transform, etc.) */}
-      <AnimatePresence>
-        {open && createPortal(
-          <>
-            {/* Backdrop (mobile) */}
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-[199] md:hidden"
-              onClick={() => setOpen(false)}
-            />
+          parent stacking contexts (backdrop-blur, transform, etc.)
+          NOTE: AnimatePresence must live INSIDE the portal, not outside it,
+          otherwise framer-motion cannot track child mount/unmount correctly. */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <>
+              {/* Backdrop (mobile) */}
+              <motion.div
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-[199] md:hidden"
+                onClick={() => setOpen(false)}
+              />
 
-            <motion.div
-              key="panel"
+              <motion.div
+                key="panel"
               initial={{ opacity: 0, y: -8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
@@ -359,11 +362,12 @@ export default function NotificationPanel({
                   </p>
                 </div>
               )}
-            </motion.div>
-          </>,
-          document.body
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
