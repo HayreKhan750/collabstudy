@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Turnstile, { useTurnstile } from 'react-turnstile';
+import { API_URL } from '@/lib/api';
 
 const TURNSTILE_SITE_KEY =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
@@ -135,7 +136,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => {
-            window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/google`;
+            window.location.href = `${API_URL}/auth/google`;
           }}
           className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-slate-200 dark:border-white/[0.08] rounded-xl bg-white dark:bg-gray-800/60 hover:bg-slate-50 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 text-sm font-medium transition-all duration-150 shadow-sm active:scale-[0.98]"
         >

@@ -7,7 +7,7 @@ import { Message, MentionUser } from '@/lib/api';
 import MentionInput from './MentionInput';
 import { renderMessageContent } from '@/lib/renderMessageContent';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { API_URL } from '@/lib/api';
 
 interface ThreadPanelProps {
   parentMessage: Message;

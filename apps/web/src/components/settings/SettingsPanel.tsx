@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 type Tab = 'profile' | 'account' | 'appearance';
 type Theme = 'dark' | 'light' | 'system';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { API_URL } from '@/lib/api';
 
 // ── Reusable field components ─────────────────────────────────────────────────
 

@@ -18,7 +18,7 @@ import CreatePollModal from './CreatePollModal';
 import type { Message } from '@/lib/api';
 import { logger } from '@/lib/logger';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { API_URL } from '@/lib/api';
 
 interface DMUser {
   id: string;

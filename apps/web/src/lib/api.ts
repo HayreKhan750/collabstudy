@@ -1,6 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 import { logger } from './logger';
-if (!API_URL) console.error('🚨 CRITICAL: API_URL is undefined! Check your .env file.');
+if (!process.env.NEXT_PUBLIC_API_URL) {
+  console.warn('⚠️  NEXT_PUBLIC_API_URL is not set — falling back to http://localhost:4000. Set this variable in Railway for production builds.');
+}
 
 export interface RegisterData {
   email: string;

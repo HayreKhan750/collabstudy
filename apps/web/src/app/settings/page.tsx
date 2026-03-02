@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 
 type Tab = 'profile' | 'account' | 'appearance';
 type Theme = 'dark' | 'light' | 'system';
@@ -78,7 +78,7 @@ function ProfileTab({ token }: { token: string }) {
     try {
       const form = new FormData();
       form.append('file', file);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/upload`, {
+      const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: form,

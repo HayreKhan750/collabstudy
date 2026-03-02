@@ -19,7 +19,7 @@ import { SearchModal } from '@/components/chat/SearchModal';
 import SettingsPanel from '@/components/settings/SettingsPanel';
 import { logger } from '@/lib/logger';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { API_URL } from '@/lib/api';
 
 export default function DashboardPage() {
   const { user, token, logout, loading } = useAuth();
