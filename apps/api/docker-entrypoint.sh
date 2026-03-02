@@ -25,7 +25,7 @@ echo "⏳ Running Prisma database migrations..."
 
 # The schema path is relative to WORKDIR (/app/apps/api) in the container.
 # The prisma directory was copied into /app/packages/db/prisma by the Dockerfile.
-npx prisma migrate deploy --schema=/app/packages/db/prisma/schema.prisma
+/app/node_modules/.bin/prisma migrate deploy --schema=/app/packages/db/prisma/schema.prisma
 
 echo "✅ Migrations complete. Starting CollabStudy API..."
 
