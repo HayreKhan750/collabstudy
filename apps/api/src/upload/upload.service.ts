@@ -12,11 +12,13 @@ export class UploadService {
   private readonly region: string;
   private readonly endpoint?: string;
   private readonly useS3: boolean;
+  private readonly r2PublicUrl?: string;
 
   constructor() {
     this.bucket = process.env.AWS_S3_BUCKET_NAME ?? '';
     this.region = process.env.S3_REGION ?? 'us-east-1';
     this.endpoint = process.env.AWS_S3_ENDPOINT || undefined;
+    this.r2PublicUrl = process.env.R2_PUBLIC_URL || undefined;
 
     const isPlaceholder = (val?: string) => !val || val.startsWith('your_');
 
@@ -50,6 +52,11 @@ export class UploadService {
       this.logger.log(
         `S3 storage enabled → bucket: "${this.bucket}" region: "${this.region}"${this.endpoint ? ` endpoint: "${this.endpoint}"` : ''}`,
       );
+      if (this.r2PublicUrl) {
+        this.logger.log(`R2 Public URL configured: ${this.r2PublicUrl} (images will use permanent public URLs)`);
+      } else {
+        this.logger.warn(`R2 Public URL NOT configured — using presigned URLs (expire after 1 hour, may cause 404s)`);
+      }
     } else {
       // Dummy client — won't be used; local disk fallback is active
       this.s3Client = new S3Client({ region: 'us-east-1' });
@@ -132,6 +139,7 @@ export class UploadService {
 
   /**
    * Generate a time-limited pre-signed GET URL for a stored file key.
+   * If R2_PUBLIC_URL is configured, returns a permanent public URL instead.
    * Returns the key unchanged when S3 is not configured (local-disk mode).
    *
    * @param fileKey  The raw key returned by uploadFile() or a local disk path/URL.
@@ -144,6 +152,16 @@ export class UploadService {
       return fileKey;
     }
 
+    // If R2 public URL is configured, return permanent public URL
+    if (this.r2PublicUrl) {
+      // Remove leading slash from fileKey if present
+      const cleanKey = fileKey.startsWith('/') ? fileKey.slice(1) : fileKey;
+      const publicUrl = `${this.r2PublicUrl}/${cleanKey}`;
+      this.logger.debug(`Generated public URL: ${publicUrl}`);
+      return publicUrl;
+    }
+
+    // Otherwise, generate a presigned URL (expires after expiresIn seconds)
     try {
       const command = new GetObjectCommand({
         Bucket: this.bucket,
