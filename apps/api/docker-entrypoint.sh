@@ -22,10 +22,14 @@
 set -e  # Exit immediately if any command fails
 
 echo "⏳ Running Prisma database migrations..."
+echo "🔍 Locating prisma binary..."
+find /app -name "prisma" -type f 2>/dev/null | head -5 || echo "No prisma binary found via find"
 
 # The schema path is relative to WORKDIR (/app/apps/api) in the container.
 # The prisma directory was copied into /app/packages/db/prisma by the Dockerfile.
-/app/node_modules/.bin/prisma migrate deploy --schema=/app/packages/db/prisma/schema.prisma
+node /app/node_modules/prisma/build/index.js migrate deploy --schema=/app/packages/db/prisma/schema.prisma 2>/dev/null || \
+  /app/packages/db/node_modules/.bin/prisma migrate deploy --schema=/app/packages/db/prisma/schema.prisma 2>/dev/null || \
+  /app/node_modules/.bin/prisma migrate deploy --schema=/app/packages/db/prisma/schema.prisma
 
 echo "✅ Migrations complete. Starting CollabStudy API..."
 

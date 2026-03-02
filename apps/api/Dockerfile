@@ -73,7 +73,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/
 # Prisma schema (needed at runtime for migrations)
 COPY --from=builder --chown=nestjs:nodejs /app/packages/db/prisma ./packages/db/prisma
 
-# Prisma CLI binary is copied from builder via node_modules (see builder stage)
+# Prisma CLI — copy packages/db/node_modules where pnpm hoists the prisma binary
+COPY --from=builder --chown=nestjs:nodejs /app/packages/db/node_modules ./packages/db/node_modules
 
 # Local uploads directory (used as fallback when S3 is not configured)
 RUN mkdir -p /app/apps/api/uploads && chown nestjs:nodejs /app/apps/api/uploads
