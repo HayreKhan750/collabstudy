@@ -109,6 +109,24 @@ function MessageListInner({
     virtualizer.measure();
   }, [messages.length, virtualizer]);
 
+  // Re-measure a specific virtualizer item when its content changes height
+  // (e.g. an image finishes loading). We expose this as a stable callback
+  // so MessageBubble can call it from an <img onLoad> handler.
+  const remeasureItem = useRef((index: number) => {
+    // measureElement re-reads the DOM node's offsetHeight and updates the item.
+    const el = parentRef.current?.querySelector<HTMLElement>(
+      `[data-index="${index}"]`
+    );
+    if (el) virtualizer.measureElement(el);
+  });
+  // Keep the ref body current without changing its identity.
+  remeasureItem.current = (index: number) => {
+    const el = parentRef.current?.querySelector<HTMLElement>(
+      `[data-index="${index}"]`
+    );
+    if (el) virtualizer.measureElement(el);
+  };
+
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -166,6 +184,7 @@ function MessageListInner({
           >
             {isFirstUnread && <UnreadDivider ref={unreadDividerRef} />}
             <MessageBubble
+              onImageLoad={() => remeasureItem.current(virtualItem.index)}
               message={message}
               isFirstInGroup={isFirstInGroup}
               isLastInGroup={isLastInGroup}

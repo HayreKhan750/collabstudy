@@ -81,6 +81,8 @@ interface MessageBubbleProps {
   onForward?: () => void;
   /** Pin message in channel */
   onPin?: () => void;
+  /** Called after an inline image finishes loading so the virtualizer can re-measure the row height. */
+  onImageLoad?: () => void;
   /** Vote on a poll option */
   onVotePoll?: (messageId: string, optionId: string) => void;
   /** Close a poll (creator only) */
@@ -150,11 +152,13 @@ function FileAttachment({
   type,
   name,
   size,
+  onImageLoad,
 }: {
   url: string;
   type: string | null;
   name: string | null;
   size: number | null;
+  onImageLoad?: () => void;
 }) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const mime = type || '';
@@ -173,6 +177,7 @@ function FileAttachment({
           className="max-w-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity shadow-md mt-1 object-cover block"
           style={{ aspectRatio: '4/3', maxHeight: '240px', minHeight: '120px', width: 'auto', minWidth: '160px' }}
           onClick={() => setViewerOpen(true)}
+          onLoad={onImageLoad}
         />
       );
     }
@@ -525,6 +530,7 @@ const MessageBubbleInner = function MessageBubble({
   onCopy,
   onForward,
   onPin,
+  onImageLoad,
   onVotePoll,
   onClosePoll,
   onSelect,
@@ -769,6 +775,7 @@ const MessageBubbleInner = function MessageBubble({
                   type={message.fileType ?? null}
                   name={message.originalName ?? null}
                   size={message.fileSize ?? null}
+                  onImageLoad={onImageLoad}
                 />
               )}
 
