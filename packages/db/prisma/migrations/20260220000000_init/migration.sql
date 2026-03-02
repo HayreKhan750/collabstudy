@@ -1,5 +1,11 @@
--- CreateExtension
-CREATE EXTENSION IF NOT EXISTS "vector";
+-- CreateExtension (pgvector — optional, gracefully skipped if not installed)
+DO $$
+BEGIN
+  CREATE EXTENSION IF NOT EXISTS "vector";
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'pgvector extension not available: %. Vector search features will be disabled.', SQLERRM;
+END;
+$$;
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ONLINE', 'OFFLINE', 'AWAY', 'DO_NOT_DISTURB');
