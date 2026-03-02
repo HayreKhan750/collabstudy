@@ -52,7 +52,7 @@ Thumbs.db
 *~
 
 # Prisma
-packages/db/prisma/migrations/
+# migrations must be committed to git so Railway can apply them on deploy
 
 # Turbo
 .turbo/

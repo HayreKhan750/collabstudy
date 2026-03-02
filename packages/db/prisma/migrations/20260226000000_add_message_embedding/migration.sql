@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- Add embedding column to messages table
 -- Uses Gemini text-embedding-004 which produces 768-dimensional vectors
 -- Nullable: populated asynchronously by the EmbeddingsWorker after message creation
-ALTER TABLE "messages" ADD COLUMN "embedding" vector(768);
+ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "embedding" vector(768);
 
 -- Add HNSW index for fast approximate nearest-neighbour search using cosine similarity.
 -- HNSW is preferred over IVFFlat here because:

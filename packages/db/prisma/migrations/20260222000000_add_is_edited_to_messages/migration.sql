@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "messages" ADD COLUMN "isEdited" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "isEdited" BOOLEAN NOT NULL DEFAULT false;
