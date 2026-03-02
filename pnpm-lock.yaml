@@ -40,9 +40,6 @@ importers:
       '@collabstudy/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@google/generative-ai':
-        specifier: ^0.24.1
-        version: 0.24.1
       '@nestjs/bullmq':
         specifier: ^11.0.4
         version: 11.0.4(@nestjs/common@11.1.14)(@nestjs/core@11.1.14)(bullmq@5.70.1)
@@ -1571,11 +1568,6 @@ packages:
       minimatch: 10.2.2
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /@google/generative-ai@0.24.1:
-    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
-    engines: {node: '>=18.0.0'}
     dev: false
 
   /@humanfs/core@0.19.1:

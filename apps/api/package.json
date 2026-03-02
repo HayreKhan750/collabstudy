@@ -30,7 +30,6 @@
     "@aws-sdk/s3-request-presigner": "^3.996.0",
     "@collabstudy/db": "workspace:*",
     "@collabstudy/shared": "workspace:*",
-    "@google/generative-ai": "^0.24.1",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^3.1.1",
