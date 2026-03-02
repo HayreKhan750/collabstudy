@@ -42,10 +42,18 @@ RUN pnpm --filter @collabstudy/db exec prisma generate
 WORKDIR /app/apps/api
 RUN pnpm run build
 
+# ── Save Prisma CLI before prod prune (it's a devDep and will be removed)
+RUN cp $(which prisma 2>/dev/null || find /app -name prisma -type f -perm /111 2>/dev/null | head -1) /tmp/prisma-bin 2>/dev/null || \
+    cp /app/node_modules/.bin/prisma /tmp/prisma-bin 2>/dev/null || \
+    cp /app/apps/api/node_modules/.bin/prisma /tmp/prisma-bin
+
 # ── Prune to production-only dependencies
 # Re-install with --prod flag to get a clean, minimal node_modules for the runner stage
 WORKDIR /app
 RUN pnpm install --frozen-lockfile --prod
+
+# ── Restore Prisma CLI after prod prune
+RUN cp /tmp/prisma-bin /app/node_modules/.bin/prisma && chmod +x /app/node_modules/.bin/prisma
 
 
 # ── Stage 2: Production Runner
@@ -72,9 +80,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/
 # Prisma schema (needed at runtime for migrations)
 COPY --from=builder --chown=nestjs:nodejs /app/packages/db/prisma ./packages/db/prisma
 
-# Prisma CLI (needed by docker-entrypoint.sh to run migrations)
-# Install it directly in production stage to avoid pnpm hoisting uncertainty
-RUN npm install -g prisma --prefer-offline 2>/dev/null || npm install -g prisma
+# Prisma CLI binary is copied from builder via node_modules (see builder stage)
 
 # Local uploads directory (used as fallback when S3 is not configured)
 RUN mkdir -p /app/apps/api/uploads && chown nestjs:nodejs /app/apps/api/uploads
