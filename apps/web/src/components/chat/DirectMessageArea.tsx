@@ -89,6 +89,10 @@ export default function DirectMessageArea({
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
+  // Tracks the temp- ID of the in-flight optimistic message so the WS handler
+  // can replace it precisely even when content is null (file-only messages).
+  const pendingTempIdRef = useRef<string | null>(null);
+
   const [uploadingFile, setUploadingFile] = useState(false);
   const [pendingFile, setPendingFile] = useState<{
     url: string;
@@ -418,18 +422,32 @@ export default function DirectMessageArea({
 
         if (msg.senderId === user?.id) {
           // This is our own message echoed back from server.
-          // Find and replace the temp- optimistic placeholder by matching content.
-          const tempIdx = prev.findIndex(
-            (m) => m.id.startsWith('temp-') && m.content === msg.content && m.senderId === user.id
-          );
+          // Strategy 1: match by the exact temp ID stored in the ref (most reliable,
+          // works for file-only messages where content is null).
+          const trackedTempId = pendingTempIdRef.current;
+          let tempIdx = trackedTempId
+            ? prev.findIndex((m) => m.id === trackedTempId)
+            : -1;
+
+          // Strategy 2: fallback — match any temp placeholder with same content
+          // (covers edge cases where ref was already cleared).
+          if (tempIdx === -1) {
+            tempIdx = prev.findIndex(
+              (m) => m.id.startsWith('temp-') && m.senderId === user.id
+            );
+          }
+
           if (tempIdx !== -1) {
-            // Replace optimistic with real server message
+            // Clear the ref since we've now replaced the placeholder
+            if (pendingTempIdRef.current === prev[tempIdx].id) {
+              pendingTempIdRef.current = null;
+            }
+            // Replace optimistic placeholder with real server message
             const next = [...prev];
             next[tempIdx] = { ...msg, reactions: msg.reactions ?? [] };
             return next;
           }
           // No temp placeholder found — this is a duplicate echo, skip it
-          // (already replaced by an earlier WS event)
           return prev;
         }
 
@@ -576,6 +594,8 @@ export default function DirectMessageArea({
 
     // ── Optimistic add: show message instantly before server confirms ────────
     const optimisticId = `temp-${Date.now()}`;
+    // Store in ref so the WS echo handler can find and replace this exact placeholder.
+    pendingTempIdRef.current = optimisticId;
     const optimisticMsg: DirectMessage = {
       id: optimisticId,
       content: content || null,
@@ -613,15 +633,17 @@ export default function DirectMessageArea({
         }),
       });
       if (!res.ok) {
-        // Remove optimistic on failure and restore input
+        // Remove optimistic on failure, restore input, clear ref
+        pendingTempIdRef.current = null;
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         if (content) setInput(content);
         if (file) setPendingFile(file);
       }
-      // On success: the WS echo (new_direct_message) will replace the temp- placeholder
-      // with the real server message. We do NOT update state here to avoid double render.
+      // On success: the WS echo (dm_new_message) will find pendingTempIdRef.current
+      // and replace the optimistic placeholder with the real server message.
     } catch (e) {
       logger.warn('[DM] send error:', e);
+      pendingTempIdRef.current = null;
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       if (content) setInput(content);
       if (file) setPendingFile(file);
