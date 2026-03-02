@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ImageLightboxProps {
   images: { src: string; alt: string }[];
@@ -79,9 +80,9 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
     if (e.target === e.currentTarget) onClose();
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
       onClick={handleBackdropClick}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
@@ -193,6 +194,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
           {index + 1} / {images.length}
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

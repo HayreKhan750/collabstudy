@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface VideoPlayerModalProps {
   src: string;
@@ -25,9 +26,9 @@ export function VideoPlayerModal({ src, name, onClose }: VideoPlayerModalProps) 
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 dark:bg-black/95 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 dark:bg-black/95 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Header bar */}
@@ -76,6 +77,7 @@ export function VideoPlayerModal({ src, name, onClose }: VideoPlayerModalProps) 
         Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/60 text-[10px]">Space</kbd> to pause ·{' '}
         <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/60 text-[10px]">Esc</kbd> to close
       </p>
-    </div>
+    </div>,
+    document.body
   );
 }

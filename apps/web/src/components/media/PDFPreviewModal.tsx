@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface PDFPreviewModalProps {
   src: string;
@@ -17,9 +18,9 @@ export function PDFPreviewModal({ src, name, onClose }: PDFPreviewModalProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-black/80 dark:bg-black/95 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex flex-col bg-black/80 dark:bg-black/95 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Header */}
@@ -79,6 +80,7 @@ export function PDFPreviewModal({ src, name, onClose }: PDFPreviewModalProps) {
           className="w-full h-full border-0"
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

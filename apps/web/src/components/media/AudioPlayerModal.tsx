@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface AudioPlayerModalProps {
   src: string;
@@ -85,9 +86,9 @@ export function AudioPlayerModal({ src, name, onClose }: AudioPlayerModalProps) 
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -283,6 +284,7 @@ export function AudioPlayerModal({ src, name, onClose }: AudioPlayerModalProps) 
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
