@@ -46,6 +46,18 @@ COPY package.json pnpm-workspace.yaml ./
 # Set Next.js telemetry to disabled for CI/Docker builds
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# ── Build-time environment variables ──────────────────────────────────────────
+# NEXT_PUBLIC_* vars are baked into the JS bundle at build time.
+# Railway passes Variables as Docker build args — declare them here so they
+# are visible during `pnpm run build`. Without ARG+ENV, they are invisible.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ARG NEXT_PUBLIC_SENTRY_DSN
+
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+
 # Build Next.js — produces .next/standalone + .next/static
 WORKDIR /app/apps/web
 RUN pnpm run build
