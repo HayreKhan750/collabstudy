@@ -19,6 +19,9 @@ export interface LoginData {
 export interface RegisterPendingResponse {
   message: string;
   email: string;
+  // DEV: auto-verify mode returns token + user immediately
+  token?: string;
+  user?: User;
 }
 
 export interface VerifyEmailData {

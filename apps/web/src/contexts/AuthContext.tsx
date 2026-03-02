@@ -50,9 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = async (data: RegisterData): Promise<{ email: string }> => {
-    // Registration now returns { message, email } — no token yet.
-    // The caller should redirect to /verify-email?email=...
+    // DEV: Registration now returns token + user directly (auto-verified).
+    // Store auth state immediately so the user lands on /dashboard logged in.
     const response = await api.register(data);
+    if (response.token && response.user) {
+      setUser(response.user);
+      setToken(response.token);
+      localStorage.setItem('auth_token', response.token);
+    }
     return { email: response.email };
   };
 

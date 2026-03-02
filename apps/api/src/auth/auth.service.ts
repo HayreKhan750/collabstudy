@@ -74,11 +74,13 @@ export class AuthService {
       return;
     }
 
-    const result = await this.resend.emails.send({ from, to: [to], subject, html });
-    if (result.error) {
-      throw new Error(`Resend error: ${result.error.message}`);
-    }
-    console.log(`[Auth] Email sent to ${to} (id=${result.data?.id})`);
+    // DEV: Resend calls silenced (sandbox mode — no verified domain)
+    // const result = await this.resend.emails.send({ from, to: [to], subject, html });
+    // if (result.error) {
+    //   throw new Error(`Resend error: ${result.error.message}`);
+    // }
+    // console.log(`[Auth] Email sent to ${to} (id=${result.data?.id})`);
+    console.log(`📧 [DEV] Email suppressed (sandbox). Would have sent "${subject}" to ${to}`);
   }
 
   private async sendVerificationEmail(email: string, otp: string): Promise<void> {
@@ -136,32 +138,30 @@ export class AuthService {
     // 4. Hash password
     const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-    // 5. Generate OTP and store hashed version
-    const otp = this.generateOtp();
-    const hashedOtp = await bcrypt.hash(otp, 10);
-
-    // 6. Create user — NOT yet verified
-    await this.prisma.user.create({
+    // 5. Create user — auto-verified (sandbox mode: no email domain configured)
+    const newUser = await this.prisma.user.create({
       data: {
         email,
         username,
         passwordHash: hashedPassword,
         fullName,
-        status: UserStatus.OFFLINE,
-        emailVerified: false,
-        verificationToken: hashedOtp,
-        verificationExpiry: this.otpExpiry(),
+        status: UserStatus.ONLINE,
+        emailVerified: true, // DEV: auto-verify, no email needed
+        verificationToken: null,
+        verificationExpiry: null,
       },
     });
 
-    // 7. Send verification email (fire-and-forget; errors logged not thrown)
-    this.sendVerificationEmail(email, otp).catch((err) =>
-      console.error('[Auth] Failed to send verification email:', err),
-    );
+    // 6. Return JWT immediately so the frontend can log the user straight in
+    const token = this.generateToken(newUser.id, newUser.email);
+
+    console.log(`✅ [DEV] Auto-verified new user: ${email}`);
 
     return {
-      message: 'Account created. Please check your email for a 6-digit verification code.',
+      message: 'Account created successfully.',
       email,
+      user: this.safeUser(newUser),
+      token,
     };
   }
 
@@ -197,11 +197,12 @@ export class AuthService {
       );
     }
 
-    // Compare OTP
-    const isOtpValid = await bcrypt.compare(otp, user.verificationToken);
-    if (!isOtpValid) {
-      throw new BadRequestException('Invalid verification code');
-    }
+    // DEV: Accept any 6-digit code (sandbox mode — real OTP check disabled)
+    // const isOtpValid = await bcrypt.compare(otp, user.verificationToken);
+    // if (!isOtpValid) {
+    //   throw new BadRequestException('Invalid verification code');
+    // }
+    console.log(`🔓 [DEV] OTP check bypassed for ${email}`);
 
     // Mark verified and clear OTP fields
     const verifiedUser = await this.prisma.user.update({
@@ -246,6 +247,7 @@ export class AuthService {
       },
     });
 
+    console.log(`🚀 [DEBUG] Verification Code for ${email}: ${otp}`);
     this.sendVerificationEmail(email, otp).catch((err) =>
       console.error('[Auth] Failed to resend verification email:', err),
     );
@@ -289,6 +291,7 @@ export class AuthService {
           verificationExpiry: this.otpExpiry(),
         },
       });
+      console.log(`🚀 [DEBUG] Verification Code for ${email}: ${otp}`);
       this.sendVerificationEmail(email, otp).catch((err) =>
         console.error('[Auth] Failed to resend verification email on login:', err),
       );

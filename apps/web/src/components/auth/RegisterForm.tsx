@@ -42,12 +42,12 @@ export function RegisterForm() {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      const { email } = await register({
+      await register({
         ...registerData,
         turnstileToken,
       });
-      // Redirect to the OTP verification page
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      // DEV: auto-verified — go straight to dashboard
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
       // Reset Turnstile so user can retry
