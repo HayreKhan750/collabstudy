@@ -5,7 +5,7 @@
 # Stage 2 (production): copies only built artifacts and prod deps — minimal image
 # =============================================================================
 
-# ── Stage 1: Builder ──────────────────────────────────────────────────────────
+# ── Stage 1: Builder
 FROM node:20-alpine AS builder
 
 # Install OS-level build dependencies needed for native addons (bcrypt, etc.)
@@ -16,7 +16,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# ── Copy workspace manifests first for layer caching ─────────────────────────
+# ── Copy workspace manifests first for layer caching
 # Root workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
@@ -27,28 +27,28 @@ COPY packages/shared/package.json ./packages/shared/
 # App manifest
 COPY apps/api/package.json ./apps/api/
 
-# ── Install ALL dependencies (including devDeps for build) ────────────────────
+# ── Install ALL dependencies (including devDeps for build)
 RUN pnpm install --frozen-lockfile
 
-# ── Copy source files ─────────────────────────────────────────────────────────
+# ── Copy source files
 COPY packages/db/ ./packages/db/
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 
-# ── Generate Prisma client ────────────────────────────────────────────────────
+# ── Generate Prisma client
 RUN pnpm --filter @collabstudy/db exec prisma generate
 
-# ── Build NestJS app ──────────────────────────────────────────────────────────
+# ── Build NestJS app
 WORKDIR /app/apps/api
 RUN pnpm run build
 
-# ── Prune to production-only dependencies ─────────────────────────────────────
+# ── Prune to production-only dependencies
 # Re-install with --prod flag to get a clean, minimal node_modules for the runner stage
 WORKDIR /app
 RUN pnpm install --frozen-lockfile --prod
 
 
-# ── Stage 2: Production Runner ────────────────────────────────────────────────
+# ── Stage 2: Production Runner
 FROM node:20-alpine AS production
 
 # Install openssl for Prisma binary compatibility + dumb-init for proper signal handling
@@ -59,7 +59,7 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001 -G nodejs
 
 WORKDIR /app
 
-# ── Copy production artifacts from builder ────────────────────────────────────
+# ── Copy production artifacts from builder
 # Production node_modules (pruned)
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages

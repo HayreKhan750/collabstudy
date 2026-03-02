@@ -41,6 +41,28 @@ services:
     networks:
       - collabstudy-network
 
+  # CollabStudy AI Service (FastAPI/Uvicorn)
+  ai:
+    build:
+      context: ./apps/ai
+      dockerfile: Dockerfile
+    container_name: collabstudy-ai
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      - DATABASE_URL=postgresql://collabstudy:collabstudy123@postgres:5432/collabstudy
+      - REDIS_URL=redis://:collabstudy123@redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - PORT=8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - collabstudy-network
+
 volumes:
   postgres_data:
     driver: local
