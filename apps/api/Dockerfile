@@ -78,6 +78,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/packages/db/node_modules ./packag
 RUN mkdir -p /app/apps/api/uploads && chown nestjs:nodejs /app/apps/api/uploads
 
 # Copy and configure the entrypoint script that runs migrations then starts the app
+# cache-bust: v2
 COPY --chown=nestjs:nodejs apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
