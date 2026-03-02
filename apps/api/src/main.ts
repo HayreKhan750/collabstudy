@@ -155,6 +155,40 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  app.get(Logger).log(`🚀 CollabStudy API running on http://localhost:${port} [${process.env.NODE_ENV ?? 'development'}]`);
+  
+  const logger = app.get(Logger);
+  logger.log(`🚀 CollabStudy API running on http://localhost:${port} [${process.env.NODE_ENV ?? 'development'}]`);
+  
+  // ─── Upload Configuration Logging ────────────────────────────────────────
+  const uploadsPath = join(process.cwd(), 'uploads');
+  logger.log(`[UPLOAD CONFIG] Static file serving:`);
+  logger.log(`[UPLOAD CONFIG]   - Root path: ${uploadsPath}`);
+  logger.log(`[UPLOAD CONFIG]   - Serve route: /uploads`);
+  logger.log(`[UPLOAD CONFIG]   - Example: GET /uploads/file.png serves ${uploadsPath}/file.png`);
+  
+  const apiUrl = process.env.API_URL || 'NOT SET';
+  logger.log(`[UPLOAD CONFIG] API_URL: ${apiUrl}`);
+  if (!process.env.API_URL) {
+    logger.warn(`[UPLOAD CONFIG] ⚠️  API_URL not set! File URLs will default to http://localhost:${port}`);
+  }
+  
+  const s3Configured = Boolean(
+    process.env.AWS_ACCESS_KEY_ID &&
+    !process.env.AWS_ACCESS_KEY_ID.startsWith('your_') &&
+    process.env.AWS_SECRET_ACCESS_KEY &&
+    !process.env.AWS_SECRET_ACCESS_KEY.startsWith('your_') &&
+    process.env.AWS_S3_BUCKET_NAME &&
+    !process.env.AWS_S3_BUCKET_NAME.startsWith('your_')
+  );
+  logger.log(`[UPLOAD CONFIG] S3/R2 Storage: ${s3Configured ? '✅ ENABLED' : '❌ DISABLED (using local disk)'}`);
+  if (s3Configured) {
+    logger.log(`[UPLOAD CONFIG]   - Bucket: ${process.env.AWS_S3_BUCKET_NAME}`);
+    logger.log(`[UPLOAD CONFIG]   - Region: ${process.env.S3_REGION || 'us-east-1'}`);
+    logger.log(`[UPLOAD CONFIG]   - Endpoint: ${process.env.AWS_S3_ENDPOINT || 'default (AWS S3)'}`);
+  } else {
+    logger.warn(`[UPLOAD CONFIG] ⚠️⚠️⚠️  WARNING: Local disk storage is EPHEMERAL on Railway!`);
+    logger.warn(`[UPLOAD CONFIG] ⚠️⚠️⚠️  Files will be DELETED on every redeploy!`);
+    logger.warn(`[UPLOAD CONFIG] ⚠️⚠️⚠️  Configure S3/R2 for production. See RAILWAY_UPLOAD_FIX.md`);
+  }
 }
 bootstrap();

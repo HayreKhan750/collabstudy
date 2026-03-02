@@ -90,6 +90,8 @@ import { HttpMetricsInterceptor } from './metrics/http-metrics.interceptor';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
+      // Exclude API routes from static file handling
+      exclude: ['/api*', '/auth*', '/workspaces*', '/channels*', '/messages*', '/upload*', '/direct*', '/health*', '/users*', '/search*', '/metrics*'],
     }),
     PrismaModule,
     AuthModule,
