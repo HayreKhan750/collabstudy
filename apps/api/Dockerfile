@@ -73,10 +73,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/
 COPY --from=builder --chown=nestjs:nodejs /app/packages/db/prisma ./packages/db/prisma
 
 # Prisma CLI (needed by docker-entrypoint.sh to run migrations)
-# In a pnpm workspace, prisma CLI lives under apps/api/node_modules (hoisted there
-# as a devDep). Copy both the binary and the package into the production stage.
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules/.bin/prisma /app/node_modules/.bin/prisma
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules/prisma ./node_modules/prisma
+# Install it directly in production stage to avoid pnpm hoisting uncertainty
+RUN npm install -g prisma --prefer-offline 2>/dev/null || npm install -g prisma
 
 # Local uploads directory (used as fallback when S3 is not configured)
 RUN mkdir -p /app/apps/api/uploads && chown nestjs:nodejs /app/apps/api/uploads
