@@ -6,7 +6,6 @@
     "buildTarget": "production"
   },
   "deploy": {
-    "startCommand": "node dist/main",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
