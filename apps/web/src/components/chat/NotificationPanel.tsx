@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { api, DigestResponse } from '@/lib/api';
 
@@ -101,10 +102,14 @@ export default function NotificationPanel({
 
   const hasUnread = !!(digest && !digest.allCaughtUp && digest.totalUnread > 0);
 
+  // Ref to the bell button — used to position the portal panel below it
+  const bellRef = useRef<HTMLButtonElement | null>(null);
+
   return (
     <div className="relative">
       {/* Bell button */}
       <button
+        ref={bellRef}
         onClick={() => setOpen((v) => !v)}
         title="Notification digest"
         className={`relative p-1.5 rounded-lg transition-colors ${
@@ -116,9 +121,10 @@ export default function NotificationPanel({
         <BellIcon hasUnread={hasUnread} />
       </button>
 
-      {/* Panel */}
+      {/* Panel — rendered via Portal into document.body so it escapes all
+          parent stacking contexts (backdrop-blur, transform, etc.) */}
       <AnimatePresence>
-        {open && (
+        {open && createPortal(
           <>
             {/* Backdrop (mobile) */}
             <motion.div
@@ -127,7 +133,7 @@ export default function NotificationPanel({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 md:hidden"
+              className="fixed inset-0 z-[199] md:hidden"
               onClick={() => setOpen(false)}
             />
 
@@ -354,7 +360,8 @@ export default function NotificationPanel({
                 </div>
               )}
             </motion.div>
-          </>
+          </>,
+          document.body
         )}
       </AnimatePresence>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface SummaryModalProps {
   isOpen: boolean;
@@ -68,7 +69,7 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
     summary.startsWith('AI summary is not configured')
   );
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
@@ -146,6 +147,7 @@ export default function SummaryModal({ isOpen, onClose, loading, summary, channe
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
