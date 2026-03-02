@@ -21,7 +21,7 @@ export class SummaryProcessor extends WorkerHost {
   }
 
   async process(job: Job<SummaryJobData>): Promise<{ summary: string }> {
-    this.logger.log(`1. Summary request received — job ${job.id} type=${job.data.type} attempt=${job.attemptsMade + 1}`);
+    this.logger.log(`[AI SUMMARY] ✨ Job ${job.id} started — type=${job.data.type} attempt=${job.attemptsMade + 1}/${job.opts?.attempts ?? 3}`);
 
     const { data } = job;
 
@@ -30,7 +30,7 @@ export class SummaryProcessor extends WorkerHost {
       let roomKey = '';
 
       if (data.type === 'channel') {
-        this.logger.log(`2. Fetching message history for channel ${data.channelId}...`);
+        this.logger.log(`[AI SUMMARY] 📥 Fetching message history for channel ${data.channelId}...`);
         // Fetch last 50 top-level messages in the channel (no soft-delete in schema)
         const messages = await this.prisma.message.findMany({
           where: { channelId: data.channelId, parentId: null },
@@ -43,8 +43,9 @@ export class SummaryProcessor extends WorkerHost {
           .map((m) => `${m.user.username}: ${m.content ?? '[attachment]'}`)
           .join('\n');
         roomKey = `channel:${data.channelId}`;
+        this.logger.log(`[AI SUMMARY] 📊 Fetched ${messages.length} messages from channel`);
       } else {
-        this.logger.log(`2. Fetching message history for conversation ${data.conversationId}...`);
+        this.logger.log(`[AI SUMMARY] 📥 Fetching message history for conversation ${data.conversationId}...`);
         // Fetch last 50 DM messages in the conversation
         const messages = await this.prisma.directMessage.findMany({
           where: { conversationId: data.conversationId },
@@ -57,9 +58,11 @@ export class SummaryProcessor extends WorkerHost {
           .map((m) => `${m.sender.username}: ${m.content ?? '[attachment]'}`)
           .join('\n');
         roomKey = `direct:${data.conversationId}`;
+        this.logger.log(`[AI SUMMARY] 📊 Fetched ${messages.length} messages from DM conversation`);
       }
 
       if (!transcript.trim()) {
+        this.logger.warn(`[AI SUMMARY] ⚠️ No messages to summarize for job ${job.id}`);
         const summary = 'No messages to summarise yet.';
         this.chatGateway.emitSummaryGenerated(roomKey, {
           jobId: job.id!,
@@ -71,10 +74,12 @@ export class SummaryProcessor extends WorkerHost {
         return { summary };
       }
 
-      this.logger.log(`3. Calling external AI API (Gemini) for job ${job.id}...`);
+      this.logger.log(`[AI SUMMARY] 🤖 Calling AI service for job ${job.id}...`);
+      this.logger.log(`[AI SUMMARY] 📝 Transcript length: ${transcript.length} characters`);
+      
       const summary = await this.aiService.summarise(transcript);
 
-      this.logger.log(`4. Summary job ${job.id} completed successfully — emitting to room ${roomKey}`);
+      this.logger.log(`[AI SUMMARY] ✅ Job ${job.id} completed successfully — emitting to room ${roomKey}`);
 
       // Emit WebSocket event so frontend updates in real-time
       this.chatGateway.emitSummaryGenerated(roomKey, {
@@ -87,7 +92,15 @@ export class SummaryProcessor extends WorkerHost {
 
       return { summary };
     } catch (err) {
-      this.logger.error(`❌ AI API ERROR — Summary job ${job.id} failed (attempt ${job.attemptsMade + 1}):`, err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorStack = err instanceof Error ? err.stack : undefined;
+      
+      this.logger.error(`[AI SUMMARY] ❌ Job ${job.id} FAILED (attempt ${job.attemptsMade + 1}/${job.opts?.attempts ?? 3})`);
+      this.logger.error(`[AI SUMMARY] 💥 Error type: ${err?.constructor?.name || typeof err}`);
+      this.logger.error(`[AI SUMMARY] 📛 Error message: ${errorMessage}`);
+      if (errorStack) {
+        this.logger.error(`[AI SUMMARY] 📚 Stack trace:\n${errorStack}`);
+      }
 
       // On final attempt (no more retries), emit an error event to the frontend
       // so it doesn't have to wait for the 15s client-side timeout.

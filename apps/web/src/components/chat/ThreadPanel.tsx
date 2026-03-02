@@ -6,6 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import { Message, MentionUser } from '@/lib/api';
 import MentionInput from './MentionInput';
 import { renderMessageContent } from '@/lib/renderMessageContent';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 import { API_URL } from '@/lib/api';
 
@@ -68,6 +69,9 @@ export default function ThreadPanel({
   const [editContent, setEditContent] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
+
+  // ─── Delete confirm modal state ───────────────────────────────────────────
+  const [deleteConfirm, setDeleteConfirm] = useState<{ replyId: string } | null>(null);
 
   // ─── Fetch existing replies ──────────────────────────────────────────────
 
@@ -305,7 +309,13 @@ export default function ThreadPanel({
 
   const handleDeleteReply = async (replyId: string) => {
     if (!token) return;
-    if (!window.confirm('Delete this reply? This cannot be undone.')) return;
+    setDeleteConfirm({ replyId });
+  };
+
+  const confirmDeleteReply = async () => {
+    if (!token || !deleteConfirm) return;
+    const { replyId } = deleteConfirm;
+    setDeleteConfirm(null);
     
     // Optimistic delete
     setReplies((prev) => prev.filter((r) => r.id !== replyId));
@@ -526,6 +536,18 @@ export default function ThreadPanel({
           />
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Delete Reply"
+        message="Are you sure you want to delete this reply? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger={true}
+        onConfirm={confirmDeleteReply}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

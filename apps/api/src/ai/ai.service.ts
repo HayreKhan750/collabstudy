@@ -152,10 +152,15 @@ export class AiService {
    * job as failed and retries with exponential back-off.
    */
   async summarise(transcript: string): Promise<string> {
-    if (!process.env.AI_SERVICE_URL) {
-      this.logger.warn('AI_SERVICE_URL is not set — returning placeholder summary');
+    const aiServiceUrl = process.env.AI_SERVICE_URL;
+    
+    if (!aiServiceUrl) {
+      this.logger.error('[AI SERVICE] ❌ AI_SERVICE_URL environment variable is NOT SET!');
+      this.logger.error('[AI SERVICE] 📋 Please configure AI_SERVICE_URL in your .env file (e.g., http://localhost:8000)');
       return 'AI summary is not configured. Please set the AI_SERVICE_URL environment variable.';
     }
+
+    this.logger.log(`[AI SERVICE] 🔗 Connecting to AI microservice at: ${aiServiceUrl}`);
 
     const prompt = `Summarise the following chat transcript with this structure:
 **Overview:** 1-2 sentences on the main topic.
@@ -166,11 +171,38 @@ export class AiService {
 Transcript:
 ${transcript}`;
 
+    this.logger.log(`[AI SERVICE] 📤 Sending request to POST ${aiServiceUrl}/summarise`);
+    this.logger.log(`[AI SERVICE] 📊 Payload size: ${JSON.stringify({ text: prompt }).length} bytes`);
+
     try {
+      const startTime = Date.now();
       const result = await this.post<{ summary: string }>('/summarise', { text: prompt });
+      const duration = Date.now() - startTime;
+      
+      this.logger.log(`[AI SERVICE] ✅ Summary received successfully in ${duration}ms`);
+      this.logger.log(`[AI SERVICE] 📝 Summary length: ${result.summary.length} characters`);
+      
       return result.summary;
     } catch (err) {
-      this.logger.error('AI microservice /summarise call failed:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      
+      this.logger.error(`[AI SERVICE] ❌ /summarise call FAILED!`);
+      this.logger.error(`[AI SERVICE] 🔍 Error details: ${errorMessage}`);
+      
+      // Check for common connection issues
+      if (errorMessage.includes('ECONNREFUSED')) {
+        this.logger.error(`[AI SERVICE] 🚫 CONNECTION REFUSED! The Python AI service is not running at ${aiServiceUrl}`);
+        this.logger.error(`[AI SERVICE] 💡 Solution: Start the Python service with 'cd apps/ai && python -m uvicorn main:app --reload'`);
+      } else if (errorMessage.includes('timed out')) {
+        this.logger.error(`[AI SERVICE] ⏱️ REQUEST TIMED OUT after ${AI_SERVICE_TIMEOUT_MS}ms`);
+        this.logger.error(`[AI SERVICE] 💡 The AI provider (Gemini) may be slow or unresponsive. Check API_KEY and quota.`);
+      } else if (errorMessage.includes('AI service responded')) {
+        this.logger.error(`[AI SERVICE] 📛 The AI service returned an error response`);
+        this.logger.error(`[AI SERVICE] 💡 Check Python service logs for details`);
+      }
+      
+      this.logger.error(`[AI SERVICE] 📚 Full error:`, err);
+      
       throw new InternalServerErrorException(
         'AI summary generation failed. The job will be retried automatically.',
       );
