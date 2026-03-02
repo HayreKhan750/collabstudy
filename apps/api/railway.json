@@ -5,7 +5,6 @@
     "dockerfilePath": "apps/api/Dockerfile"
   },
   "deploy": {
-    "preDeployCommand": "psql \"$DATABASE_URL\" -c \"DELETE FROM _prisma_migrations WHERE migration_name = '20260221000000_add_pg_trgm_and_gin_index' AND finished_at IS NULL;\" 2>/dev/null || true && node /app/packages/db/node_modules/prisma/build/index.js migrate deploy --schema=/app/packages/db/prisma/schema.prisma",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
