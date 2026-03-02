@@ -43,14 +43,23 @@ export class UploadController {
       if (!file.buffer) {
         throw new BadRequestException('File buffer is missing — ensure S3 credentials are configured correctly');
       }
-      fileUrl = await this.uploadService.uploadFile(
+      
+      // Upload to R2 and get the storage key (e.g., "uploads/abc-123.png")
+      const storageKey = await this.uploadService.uploadFile(
         file.buffer,
         file.originalname,
         file.mimetype,
       );
+      this.logger.log(`[UPLOAD] S3 upload successful. Storage key: ${storageKey}`);
+      
+      // Convert the storage key to a public URL
+      // If R2_PUBLIC_URL is set: returns permanent public URL (https://pub-xxx.r2.dev/uploads/abc.png)
+      // If not set: returns presigned URL (expires in 1 hour)
+      fileUrl = await this.uploadService.getPresignedUrl(storageKey);
+      this.logger.log(`[UPLOAD] Generated public URL: ${fileUrl}`);
+      
       // Use the last path segment as the "filename" for convenience
-      filename = fileUrl.split('/').pop() ?? file.originalname;
-      this.logger.log(`[UPLOAD] S3 upload successful. Key: ${fileUrl}`);
+      filename = storageKey.split('/').pop() ?? file.originalname;
     } else {
       // ── Local disk fallback (development / no S3 configured) ──────────────
       this.logger.warn('[UPLOAD] S3 NOT configured — using local disk storage (NOT RECOMMENDED FOR PRODUCTION)');
