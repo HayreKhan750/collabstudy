@@ -33,7 +33,7 @@ if [ -z "$PRISMA_BIN" ]; then
   exit 1
 fi
 
-node "$PRISMA_BIN" migrate deploy --schema=/app/packages/db/prisma/schema.prisma
+"$PRISMA_BIN" migrate deploy --schema=/app/packages/db/prisma/schema.prisma
 
 echo "✅ Migrations complete. Starting CollabStudy API..."
 
