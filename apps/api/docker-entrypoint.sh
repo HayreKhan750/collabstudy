@@ -40,6 +40,7 @@ SCHEMA="--schema=/app/packages/db/prisma/schema.prisma"
 # To add more migrations to this list in future, append their names below.
 # ---------------------------------------------------------------------------
 FAILED_MIGRATIONS="
+  20260220000000_init
   20260221000000_add_pg_trgm_and_gin_index
 "
 
