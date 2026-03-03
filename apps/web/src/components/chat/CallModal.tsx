@@ -111,7 +111,17 @@ export default function CallModal({
       const peer = new RTCPeerConnection(ICE_SERVERS);
       peerRef.current = peer;
 
-      stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+      // CRITICAL: Add explicit transceivers for two-way communication FIRST
+      console.log('[WebRTC] Adding sendrecv transceivers for two-way media');
+      peer.addTransceiver('video', { direction: 'sendrecv' });
+      peer.addTransceiver('audio', { direction: 'sendrecv' });
+
+      // Add local tracks to the peer connection
+      console.log('[WebRTC] Adding', stream.getTracks().length, 'local tracks to peer connection');
+      stream.getTracks().forEach((track) => {
+        console.log('[WebRTC] Adding track:', track.kind, 'enabled:', track.enabled);
+        peer.addTrack(track, stream);
+      });
 
       peer.onicecandidate = (e) => {
         if (e.candidate && socket && remoteUserIdRef.current) {
@@ -191,18 +201,31 @@ export default function CallModal({
     onIncomingCallHandled();
 
     try {
+      console.log('[WebRTC] RECEIVER: Starting accept call sequence');
+      
+      // Step 1: Get local media first
+      console.log('[WebRTC] RECEIVER: Step 1 - Getting local media');
       const stream = await getMedia();
+      
+      // Step 2: Create peer connection and add tracks
+      console.log('[WebRTC] RECEIVER: Step 2 - Creating peer connection with transceivers');
       const peer = createPeer(stream);
-
+      
+      // Step 3: Set remote description (the caller's offer)
+      console.log('[WebRTC] RECEIVER: Step 3 - Setting remote description (caller offer)');
       await peer.setRemoteDescription(new RTCSessionDescription(incomingCall.sdp));
 
-      // Flush any ICE candidates that arrived before remote description was set
+      // Step 4: Flush any ICE candidates that arrived before remote description was set
+      console.log('[WebRTC] RECEIVER: Step 4 - Flushing', pendingIceCandidatesRef.current.length, 'pending ICE candidates');
       for (const c of pendingIceCandidatesRef.current) {
         await peer.addIceCandidate(new RTCIceCandidate(c));
       }
       pendingIceCandidatesRef.current = [];
 
+      // Step 5: Create answer AFTER tracks are added and remote description is set
+      console.log('[WebRTC] RECEIVER: Step 5 - Creating answer (tracks already added)');
       const answer = await peer.createAnswer();
+      console.log('[WebRTC] RECEIVER: Step 6 - Setting local description (answer)');
       await peer.setLocalDescription(answer);
 
       socket.emit('call_answer', {
