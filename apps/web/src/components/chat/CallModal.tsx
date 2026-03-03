@@ -95,6 +95,7 @@ export default function CallModal({
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [remoteName, setRemoteName] = useState('');
   const [callDuration, setCallDuration] = useState(0);
 
@@ -506,6 +507,15 @@ export default function CallModal({
     }
   }, [outgoingCall]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Detect multiple cameras (for showing flip button only on mobile) ──────
+
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+      setHasMultipleCameras(videoInputs.length >= 2);
+    }).catch(() => {});
+  }, []);
+
   // ── Toggle mic / camera ───────────────────────────────────────────────────
 
   const toggleMute = () => {
@@ -524,69 +534,50 @@ export default function CallModal({
 
   const switchCamera = useCallback(async () => {
     const nextFacing = facingMode === 'user' ? 'environment' : 'user';
-    try {
-      // Get new stream with the opposite camera at full quality
+
+    const applyNewCamera = async (constraints: MediaTrackConstraints) => {
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { ...VIDEO_CONSTRAINTS, facingMode: { exact: nextFacing } },
+        video: constraints,
         audio: false,
       });
       const newVideoTrack = newStream.getVideoTracks()[0];
       if (!newVideoTrack) return;
 
-      // Replace the track in the peer connection (no renegotiation needed)
+      // Replace track on peer connection without renegotiation
       if (peerRef.current) {
-        const sender = peerRef.current
-          .getSenders()
-          .find((s) => s.track?.kind === 'video');
+        const sender = peerRef.current.getSenders().find((s) => s.track?.kind === 'video');
         if (sender) await sender.replaceTrack(newVideoTrack);
       }
 
-      // Stop the old video track and update localStream
+      // Stop old video track, swap in new one
       localStreamRef.current?.getVideoTracks().forEach((t) => t.stop());
-      // Swap the video track in localStreamRef so toggleCamera still works
       if (localStreamRef.current) {
-        localStreamRef.current.getVideoTracks().forEach((t) =>
-          localStreamRef.current!.removeTrack(t)
-        );
+        localStreamRef.current.getVideoTracks().forEach((t) => localStreamRef.current!.removeTrack(t));
         localStreamRef.current.addTrack(newVideoTrack);
       }
 
       // Update local preview
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = localStreamRef.current;
-      }
-
+      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
       setFacingMode(nextFacing);
+    };
+
+    try {
+      // Try ideal facingMode first (works on most mobile browsers)
+      await applyNewCamera({ ...VIDEO_CONSTRAINTS, facingMode: nextFacing });
     } catch (err) {
-      console.error('[WebRTC] Failed to switch camera:', err);
-      // Fallback: some devices don't support { exact: facingMode }
-      // Try without exact constraint
+      console.warn('[WebRTC] facingMode switch failed, trying deviceId approach:', err);
       try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: nextFacing },
-          audio: false,
-        });
-        const newVideoTrack = fallbackStream.getVideoTracks()[0];
-        if (!newVideoTrack) return;
-        if (peerRef.current) {
-          const sender = peerRef.current
-            .getSenders()
-            .find((s) => s.track?.kind === 'video');
-          if (sender) await sender.replaceTrack(newVideoTrack);
+        // Fallback: enumerate devices and pick by label/index
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+        // Find a camera that is NOT the current one
+        const currentTrackLabel = localStreamRef.current?.getVideoTracks()[0]?.label ?? '';
+        const next = videoInputs.find((d) => d.label !== currentTrackLabel) ?? videoInputs[0];
+        if (next?.deviceId) {
+          await applyNewCamera({ deviceId: { exact: next.deviceId } });
         }
-        localStreamRef.current?.getVideoTracks().forEach((t) => t.stop());
-        if (localStreamRef.current) {
-          localStreamRef.current.getVideoTracks().forEach((t) =>
-            localStreamRef.current!.removeTrack(t)
-          );
-          localStreamRef.current.addTrack(newVideoTrack);
-        }
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStreamRef.current;
-        }
-        setFacingMode(nextFacing);
       } catch (fallbackErr) {
-        console.error('[WebRTC] Camera switch fallback also failed:', fallbackErr);
+        console.error('[WebRTC] Camera switch completely failed:', fallbackErr);
       }
     }
   }, [facingMode]);
@@ -814,16 +805,18 @@ export default function CallModal({
                 </svg>
               )}
             </button>
-            {/* Flip camera button (mobile) */}
-            <button
-              onClick={switchCamera}
-              title={facingMode === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
-              className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all duration-150 active:scale-90"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
+            {/* Flip camera button — only shown on devices with 2+ cameras (smartphones) */}
+            {hasMultipleCameras && (
+              <button
+                onClick={switchCamera}
+                title={facingMode === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
+                className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all duration-150 active:scale-90"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
             {/* End call button */}
             <button
               onClick={() => endCall(true)}
