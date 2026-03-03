@@ -31,6 +31,7 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editContent, setEditContent] = useState('');
   const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -255,6 +256,26 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
     }
   };
 
+  const copyToClipboard = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch {
+      // Fallback for browsers that don't support clipboard API
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    }
+  };
+
   const clearHistory = () => {
     setMessages([]);
     localStorage.removeItem(STORAGE_KEY);
@@ -409,8 +430,25 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
                     <motion.div
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-1 mr-2"
+                      className="flex items-center gap-1 mr-2 self-center"
                     >
+                      {/* Copy button */}
+                      <button
+                        onClick={() => copyToClipboard(msg.content, idx)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                        title={copiedIndex === idx ? 'Copied!' : 'Copy message'}
+                      >
+                        {copiedIndex === idx ? (
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                      {/* Edit button */}
                       <button
                         onClick={() => handleEditMessage(idx)}
                         className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
@@ -420,6 +458,7 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
                           <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
+                      {/* Delete button */}
                       <button
                         onClick={() => handleDeleteMessage(idx)}
                         className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 transition-all"
@@ -468,43 +507,73 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
                       </div>
                     </div>
                   ) : (
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-5 py-3.5 ${
-                        isUserMessage
-                          ? 'bg-gradient-to-br from-purple-600/90 to-blue-600/90 text-white shadow-lg shadow-purple-500/20'
-                          : 'bg-white/10 backdrop-blur-xl border border-white/10 text-white shadow-lg'
-                      }`}
-                    >
-                    {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm prose-invert max-w-none">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            code({ inline, className, children, ...props }: any) {
-                              return !inline ? (
-                                <pre className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl p-4 overflow-x-auto my-3 shadow-inner">
-                                  <code className={className} {...props}>
-                                    {children}
-                                  </code>
-                                </pre>
-                              ) : (
-                                <code className="bg-white/10 px-2 py-0.5 rounded-lg text-sm border border-white/10" {...props}>
-                                  {children}
-                                </code>
-                              );
-                            },
-                            p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                            ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
-                            ol: ({ children }) => <ol className="space-y-1 my-2">{children}</ol>,
-                            li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
+                    <div className={`max-w-[85%] flex flex-col gap-1 ${isUserMessage ? 'items-end' : 'items-start'}`}>
+                      <div
+                        className={`w-full rounded-2xl px-5 py-3.5 ${
+                          isUserMessage
+                            ? 'bg-gradient-to-br from-purple-600/90 to-blue-600/90 text-white shadow-lg shadow-purple-500/20'
+                            : 'bg-white/10 backdrop-blur-xl border border-white/10 text-white shadow-lg'
+                        }`}
+                      >
+                        {msg.role === 'assistant' ? (
+                          <div className="prose prose-sm prose-invert max-w-none">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                code({ inline, className, children, ...props }: any) {
+                                  return !inline ? (
+                                    <pre className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl p-4 overflow-x-auto my-3 shadow-inner">
+                                      <code className={className} {...props}>
+                                        {children}
+                                      </code>
+                                    </pre>
+                                  ) : (
+                                    <code className="bg-white/10 px-2 py-0.5 rounded-lg text-sm border border-white/10" {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                },
+                                p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
+                                ol: ({ children }) => <ol className="space-y-1 my-2">{children}</ol>,
+                                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    )}
+                      {/* Copy button — appears below bubble on hover for AI, inline for user */}
+                      {!isUserMessage && hoveredMessageIndex === idx && (
+                        <motion.button
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.15 }}
+                          onClick={() => copyToClipboard(msg.content, idx)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md transition-all text-white/60 hover:text-white/90"
+                          title={copiedIndex === idx ? 'Copied!' : 'Copy response'}
+                        >
+                          {copiedIndex === idx ? (
+                            <>
+                              <svg className="w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span className="text-[11px] text-green-400 font-medium">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-[11px] font-medium">Copy</span>
+                            </>
+                          )}
+                        </motion.button>
+                      )}
                     </div>
                   )}
                 </motion.div>
