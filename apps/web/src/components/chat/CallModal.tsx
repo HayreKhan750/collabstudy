@@ -80,12 +80,28 @@ export default function CallModal({
   // ── Get user media ─────────────────────────────────────────────────────────
 
   const getMedia = useCallback(async (): Promise<MediaStream> => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    localStreamRef.current = stream;
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
+    try {
+      console.log('[WebRTC] Requesting camera/mic permissions...');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log('[WebRTC] Got local media stream with', stream.getTracks().length, 'tracks');
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+      return stream;
+    } catch (error) {
+      console.error('[WebRTC] Failed to get user media:', error);
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+          console.error('[WebRTC] Camera/microphone permission DENIED by user');
+          alert('Camera and microphone access is required for video calls. Please enable permissions in your browser settings.');
+        } else if (error.name === 'NotFoundError') {
+          console.error('[WebRTC] No camera/microphone found on device');
+          alert('No camera or microphone found. Please connect a device and try again.');
+        }
+      }
+      throw error;
     }
-    return stream;
   }, []);
 
   // ── Create RTCPeerConnection ───────────────────────────────────────────────
@@ -107,7 +123,9 @@ export default function CallModal({
       };
 
       peer.ontrack = (e) => {
-        if (remoteVideoRef.current && e.streams[0]) {
+        console.log('[WebRTC] Received remote track:', e.track.kind);
+        if (remoteVideoRef.current && e.streams && e.streams[0]) {
+          console.log('[WebRTC] Assigning remote stream to video element');
           remoteVideoRef.current.srcObject = e.streams[0];
         }
       };
