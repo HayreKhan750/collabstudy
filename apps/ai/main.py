@@ -10,10 +10,10 @@ app = FastAPI(
     description="Gemini-powered summarisation and embedding endpoints",
 )
 
-# Allow the NestJS API (and local dev) to call this service
+# Allow the NestJS API, web app, and local dev to call this service
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:4000",
+    "http://localhost:3000,http://localhost:4000,https://collabstudyweb-production.up.railway.app",
 ).split(",")
 
 app.add_middleware(

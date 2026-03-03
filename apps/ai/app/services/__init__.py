@@ -73,6 +73,77 @@ class GeminiService:
         )
         return result["embedding"]
 
+    async def chat_stream(self, message: str, history: list[dict]):
+        """
+        Interactive chat with streaming response.
+        
+        Args:
+            message: The user's current message
+            history: List of previous messages with 'role' and 'content' keys
+        
+        Yields:
+            Chunks of the AI response as they arrive
+        """
+        # System prompt that defines the AI tutor's persona
+        system_instruction = """You are the Collabstudy AI Tutor. You are an encouraging, highly knowledgeable, and concise study assistant. 
+
+Your role is to:
+- Help students understand complex topics with clear, easy-to-understand explanations
+- Break down difficult problems into manageable steps
+- Provide coding or academic guidance across various subjects
+- Offer encouragement and positive reinforcement
+- Keep responses concise but comprehensive
+- Use Markdown formatting for better readability (code blocks, lists, headers, etc.)
+
+Guidelines:
+- Be friendly and supportive in your tone
+- Use examples and analogies when helpful
+- If a topic is complex, break it into smaller concepts
+- For code-related questions, provide working examples with explanations
+- If you don't know something, admit it honestly and suggest resources
+- Encourage critical thinking by asking guiding questions when appropriate
+
+Format your responses with clear Markdown:
+- Use **bold** for important terms
+- Use `code` for inline code
+- Use ```language for code blocks
+- Use bullet points or numbered lists for clarity
+- Use headers (##) to organize longer responses"""
+
+        # Create a chat session with system instruction
+        loop = asyncio.get_event_loop()
+        
+        # Build conversation history in Gemini's format
+        conversation = []
+        for msg in history:
+            conversation.append({
+                "role": "user" if msg["role"] == "user" else "model",
+                "parts": [msg["content"]]
+            })
+        
+        # Create model with system instruction
+        chat_model = genai.GenerativeModel(
+            self.CHAT_MODEL,
+            system_instruction=system_instruction
+        )
+        
+        try:
+            # Generate streaming response
+            chat_session = chat_model.start_chat(history=conversation)
+            response = await loop.run_in_executor(
+                None, partial(chat_session.send_message, message, stream=True)
+            )
+            
+            # Stream chunks as they arrive
+            for chunk in response:
+                if hasattr(chunk, 'text') and chunk.text:
+                    yield chunk.text
+                    
+        except asyncio.TimeoutError:
+            raise RuntimeError("Gemini API call timed out after 35 seconds")
+        except Exception as e:
+            raise RuntimeError(f"Gemini streaming error: {str(e)}")
+
     async def chat(self, message: str, history: list[dict]) -> str:
         """
         Interactive chat with the Collabstudy AI Study Tutor.

@@ -46,6 +46,7 @@
   },
   "packageManager": "pnpm@8.15.1",
   "dependencies": {
+    "framer-motion": "^12.34.3",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"
   }

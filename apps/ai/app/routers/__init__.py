@@ -7,7 +7,9 @@ Exposes AI capabilities as REST endpoints:
 """
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+import json
 
 from app.services import gemini_service
 
@@ -78,10 +80,10 @@ async def embed(body: EmbedRequest):
         raise HTTPException(status_code=500, detail=f"Gemini error: {str(e)}")
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/chat")
 async def chat(body: ChatRequest):
     """
-    Interactive AI Study Assistant chat endpoint.
+    Interactive AI Study Assistant chat endpoint with SSE streaming.
     
     Provides a conversational AI tutor powered by Gemini that helps with:
     - Study assistance and academic guidance
@@ -90,11 +92,26 @@ async def chat(body: ChatRequest):
     - Encouragement and study tips
     
     Maintains conversation context through chat history.
+    Streams the response in real-time using Server-Sent Events.
     """
-    try:
-        response = await gemini_service.chat(body.message, body.history)
-        return ChatResponse(response=response, message=response)
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini error: {str(e)}")
+    async def generate_stream():
+        try:
+            async for chunk in gemini_service.chat_stream(body.message, body.history):
+                # Send each chunk as SSE format
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            # Send done signal
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except RuntimeError as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': f'Gemini error: {str(e)}'})}\n\n"
+    
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        }
+    )

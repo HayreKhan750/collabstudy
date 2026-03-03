@@ -17,7 +17,7 @@ import { io, Socket } from 'socket.io-client';
 import CallModal, { IncomingCallPayload } from '@/components/chat/CallModal';
 import { SearchModal } from '@/components/chat/SearchModal';
 import SettingsPanel from '@/components/settings/SettingsPanel';
-import AIAssistantPanel from '@/components/chat/AIAssistantPanel';
+import AIAssistantPanelPremium from '@/components/chat/AIAssistantPanelPremium';
 import { logger } from '@/lib/logger';
 
 import { API_URL } from '@/lib/api';
@@ -813,20 +813,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── AI Study Assistant ────────────────────────────────────────────── */}
-      <AIAssistantPanel isOpen={aiAssistantOpen} onClose={() => setAiAssistantOpen(false)} />
-
-      {/* Floating AI Assistant Button */}
-      {!aiAssistantOpen && (
-        <button
-          onClick={() => setAiAssistantOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-30 group"
-          aria-label="Open AI Study Tutor"
-        >
-          <span className="text-2xl group-hover:scale-110 transition-transform duration-300">✨</span>
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-        </button>
-      )}
+      {/* ── AI Study Assistant (Premium with Draggable Button) ──────────── */}
+      <AIAssistantPanelPremium 
+        isOpen={aiAssistantOpen} 
+        onClose={() => setAiAssistantOpen(aiAssistantOpen ? false : true)} 
+      />
     </div>
   );
 }
