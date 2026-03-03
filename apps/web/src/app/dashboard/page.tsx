@@ -226,7 +226,13 @@ export default function DashboardPage() {
       });
     });
 
-    socket.on('call_offer', (payload: IncomingCallPayload) => { setIncomingCall(payload); });
+    socket.on('call_offer', (payload: IncomingCallPayload) => {
+      // If we were in the middle of placing an outgoing call and the other
+      // party also called us simultaneously, prefer the incoming call and
+      // cancel our outgoing attempt (call collision).
+      setOutgoingCall(null);
+      setIncomingCall(payload);
+    });
 
     socket.on('channel_unread_notification', (payload: { channelId: string; senderId: string; messageId: string }) => {
       if (payload.messageId && processedMessageIds.current.has(payload.messageId)) return;
