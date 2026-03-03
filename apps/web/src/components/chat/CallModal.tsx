@@ -61,6 +61,7 @@ export default function CallModal({
   const roomIdRef = useRef<string>('');
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const acceptingRef = useRef<boolean>(false);
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ export default function CallModal({
     setIsMuted(false);
     setIsCameraOff(false);
     pendingIceCandidatesRef.current = [];
+    acceptingRef.current = false;
   }, []);
 
   // ── Get user media ─────────────────────────────────────────────────────────
@@ -105,25 +107,36 @@ export default function CallModal({
   }, []);
 
   // ── Create RTCPeerConnection ───────────────────────────────────────────────
+  // role = 'caller'  → use addTransceiver (defines the offer structure)
+  // role = 'receiver' → use addTrack (slots into transceivers from the remote offer)
 
   const createPeer = useCallback(
-    (stream: MediaStream): RTCPeerConnection => {
+    (stream: MediaStream, role: 'caller' | 'receiver'): RTCPeerConnection => {
       const peer = new RTCPeerConnection(ICE_SERVERS);
       peerRef.current = peer;
 
-      // CRITICAL: Add explicit transceivers with tracks for two-way communication
-      console.log('[WebRTC] Adding sendrecv transceivers for two-way media');
-      const videoTrack = stream.getVideoTracks()[0];
-      const audioTrack = stream.getAudioTracks()[0];
-      
-      if (videoTrack) {
-        console.log('[WebRTC] Adding video transceiver with track, sendrecv');
-        peer.addTransceiver(videoTrack, { direction: 'sendrecv', streams: [stream] });
-      }
-      
-      if (audioTrack) {
-        console.log('[WebRTC] Adding audio transceiver with track, sendrecv');
-        peer.addTransceiver(audioTrack, { direction: 'sendrecv', streams: [stream] });
+      if (role === 'caller') {
+        // Caller defines the transceiver structure that becomes the offer.
+        console.log('[WebRTC] CALLER: Adding sendrecv transceivers for two-way media');
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+        if (videoTrack) {
+          console.log('[WebRTC] Adding video transceiver with track, sendrecv');
+          peer.addTransceiver(videoTrack, { direction: 'sendrecv', streams: [stream] });
+        }
+        if (audioTrack) {
+          console.log('[WebRTC] Adding audio transceiver with track, sendrecv');
+          peer.addTransceiver(audioTrack, { direction: 'sendrecv', streams: [stream] });
+        }
+      } else {
+        // Receiver must use addTrack so tracks slot into the transceivers
+        // already described in the caller's offer (after setRemoteDescription).
+        // addTransceiver here would create extra transceivers and break SDP matching.
+        console.log('[WebRTC] RECEIVER: Adding local tracks via addTrack (slots into offer transceivers)');
+        stream.getTracks().forEach((track) => {
+          console.log('[WebRTC] addTrack:', track.kind);
+          peer.addTrack(track, stream);
+        });
       }
 
       peer.onicecandidate = (e) => {
@@ -171,7 +184,7 @@ export default function CallModal({
 
       try {
         const stream = await getMedia();
-        const peer = createPeer(stream);
+        const peer = createPeer(stream, 'caller');
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
 
@@ -196,6 +209,8 @@ export default function CallModal({
 
   const acceptCall = useCallback(async () => {
     if (!incomingCall || !socket) return;
+    if (acceptingRef.current) return; // prevent double-invocation
+    acceptingRef.current = true;
     remoteUserIdRef.current = incomingCall.callerId;
     roomIdRef.current = incomingCall.roomId;
     setRemoteName(incomingCall.callerName);
@@ -210,13 +225,50 @@ export default function CallModal({
       console.log('[WebRTC] RECEIVER: Step 1 - Getting local media');
       const stream = await getMedia();
       
-      // Step 2: Create peer connection and add tracks
-      console.log('[WebRTC] RECEIVER: Step 2 - Creating peer connection with transceivers');
-      const peer = createPeer(stream);
-      
-      // Step 3: Set remote description (the caller's offer)
+      // Step 2: Create peer connection (no tracks yet — must add AFTER setRemoteDescription)
+      console.log('[WebRTC] RECEIVER: Step 2 - Creating peer connection');
+      const peer = new RTCPeerConnection(ICE_SERVERS);
+      peerRef.current = peer;
+
+      peer.onicecandidate = (e) => {
+        if (e.candidate && socket && remoteUserIdRef.current) {
+          socket.emit('ice_candidate', {
+            targetUserId: remoteUserIdRef.current,
+            candidate: e.candidate.toJSON(),
+          });
+        }
+      };
+
+      peer.ontrack = (e) => {
+        console.log('[WebRTC] Received remote track:', e.track.kind);
+        if (remoteVideoRef.current && e.streams && e.streams[0]) {
+          console.log('[WebRTC] Assigning remote stream to video element');
+          remoteVideoRef.current.srcObject = e.streams[0];
+        }
+      };
+
+      peer.onconnectionstatechange = () => {
+        if (peer.connectionState === 'connected') {
+          setCallState('active');
+          onStopRingtone?.();
+          durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
+        }
+        if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
+          endCall(false);
+        }
+      };
+
+      // Step 3: Set remote description (the caller's offer) FIRST
       console.log('[WebRTC] RECEIVER: Step 3 - Setting remote description (caller offer)');
       await peer.setRemoteDescription(new RTCSessionDescription(incomingCall.sdp));
+
+      // Step 3b: NOW add local tracks via addTrack so they slot into the
+      // transceivers created by the caller's offer (not new ones).
+      console.log('[WebRTC] RECEIVER: Step 3b - Adding local tracks into offer transceivers');
+      stream.getTracks().forEach((track) => {
+        console.log('[WebRTC] RECEIVER: addTrack', track.kind);
+        peer.addTrack(track, stream);
+      });
 
       // Step 4: Flush any ICE candidates that arrived before remote description was set
       console.log('[WebRTC] RECEIVER: Step 4 - Flushing', pendingIceCandidatesRef.current.length, 'pending ICE candidates');
