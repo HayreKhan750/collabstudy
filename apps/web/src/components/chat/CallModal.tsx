@@ -45,12 +45,11 @@ const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1, // mono for voice — cleaner than stereo for calls
 };
 
-// High-quality video constraints
+// High-quality video constraints (no facingMode here — passed per call)
 const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   width: { ideal: 1280, max: 1920 },
   height: { ideal: 720, max: 1080 },
   frameRate: { ideal: 30, max: 60 },
-  facingMode: 'user',
 };
 
 export type CallState = 'idle' | 'calling' | 'incoming' | 'active' | 'ended';
@@ -137,24 +136,19 @@ export default function CallModal({
 
   const getMedia = useCallback(async (videoConstraints: MediaTrackConstraints = VIDEO_CONSTRAINTS): Promise<MediaStream> => {
     try {
-      console.log('[WebRTC] Requesting camera/mic permissions...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: videoConstraints,
         audio: AUDIO_CONSTRAINTS,
       });
-      console.log('[WebRTC] Got local media stream with', stream.getTracks().length, 'tracks');
-      // Log actual acquired constraints for debugging
-      const videoTrack = stream.getVideoTracks()[0];
-      const audioTrack = stream.getAudioTracks()[0];
-      if (videoTrack) console.log('[WebRTC] Video settings:', videoTrack.getSettings());
-      if (audioTrack) console.log('[WebRTC] Audio settings:', audioTrack.getSettings());
       localStreamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      // Enumerate cameras AFTER getUserMedia — labels are only available post-permission
+      navigator.mediaDevices.enumerateDevices().then((devices) => {
+        const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+        setHasMultipleCameras(videoInputs.length >= 2);
+      }).catch(() => {});
       return stream;
     } catch (error) {
-      console.error('[WebRTC] Failed to get user media:', error);
       if (error instanceof DOMException) {
         if (error.name === 'NotAllowedError') {
           alert('Camera and microphone access is required for video calls. Please enable permissions in your browser settings.');
@@ -162,7 +156,6 @@ export default function CallModal({
           alert('No camera or microphone found. Please connect a device and try again.');
         } else if (error.name === 'OverconstrainedError') {
           // Device can't meet ideal constraints — fall back to basic
-          console.warn('[WebRTC] Constraints too strict, falling back to basic quality');
           const fallback = await navigator.mediaDevices.getUserMedia({ video: true, audio: AUDIO_CONSTRAINTS });
           localStreamRef.current = fallback;
           if (localVideoRef.current) localVideoRef.current.srcObject = fallback;
@@ -184,11 +177,9 @@ export default function CallModal({
 
       if (role === 'caller') {
         // Caller defines the transceiver structure that becomes the offer.
-        console.log('[WebRTC] CALLER: Adding sendrecv transceivers for two-way media');
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
         if (videoTrack) {
-          console.log('[WebRTC] Adding video transceiver with track, sendrecv');
           const videoTransceiver = peer.addTransceiver(videoTrack, { direction: 'sendrecv', streams: [stream] });
           // Prefer VP9 (best quality/compression), fallback to H264, then VP8
           const videoCapabilities = RTCRtpSender.getCapabilities('video');
@@ -210,7 +201,6 @@ export default function CallModal({
           videoSender.setParameters(videoParams).catch(() => {});
         }
         if (audioTrack) {
-          console.log('[WebRTC] Adding audio transceiver with track, sendrecv');
           const audioTransceiver = peer.addTransceiver(audioTrack, { direction: 'sendrecv', streams: [stream] });
           // Prefer Opus — best audio codec for WebRTC (low latency, noise robust)
           const audioCapabilities = RTCRtpSender.getCapabilities('audio');
@@ -232,9 +222,7 @@ export default function CallModal({
         // Receiver must use addTrack so tracks slot into the transceivers
         // already described in the caller's offer (after setRemoteDescription).
         // addTransceiver here would create extra transceivers and break SDP matching.
-        console.log('[WebRTC] RECEIVER: Adding local tracks via addTrack (slots into offer transceivers)');
         stream.getTracks().forEach((track) => {
-          console.log('[WebRTC] addTrack:', track.kind);
           peer.addTrack(track, stream);
         });
       }
@@ -249,7 +237,6 @@ export default function CallModal({
       };
 
       peer.ontrack = (e) => {
-        console.log('[WebRTC] Received remote track:', e.track.kind);
         if (e.streams && e.streams[0]) {
           remoteStreamRef.current = e.streams[0];
           if (remoteVideoRef.current) {
@@ -259,7 +246,6 @@ export default function CallModal({
       };
 
       peer.onconnectionstatechange = () => {
-        console.log('[WebRTC] Connection state:', peer.connectionState);
         if (peer.connectionState === 'connected') {
           callActiveRef.current = true;
           setCallState('active');
@@ -319,7 +305,6 @@ export default function CallModal({
           callerName: username,
         });
       } catch (err) {
-        console.error('[Call] Failed to start call:', err);
         cleanup();
         setCallState('idle');
       }
@@ -342,14 +327,11 @@ export default function CallModal({
     onOutgoingCallHandled?.(); // cancel any simultaneous outgoing call (collision)
 
     try {
-      console.log('[WebRTC] RECEIVER: Starting accept call sequence');
       
       // Step 1: Get local media first
-      console.log('[WebRTC] RECEIVER: Step 1 - Getting local media');
       const stream = await getMedia();
       
       // Step 2: Create peer connection (no tracks yet — must add AFTER setRemoteDescription)
-      console.log('[WebRTC] RECEIVER: Step 2 - Creating peer connection');
       const peer = new RTCPeerConnection(ICE_SERVERS);
       peerRef.current = peer;
 
@@ -363,7 +345,6 @@ export default function CallModal({
       };
 
       peer.ontrack = (e) => {
-        console.log('[WebRTC] Received remote track:', e.track.kind);
         if (e.streams && e.streams[0]) {
           remoteStreamRef.current = e.streams[0];
           if (remoteVideoRef.current) {
@@ -373,7 +354,6 @@ export default function CallModal({
       };
 
       peer.onconnectionstatechange = () => {
-        console.log('[WebRTC] Connection state:', peer.connectionState);
         if (peer.connectionState === 'connected') {
           callActiveRef.current = true;
           setCallState('active');
@@ -400,28 +380,22 @@ export default function CallModal({
       };
 
       // Step 3: Set remote description (the caller's offer) FIRST
-      console.log('[WebRTC] RECEIVER: Step 3 - Setting remote description (caller offer)');
       await peer.setRemoteDescription(new RTCSessionDescription(incomingCall.sdp));
 
       // Step 3b: NOW add local tracks via addTrack so they slot into the
       // transceivers created by the caller's offer (not new ones).
-      console.log('[WebRTC] RECEIVER: Step 3b - Adding local tracks into offer transceivers');
       stream.getTracks().forEach((track) => {
-        console.log('[WebRTC] RECEIVER: addTrack', track.kind);
         peer.addTrack(track, stream);
       });
 
       // Step 4: Flush any ICE candidates that arrived before remote description was set
-      console.log('[WebRTC] RECEIVER: Step 4 - Flushing', pendingIceCandidatesRef.current.length, 'pending ICE candidates');
       for (const c of pendingIceCandidatesRef.current) {
         await peer.addIceCandidate(new RTCIceCandidate(c));
       }
       pendingIceCandidatesRef.current = [];
 
       // Step 5: Create answer AFTER tracks are added and remote description is set
-      console.log('[WebRTC] RECEIVER: Step 5 - Creating answer (tracks already added)');
       const answer = await peer.createAnswer();
-      console.log('[WebRTC] RECEIVER: Step 6 - Setting local description (answer)');
       await peer.setLocalDescription(answer);
 
       socket.emit('call_answer', {
@@ -430,7 +404,6 @@ export default function CallModal({
       });
       // Note: durationTimerRef is started inside onconnectionstatechange → 'connected'
     } catch (err) {
-      console.error('[Call] Failed to accept call:', err);
       cleanup();
       setCallState('idle');
     }
@@ -507,15 +480,6 @@ export default function CallModal({
     }
   }, [outgoingCall]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Detect multiple cameras (for showing flip button only on mobile) ──────
-
-  useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-      setHasMultipleCameras(videoInputs.length >= 2);
-    }).catch(() => {});
-  }, []);
-
   // ── Toggle mic / camera ───────────────────────────────────────────────────
 
   const toggleMute = () => {
@@ -562,10 +526,15 @@ export default function CallModal({
     };
 
     try {
-      // Try ideal facingMode first (works on most mobile browsers)
-      await applyNewCamera({ ...VIDEO_CONSTRAINTS, facingMode: nextFacing });
+      // Use facingMode directly — do NOT spread VIDEO_CONSTRAINTS as it would
+      // override facingMode back. Keep resolution/fps as ideals alongside.
+      await applyNewCamera({
+        facingMode: nextFacing,
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 },
+      });
     } catch (err) {
-      console.warn('[WebRTC] facingMode switch failed, trying deviceId approach:', err);
       try {
         // Fallback: enumerate devices and pick by label/index
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -577,7 +546,6 @@ export default function CallModal({
           await applyNewCamera({ deviceId: { exact: next.deviceId } });
         }
       } catch (fallbackErr) {
-        console.error('[WebRTC] Camera switch completely failed:', fallbackErr);
       }
     }
   }, [facingMode]);
