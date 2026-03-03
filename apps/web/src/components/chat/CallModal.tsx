@@ -504,6 +504,9 @@ export default function CallModal({
 
   const switchCamera = useCallback(async () => {
     const devices = videoDevicesRef.current;
+    console.log('[CAM] devices:', devices.map(d => ({ id: d.deviceId, label: d.label })));
+    console.log('[CAM] currentId:', currentDeviceIdRef.current);
+    console.log('[CAM] hasMultipleCameras:', hasMultipleCameras);
     if (devices.length < 2) return;
 
     // Find the next camera deviceId (cycle through all video devices)
@@ -537,6 +540,7 @@ export default function CallModal({
       // Update local preview
       if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
 
+      console.log('[CAM] switched to:', nextDevice.label, nextDevice.deviceId);
       // Update tracking refs and state
       currentDeviceIdRef.current = nextDevice.deviceId;
       // Determine facing mode from track label or settings
@@ -545,7 +549,8 @@ export default function CallModal({
         ? 'environment'
         : 'user';
       setFacingMode(newFacing);
-    } catch {
+    } catch (err) {
+      console.log('[CAM] exact deviceId failed:', err);
       // If exact deviceId fails, try facingMode as last resort
       const nextFacing = facingMode === 'user' ? 'environment' : 'user';
       try {
@@ -567,7 +572,7 @@ export default function CallModal({
         if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
         currentDeviceIdRef.current = track.getSettings().deviceId ?? '';
         setFacingMode(nextFacing);
-      } catch { /* camera switch unsupported on this device */ }
+      } catch (fallbackErr) { console.log('[CAM] fallback also failed:', fallbackErr); }
     }
   }, [facingMode]);
 
