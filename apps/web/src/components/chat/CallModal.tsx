@@ -63,6 +63,9 @@ export default function CallModal({
   const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const acceptingRef = useRef<boolean>(false);
   const callingRef = useRef<boolean>(false);
+  // Tracks whether we are in an active/calling/incoming state to prevent
+  // premature endCall triggered by transient ICE disconnection events.
+  const callActiveRef = useRef<boolean>(false);
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
@@ -79,6 +82,7 @@ export default function CallModal({
     pendingIceCandidatesRef.current = [];
     acceptingRef.current = false;
     callingRef.current = false;
+    callActiveRef.current = false;
   }, []);
 
   // ── Get user media ─────────────────────────────────────────────────────────
@@ -159,12 +163,17 @@ export default function CallModal({
       };
 
       peer.onconnectionstatechange = () => {
+        console.log('[WebRTC] Connection state:', peer.connectionState);
         if (peer.connectionState === 'connected') {
+          callActiveRef.current = true;
           setCallState('active');
           onStopRingtone?.(); // stop outgoing ringtone — call is now live
           durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
         }
-        if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
+        // Only end the call on terminal states, and only after we were genuinely
+        // connected. 'disconnected' during ICE negotiation is transient and must
+        // NOT tear down the peer connection or reset the mutex refs.
+        if (callActiveRef.current && ['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
           endCall(false);
         }
       };
@@ -181,6 +190,7 @@ export default function CallModal({
       if (!socket) return;
       if (callingRef.current || acceptingRef.current) return; // already in a call
       callingRef.current = true;
+      callActiveRef.current = false; // will be set true only on 'connected'
       remoteUserIdRef.current = targetUserId;
       roomIdRef.current = roomId;
       setRemoteName(targetName);
@@ -252,12 +262,16 @@ export default function CallModal({
       };
 
       peer.onconnectionstatechange = () => {
+        console.log('[WebRTC] Connection state:', peer.connectionState);
         if (peer.connectionState === 'connected') {
+          callActiveRef.current = true;
           setCallState('active');
           onStopRingtone?.();
           durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
         }
-        if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
+        // Only tear down on terminal states AFTER we were genuinely connected.
+        // 'disconnected' during ICE is transient and must not reset mutex refs.
+        if (callActiveRef.current && ['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
           endCall(false);
         }
       };
@@ -291,8 +305,7 @@ export default function CallModal({
         targetUserId: incomingCall.callerId,
         sdp: answer,
       });
-
-      durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
+      // Note: durationTimerRef is started inside onconnectionstatechange → 'connected'
     } catch (err) {
       console.error('[Call] Failed to accept call:', err);
       cleanup();
