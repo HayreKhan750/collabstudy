@@ -17,11 +17,32 @@ interface VoiceChannelBarProps {
   currentUsername: string;
 }
 
-const ICE_SERVERS = {
+const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
+  iceCandidatePoolSize: 10,
+  bundlePolicy: 'max-bundle',
+  rtcpMuxPolicy: 'require',
 };
 
 export default function VoiceChannelBar({
@@ -42,6 +63,10 @@ export default function VoiceChannelBar({
   const localStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const pendingCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
+  // Remote streams: userId → MediaStream. Stored in a ref for immediate access
+  // and mirrored into state so React re-renders the <audio> elements.
+  const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
+  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
 
   // ── Peer management ────────────────────────────────────────────────────────
 
@@ -62,12 +87,12 @@ export default function VoiceChannelBar({
     };
 
     peer.ontrack = (e) => {
-      // Attach remote audio track to a hidden audio element
-      const audio = document.createElement('audio');
-      audio.srcObject = e.streams[0];
-      audio.autoplay = true;
-      audio.dataset.voiceUserId = targetUserId;
-      document.body.appendChild(audio);
+      // Store the remote stream and trigger React re-render so the
+      // <audio> element in JSX gets the srcObject assigned via callback ref.
+      if (e.streams && e.streams[0]) {
+        remoteStreamsRef.current.set(targetUserId, e.streams[0]);
+        setRemoteStreams(new Map(remoteStreamsRef.current));
+      }
     };
 
     peer.onconnectionstatechange = () => {
@@ -83,8 +108,8 @@ export default function VoiceChannelBar({
   const cleanupPeer = (userId: string) => {
     peersRef.current.get(userId)?.close();
     peersRef.current.delete(userId);
-    // Remove injected audio element
-    document.querySelector(`audio[data-voice-user-id="${userId}"]`)?.remove();
+    remoteStreamsRef.current.delete(userId);
+    setRemoteStreams(new Map(remoteStreamsRef.current));
   };
 
   // ── Join voice channel ─────────────────────────────────────────────────────
@@ -126,6 +151,8 @@ export default function VoiceChannelBar({
     localStreamRef.current = null;
     for (const [uid] of peersRef.current) cleanupPeer(uid);
     peersRef.current.clear();
+    remoteStreamsRef.current.clear();
+    setRemoteStreams(new Map());
     // Stop recording timer
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
@@ -241,6 +268,23 @@ export default function VoiceChannelBar({
 
   return (
     <div className="mt-2 mx-2 mb-1">
+      {/* Hidden audio elements — one per remote user. Callback ref assigns
+          srcObject properly (cannot use src= attribute for MediaStream in React).
+          Rendered in React DOM so browser autoplay policies are satisfied
+          since connection starts from explicit user "Join" click. */}
+      {Array.from(remoteStreams.entries()).map(([userId, stream]) => (
+        <audio
+          key={userId}
+          autoPlay
+          playsInline
+          ref={(el) => {
+            if (el && el.srcObject !== stream) {
+              el.srcObject = stream;
+            }
+          }}
+          style={{ display: 'none' }}
+        />
+      ))}
       {/* Mic error toast */}
       {micError && (
         <div className="mb-2 flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-xl px-3 py-2 text-xs text-red-700 dark:text-red-300 shadow-sm">
