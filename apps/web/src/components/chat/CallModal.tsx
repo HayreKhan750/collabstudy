@@ -55,6 +55,7 @@ export default function CallModal({
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteUserIdRef = useRef<string>('');
@@ -83,6 +84,7 @@ export default function CallModal({
     acceptingRef.current = false;
     callingRef.current = false;
     callActiveRef.current = false;
+    remoteStreamRef.current = null;
   }, []);
 
   // ── Get user media ─────────────────────────────────────────────────────────
@@ -156,9 +158,11 @@ export default function CallModal({
 
       peer.ontrack = (e) => {
         console.log('[WebRTC] Received remote track:', e.track.kind);
-        if (remoteVideoRef.current && e.streams && e.streams[0]) {
-          console.log('[WebRTC] Assigning remote stream to video element');
-          remoteVideoRef.current.srcObject = e.streams[0];
+        if (e.streams && e.streams[0]) {
+          remoteStreamRef.current = e.streams[0];
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = e.streams[0];
+          }
         }
       };
 
@@ -256,9 +260,11 @@ export default function CallModal({
 
       peer.ontrack = (e) => {
         console.log('[WebRTC] Received remote track:', e.track.kind);
-        if (remoteVideoRef.current && e.streams && e.streams[0]) {
-          console.log('[WebRTC] Assigning remote stream to video element');
-          remoteVideoRef.current.srcObject = e.streams[0];
+        if (e.streams && e.streams[0]) {
+          remoteStreamRef.current = e.streams[0];
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = e.streams[0];
+          }
         }
       };
 
@@ -545,7 +551,15 @@ export default function CallModal({
       <div className="call-active-enter fixed inset-0 z-50 bg-slate-900 flex flex-col">
         {/* Remote video (full screen) */}
         <video
-          ref={remoteVideoRef}
+          ref={(el) => {
+            remoteVideoRef.current = el;
+            // If ontrack already fired before this element mounted (e.g. on the
+            // caller side where callState was 'calling' when the answer arrived),
+            // assign the stored stream now so it is never lost.
+            if (el && remoteStreamRef.current) {
+              el.srcObject = remoteStreamRef.current;
+            }
+          }}
           autoPlay
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
