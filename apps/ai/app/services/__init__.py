@@ -26,9 +26,9 @@ def _get_api_key() -> str:
 class GeminiService:
     """Singleton-style service; instantiate once and reuse."""
 
-    # Use the stable API (v1) model names with "models/" prefix
+    # Gemini 1.5 models were retired in late 2025 - now using Gemini 2.5
     # See: https://ai.google.dev/gemini-api/docs/models/gemini
-    CHAT_MODEL = "models/gemini-1.5-flash"
+    CHAT_MODEL = "gemini-2.0-flash-exp"  # Gemini 2.0 Flash (experimental, free tier available)
     EMBED_MODEL = "models/text-embedding-004"
 
     def __init__(self) -> None:
