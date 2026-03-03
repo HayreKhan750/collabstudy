@@ -5,8 +5,52 @@ import { io, Socket } from 'socket.io-client';
 
 import { API_URL } from '@/lib/api';
 
-const ICE_SERVERS = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
+const ICE_SERVERS: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    // Free TURN servers for NAT traversal (strong connection across networks)
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+  ],
+  iceCandidatePoolSize: 10,
+  bundlePolicy: 'max-bundle',
+  rtcpMuxPolicy: 'require',
+};
+
+// High-quality audio constraints — noise suppression, echo cancellation, no AGC distortion
+const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  sampleRate: 48000,
+  sampleSize: 16,
+  channelCount: 1, // mono for voice — cleaner than stereo for calls
+};
+
+// High-quality video constraints
+const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  width: { ideal: 1280, max: 1920 },
+  height: { ideal: 720, max: 1080 },
+  frameRate: { ideal: 30, max: 60 },
+  facingMode: 'user',
 };
 
 export type CallState = 'idle' | 'calling' | 'incoming' | 'active' | 'ended';
@@ -90,11 +134,19 @@ export default function CallModal({
 
   // ── Get user media ─────────────────────────────────────────────────────────
 
-  const getMedia = useCallback(async (): Promise<MediaStream> => {
+  const getMedia = useCallback(async (videoConstraints: MediaTrackConstraints = VIDEO_CONSTRAINTS): Promise<MediaStream> => {
     try {
       console.log('[WebRTC] Requesting camera/mic permissions...');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: AUDIO_CONSTRAINTS,
+      });
       console.log('[WebRTC] Got local media stream with', stream.getTracks().length, 'tracks');
+      // Log actual acquired constraints for debugging
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
+      if (videoTrack) console.log('[WebRTC] Video settings:', videoTrack.getSettings());
+      if (audioTrack) console.log('[WebRTC] Audio settings:', audioTrack.getSettings());
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -104,11 +156,16 @@ export default function CallModal({
       console.error('[WebRTC] Failed to get user media:', error);
       if (error instanceof DOMException) {
         if (error.name === 'NotAllowedError') {
-          console.error('[WebRTC] Camera/microphone permission DENIED by user');
           alert('Camera and microphone access is required for video calls. Please enable permissions in your browser settings.');
         } else if (error.name === 'NotFoundError') {
-          console.error('[WebRTC] No camera/microphone found on device');
           alert('No camera or microphone found. Please connect a device and try again.');
+        } else if (error.name === 'OverconstrainedError') {
+          // Device can't meet ideal constraints — fall back to basic
+          console.warn('[WebRTC] Constraints too strict, falling back to basic quality');
+          const fallback = await navigator.mediaDevices.getUserMedia({ video: true, audio: AUDIO_CONSTRAINTS });
+          localStreamRef.current = fallback;
+          if (localVideoRef.current) localVideoRef.current.srcObject = fallback;
+          return fallback;
         }
       }
       throw error;
@@ -131,11 +188,44 @@ export default function CallModal({
         const audioTrack = stream.getAudioTracks()[0];
         if (videoTrack) {
           console.log('[WebRTC] Adding video transceiver with track, sendrecv');
-          peer.addTransceiver(videoTrack, { direction: 'sendrecv', streams: [stream] });
+          const videoTransceiver = peer.addTransceiver(videoTrack, { direction: 'sendrecv', streams: [stream] });
+          // Prefer VP9 (best quality/compression), fallback to H264, then VP8
+          const videoCapabilities = RTCRtpSender.getCapabilities('video');
+          if (videoCapabilities) {
+            const preferredCodecs = [
+              ...videoCapabilities.codecs.filter(c => c.mimeType === 'video/VP9'),
+              ...videoCapabilities.codecs.filter(c => c.mimeType === 'video/H264'),
+              ...videoCapabilities.codecs.filter(c => c.mimeType === 'video/VP8'),
+              ...videoCapabilities.codecs.filter(c => !['video/VP9','video/H264','video/VP8'].includes(c.mimeType)),
+            ];
+            if (preferredCodecs.length) videoTransceiver.setCodecPreferences(preferredCodecs);
+          }
+          // Set high video bitrate: 2.5 Mbps target, 4 Mbps max
+          const videoSender = videoTransceiver.sender;
+          const videoParams = videoSender.getParameters();
+          if (!videoParams.encodings || videoParams.encodings.length === 0) videoParams.encodings = [{}];
+          videoParams.encodings[0].maxBitrate = 4_000_000;
+          videoParams.encodings[0].scaleResolutionDownBy = 1.0;
+          videoSender.setParameters(videoParams).catch(() => {});
         }
         if (audioTrack) {
           console.log('[WebRTC] Adding audio transceiver with track, sendrecv');
-          peer.addTransceiver(audioTrack, { direction: 'sendrecv', streams: [stream] });
+          const audioTransceiver = peer.addTransceiver(audioTrack, { direction: 'sendrecv', streams: [stream] });
+          // Prefer Opus — best audio codec for WebRTC (low latency, noise robust)
+          const audioCapabilities = RTCRtpSender.getCapabilities('audio');
+          if (audioCapabilities) {
+            const preferredAudioCodecs = [
+              ...audioCapabilities.codecs.filter(c => c.mimeType === 'audio/opus'),
+              ...audioCapabilities.codecs.filter(c => c.mimeType !== 'audio/opus'),
+            ];
+            if (preferredAudioCodecs.length) audioTransceiver.setCodecPreferences(preferredAudioCodecs);
+          }
+          // Set high audio bitrate: 128 kbps (music/HD voice quality)
+          const audioSender = audioTransceiver.sender;
+          const audioParams = audioSender.getParameters();
+          if (!audioParams.encodings || audioParams.encodings.length === 0) audioParams.encodings = [{}];
+          audioParams.encodings[0].maxBitrate = 128_000;
+          audioSender.setParameters(audioParams).catch(() => {});
         }
       } else {
         // Receiver must use addTrack so tracks slot into the transceivers
@@ -174,6 +264,18 @@ export default function CallModal({
           setCallState('active');
           onStopRingtone?.(); // stop outgoing ringtone — call is now live
           durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
+          // Boost sender bitrates after connection (works for both caller & receiver)
+          peer.getSenders().forEach((sender) => {
+            const params = sender.getParameters();
+            if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+            if (sender.track?.kind === 'video') {
+              params.encodings[0].maxBitrate = 4_000_000;
+              params.encodings[0].scaleResolutionDownBy = 1.0;
+            } else if (sender.track?.kind === 'audio') {
+              params.encodings[0].maxBitrate = 128_000;
+            }
+            sender.setParameters(params).catch(() => {});
+          });
         }
         // Only end the call on terminal states, and only after we were genuinely
         // connected. 'disconnected' during ICE negotiation is transient and must
@@ -276,6 +378,18 @@ export default function CallModal({
           setCallState('active');
           onStopRingtone?.();
           durationTimerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
+          // Boost sender bitrates after connection
+          peer.getSenders().forEach((sender) => {
+            const params = sender.getParameters();
+            if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+            if (sender.track?.kind === 'video') {
+              params.encodings[0].maxBitrate = 4_000_000;
+              params.encodings[0].scaleResolutionDownBy = 1.0;
+            } else if (sender.track?.kind === 'audio') {
+              params.encodings[0].maxBitrate = 128_000;
+            }
+            sender.setParameters(params).catch(() => {});
+          });
         }
         // Only tear down on terminal states AFTER we were genuinely connected.
         // 'disconnected' during ICE is transient and must not reset mutex refs.
@@ -411,9 +525,9 @@ export default function CallModal({
   const switchCamera = useCallback(async () => {
     const nextFacing = facingMode === 'user' ? 'environment' : 'user';
     try {
-      // Get new stream with the opposite camera
+      // Get new stream with the opposite camera at full quality
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: nextFacing } },
+        video: { ...VIDEO_CONSTRAINTS, facingMode: { exact: nextFacing } },
         audio: false,
       });
       const newVideoTrack = newStream.getVideoTracks()[0];
