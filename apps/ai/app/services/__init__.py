@@ -28,7 +28,7 @@ class GeminiService:
 
     # Gemini 1.5 models were retired in late 2025 - now using Gemini 2.5
     # See: https://ai.google.dev/gemini-api/docs/models/gemini
-    CHAT_MODEL = "gemini-2.0-flash-exp"  # Gemini 2.0 Flash (experimental, free tier available)
+    CHAT_MODEL = "gemini-2.5-flash"  # Gemini 2.5 Flash (latest stable model)
     EMBED_MODEL = "models/text-embedding-004"
 
     def __init__(self) -> None:
