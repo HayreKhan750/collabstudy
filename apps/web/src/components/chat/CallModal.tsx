@@ -504,9 +504,6 @@ export default function CallModal({
 
   const switchCamera = useCallback(async () => {
     const devices = videoDevicesRef.current;
-    console.log('[CAM] devices:', devices.map(d => ({ id: d.deviceId, label: d.label })));
-    console.log('[CAM] currentId:', currentDeviceIdRef.current);
-    console.log('[CAM] hasMultipleCameras:', hasMultipleCameras);
     if (devices.length < 2) return;
 
     // Find the next camera deviceId (cycle through all video devices)
@@ -540,7 +537,6 @@ export default function CallModal({
       // Update local preview
       if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
 
-      console.log('[CAM] switched to:', nextDevice.label, nextDevice.deviceId);
       // Update tracking refs and state
       currentDeviceIdRef.current = nextDevice.deviceId;
       // Determine facing mode from track label or settings
@@ -549,8 +545,7 @@ export default function CallModal({
         ? 'environment'
         : 'user';
       setFacingMode(newFacing);
-    } catch (err) {
-      console.log('[CAM] exact deviceId failed:', err);
+    } catch {
       // If exact deviceId fails, try facingMode as last resort
       const nextFacing = facingMode === 'user' ? 'environment' : 'user';
       try {
@@ -572,7 +567,7 @@ export default function CallModal({
         if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
         currentDeviceIdRef.current = track.getSettings().deviceId ?? '';
         setFacingMode(nextFacing);
-      } catch (fallbackErr) { console.log('[CAM] fallback also failed:', fallbackErr); }
+      } catch { /* camera switch unsupported on this device */ }
     }
   }, [facingMode]);
 
@@ -800,10 +795,9 @@ export default function CallModal({
               )}
             </button>
             {/* Flip camera button — only shown on devices with 2+ cameras (smartphones) */}
-            {console.log('[CAM] render: hasMultipleCameras=', hasMultipleCameras)}
             {hasMultipleCameras && (
               <button
-                onClick={() => { console.log('[CAM] button clicked'); switchCamera(); }}
+                onClick={switchCamera}
                 title={facingMode === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
                 className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all duration-150 active:scale-90"
               >
