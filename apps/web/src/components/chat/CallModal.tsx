@@ -95,6 +95,8 @@ export default function CallModal({
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const videoDevicesRef = useRef<MediaDeviceInfo[]>([]);
+  const currentDeviceIdRef = useRef<string>('');
   const [remoteName, setRemoteName] = useState('');
   const [callDuration, setCallDuration] = useState(0);
 
@@ -142,9 +144,13 @@ export default function CallModal({
       });
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      // Enumerate cameras AFTER getUserMedia — labels are only available post-permission
+      // Store current deviceId for camera switching
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) currentDeviceIdRef.current = videoTrack.getSettings().deviceId ?? '';
+      // Enumerate cameras AFTER getUserMedia — labels only available post-permission
       navigator.mediaDevices.enumerateDevices().then((devices) => {
         const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+        videoDevicesRef.current = videoInputs;
         setHasMultipleCameras(videoInputs.length >= 2);
       }).catch(() => {});
       return stream;
@@ -497,11 +503,19 @@ export default function CallModal({
   };
 
   const switchCamera = useCallback(async () => {
-    const nextFacing = facingMode === 'user' ? 'environment' : 'user';
+    const devices = videoDevicesRef.current;
+    if (devices.length < 2) return;
 
-    const applyNewCamera = async (constraints: MediaTrackConstraints) => {
+    // Find the next camera deviceId (cycle through all video devices)
+    const currentId = currentDeviceIdRef.current;
+    const currentIndex = devices.findIndex((d) => d.deviceId === currentId);
+    const nextIndex = (currentIndex + 1) % devices.length;
+    const nextDevice = devices[nextIndex];
+    if (!nextDevice) return;
+
+    try {
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: constraints,
+        video: { deviceId: { exact: nextDevice.deviceId } },
         audio: false,
       });
       const newVideoTrack = newStream.getVideoTracks()[0];
@@ -513,7 +527,7 @@ export default function CallModal({
         if (sender) await sender.replaceTrack(newVideoTrack);
       }
 
-      // Stop old video track, swap in new one
+      // Stop old video track and swap in new one
       localStreamRef.current?.getVideoTracks().forEach((t) => t.stop());
       if (localStreamRef.current) {
         localStreamRef.current.getVideoTracks().forEach((t) => localStreamRef.current!.removeTrack(t));
@@ -522,31 +536,38 @@ export default function CallModal({
 
       // Update local preview
       if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
-      setFacingMode(nextFacing);
-    };
 
-    try {
-      // Use facingMode directly — do NOT spread VIDEO_CONSTRAINTS as it would
-      // override facingMode back. Keep resolution/fps as ideals alongside.
-      await applyNewCamera({
-        facingMode: nextFacing,
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 30 },
-      });
-    } catch (err) {
+      // Update tracking refs and state
+      currentDeviceIdRef.current = nextDevice.deviceId;
+      // Determine facing mode from track label or settings
+      const settings = newVideoTrack.getSettings();
+      const newFacing = (settings as { facingMode?: string }).facingMode === 'environment'
+        ? 'environment'
+        : 'user';
+      setFacingMode(newFacing);
+    } catch {
+      // If exact deviceId fails, try facingMode as last resort
+      const nextFacing = facingMode === 'user' ? 'environment' : 'user';
       try {
-        // Fallback: enumerate devices and pick by label/index
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-        // Find a camera that is NOT the current one
-        const currentTrackLabel = localStreamRef.current?.getVideoTracks()[0]?.label ?? '';
-        const next = videoInputs.find((d) => d.label !== currentTrackLabel) ?? videoInputs[0];
-        if (next?.deviceId) {
-          await applyNewCamera({ deviceId: { exact: next.deviceId } });
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: nextFacing },
+          audio: false,
+        });
+        const track = fallbackStream.getVideoTracks()[0];
+        if (!track) return;
+        if (peerRef.current) {
+          const sender = peerRef.current.getSenders().find((s) => s.track?.kind === 'video');
+          if (sender) await sender.replaceTrack(track);
         }
-      } catch (fallbackErr) {
-      }
+        localStreamRef.current?.getVideoTracks().forEach((t) => t.stop());
+        if (localStreamRef.current) {
+          localStreamRef.current.getVideoTracks().forEach((t) => localStreamRef.current!.removeTrack(t));
+          localStreamRef.current.addTrack(track);
+        }
+        if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+        currentDeviceIdRef.current = track.getSettings().deviceId ?? '';
+        setFacingMode(nextFacing);
+      } catch { /* camera switch unsupported on this device */ }
     }
   }, [facingMode]);
 
