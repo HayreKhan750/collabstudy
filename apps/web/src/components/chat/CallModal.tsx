@@ -62,6 +62,7 @@ export default function CallModal({
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const acceptingRef = useRef<boolean>(false);
+  const callingRef = useRef<boolean>(false);
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
@@ -77,6 +78,7 @@ export default function CallModal({
     setIsCameraOff(false);
     pendingIceCandidatesRef.current = [];
     acceptingRef.current = false;
+    callingRef.current = false;
   }, []);
 
   // ── Get user media ─────────────────────────────────────────────────────────
@@ -177,6 +179,8 @@ export default function CallModal({
   const startCall = useCallback(
     async (targetUserId: string, targetName: string, roomId: string) => {
       if (!socket) return;
+      if (callingRef.current || acceptingRef.current) return; // already in a call
+      callingRef.current = true;
       remoteUserIdRef.current = targetUserId;
       roomIdRef.current = roomId;
       setRemoteName(targetName);
@@ -361,7 +365,7 @@ export default function CallModal({
   // ── React to outgoingCall prop (initiates the call) ───────────────────────
 
   useEffect(() => {
-    if (outgoingCall && callState === 'idle') {
+    if (outgoingCall && callState === 'idle' && !acceptingRef.current && !callingRef.current) {
       startCall(outgoingCall.targetUserId, outgoingCall.targetName, outgoingCall.roomId);
       onOutgoingCallHandled?.();
     }
