@@ -631,8 +631,8 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
           </motion.div>
         )}
 
-        {/* Premium Input Area */}
-        <div className="border-t border-white/10 px-6 py-5 bg-white/5 backdrop-blur-xl">
+        {/* Premium Input Area — pb-safe ensures input isn't covered by mobile keyboard */}
+        <div className="border-t border-white/10 px-4 sm:px-6 py-4 sm:py-5 bg-white/5 backdrop-blur-xl" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
           {messages.length > 0 && (
             <button
               onClick={clearHistory}

@@ -34,7 +34,7 @@ function SaveButton({ loading, label = 'Save changes' }: { loading: boolean; lab
     <button
       type="submit"
       disabled={loading}
-      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white hover:text-white text-sm font-semibold rounded-xl transition-colors"
+      className="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white hover:text-white text-sm font-semibold rounded-xl transition-colors min-h-[44px]"
     >
       {loading ? 'Saving…' : label}
     </button>
@@ -138,7 +138,7 @@ function ProfileTab({ token }: { token: string }) {
           </div>
           <div className="space-y-2">
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-            <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-white bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 rounded-xl transition-colors">
+            <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 min-h-[44px] text-sm font-medium text-slate-700 dark:text-white bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 rounded-xl transition-colors">
               {uploading ? 'Uploading…' : 'Upload photo'}
             </button>
             {avatar && (
@@ -325,27 +325,47 @@ export default function SettingsPage() {
         <h1 className="text-base font-semibold text-slate-900 dark:text-white">Settings</h1>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-10 flex gap-8">
-        {/* Sidebar tabs */}
-        <nav className="w-48 flex-shrink-0 space-y-1">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
-                tab === t.id
-                  ? 'bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
-              }`}
-            >
-              <span>{t.icon}</span>
-              {t.label}
-            </button>
-          ))}
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10 flex flex-col md:flex-row gap-4 md:gap-8">
+        {/* Mobile: horizontal scrolling pill tabs | Desktop: vertical sidebar */}
+        <nav className="md:w-48 md:flex-shrink-0">
+          {/* Mobile pill row */}
+          <div className="flex md:hidden gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all min-h-[44px] ${
+                  tab === t.id
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
+                    : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                <span>{t.icon}</span>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {/* Desktop vertical list */}
+          <div className="hidden md:flex flex-col space-y-1">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left min-h-[44px] ${
+                  tab === t.id
+                    ? 'bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                <span>{t.icon}</span>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </nav>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 rounded-2xl p-8">
+        <div className="flex-1 min-w-0 bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 rounded-2xl p-5 sm:p-8">
           {tab === 'profile' && <ProfileTab token={token} />}
           {tab === 'account' && <AccountTab token={token} />}
           {tab === 'appearance' && <AppearanceTab />}
