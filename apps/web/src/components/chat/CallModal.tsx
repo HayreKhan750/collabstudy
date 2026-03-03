@@ -111,17 +111,20 @@ export default function CallModal({
       const peer = new RTCPeerConnection(ICE_SERVERS);
       peerRef.current = peer;
 
-      // CRITICAL: Add explicit transceivers for two-way communication FIRST
+      // CRITICAL: Add explicit transceivers with tracks for two-way communication
       console.log('[WebRTC] Adding sendrecv transceivers for two-way media');
-      peer.addTransceiver('video', { direction: 'sendrecv' });
-      peer.addTransceiver('audio', { direction: 'sendrecv' });
-
-      // Add local tracks to the peer connection
-      console.log('[WebRTC] Adding', stream.getTracks().length, 'local tracks to peer connection');
-      stream.getTracks().forEach((track) => {
-        console.log('[WebRTC] Adding track:', track.kind, 'enabled:', track.enabled);
-        peer.addTrack(track, stream);
-      });
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
+      
+      if (videoTrack) {
+        console.log('[WebRTC] Adding video transceiver with track, sendrecv');
+        peer.addTransceiver(videoTrack, { direction: 'sendrecv', streams: [stream] });
+      }
+      
+      if (audioTrack) {
+        console.log('[WebRTC] Adding audio transceiver with track, sendrecv');
+        peer.addTransceiver(audioTrack, { direction: 'sendrecv', streams: [stream] });
+      }
 
       peer.onicecandidate = (e) => {
         if (e.candidate && socket && remoteUserIdRef.current) {
