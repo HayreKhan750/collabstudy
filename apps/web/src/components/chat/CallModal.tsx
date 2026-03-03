@@ -189,6 +189,8 @@ export default function CallModal({
     async (targetUserId: string, targetName: string, roomId: string) => {
       if (!socket) return;
       if (callingRef.current || acceptingRef.current) return; // already in a call
+      console.log('[WebRTC] startCall invoked — stack trace:');
+      console.trace();
       callingRef.current = true;
       callActiveRef.current = false; // will be set true only on 'connected'
       remoteUserIdRef.current = targetUserId;
@@ -378,6 +380,12 @@ export default function CallModal({
   // ── React to outgoingCall prop (initiates the call) ───────────────────────
 
   useEffect(() => {
+    console.log('[WebRTC] outgoingCall effect fired:', {
+      outgoingCall: !!outgoingCall,
+      callState,
+      accepting: acceptingRef.current,
+      calling: callingRef.current,
+    });
     if (outgoingCall && callState === 'idle' && !acceptingRef.current && !callingRef.current) {
       startCall(outgoingCall.targetUserId, outgoingCall.targetName, outgoingCall.roomId);
       onOutgoingCallHandled?.();
