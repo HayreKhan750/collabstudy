@@ -307,6 +307,7 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
         dragElastic={0.1}
         dragMomentum={false}
         dragTransition={{ bounceStiffness: 400, bounceDamping: 25 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         dragConstraints={{
           left: -window.innerWidth / 2 + 40,
           right: window.innerWidth / 2 - 40,
@@ -346,7 +347,7 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed right-0 top-0 h-full w-full sm:w-[520px] bg-white/10 dark:bg-[#0B0F19]/60 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-full max-w-[100vw] sm:w-[520px] bg-white/10 dark:bg-[#0B0F19]/60 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-50 flex flex-col overflow-x-hidden"
       >
         {/* Premium Header with Glassmorphism */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-gradient-to-r from-purple-600/20 via-purple-500/20 to-blue-600/20 backdrop-blur-xl">
@@ -373,7 +374,7 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
         </div>
 
         {/* Messages - Premium Scroll */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-6 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {messages.length === 0 && !streamingContent ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
               <motion.div
