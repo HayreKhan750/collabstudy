@@ -154,10 +154,11 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
         throw new Error(errorData.detail || `AI service error: ${response.status}`);
       }
 
-      // Handle SSE streaming
+      // Handle SSE streaming with proper chunk accumulation
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullContent = '';
+      let buffer = ''; // Accumulate incomplete chunks
 
       if (!reader) throw new Error('Response body is not readable');
 
@@ -165,32 +166,46 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        // Decode and add to buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Split by double newlines to get complete SSE events
+        const events = buffer.split('\n\n');
+        
+        // Keep the last potentially incomplete event in the buffer
+        buffer = events.pop() || '';
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.error) {
-                throw new Error(data.error);
-              } else if (data.done) {
-                // Streaming complete
-                const assistantMessage: ChatMessage = {
-                  role: 'assistant',
-                  content: fullContent,
-                  timestamp: Date.now(),
-                };
-                setMessages((prev) => [...prev, assistantMessage]);
-                setStreamingContent('');
-              } else if (data.chunk) {
-                // Append chunk to streaming content
-                fullContent += data.chunk;
-                setStreamingContent(fullContent);
+        // Process complete events
+        for (const event of events) {
+          const lines = event.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr) continue; // Skip empty data
+                
+                const data = JSON.parse(jsonStr);
+                
+                if (data.error) {
+                  throw new Error(data.error);
+                } else if (data.done) {
+                  // Streaming complete
+                  const assistantMessage: ChatMessage = {
+                    role: 'assistant',
+                    content: fullContent,
+                    timestamp: Date.now(),
+                  };
+                  setMessages((prev) => [...prev, assistantMessage]);
+                  setStreamingContent('');
+                } else if (data.chunk) {
+                  // Append chunk to streaming content
+                  fullContent += data.chunk;
+                  setStreamingContent(fullContent);
+                }
+              } catch (parseErr) {
+                // Silently skip malformed chunks - they're likely incomplete
+                console.debug('Skipping incomplete SSE chunk');
               }
-            } catch (parseErr) {
-              console.error('Failed to parse SSE data:', parseErr);
             }
           }
         }
