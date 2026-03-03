@@ -35,6 +35,21 @@ class EmbedResponse(BaseModel):
     dimensions: int
 
 
+class ChatMessage(BaseModel):
+    role: str = Field(..., description="Role: 'user' or 'assistant'")
+    content: str = Field(..., min_length=1, description="Message content")
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, description="User's current message")
+    history: list[ChatMessage] = Field(default=[], description="Previous conversation history")
+
+
+class ChatResponse(BaseModel):
+    response: str
+    message: str  # alias for response for consistency
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -57,6 +72,28 @@ async def embed(body: EmbedRequest):
     try:
         embedding = await gemini_service.embed(body.text)
         return EmbedResponse(embedding=embedding, dimensions=len(embedding))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini error: {str(e)}")
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat(body: ChatRequest):
+    """
+    Interactive AI Study Assistant chat endpoint.
+    
+    Provides a conversational AI tutor powered by Gemini that helps with:
+    - Study assistance and academic guidance
+    - Breaking down complex topics
+    - Coding help and problem-solving
+    - Encouragement and study tips
+    
+    Maintains conversation context through chat history.
+    """
+    try:
+        response = await gemini_service.chat(body.message, body.history)
+        return ChatResponse(response=response, message=response)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:

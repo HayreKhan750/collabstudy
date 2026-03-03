@@ -73,6 +73,86 @@ class GeminiService:
         )
         return result["embedding"]
 
+    async def chat(self, message: str, history: list[dict]) -> str:
+        """
+        Interactive chat with the Collabstudy AI Study Tutor.
+        
+        Args:
+            message: The user's current message
+            history: List of previous messages with 'role' and 'content' keys
+        
+        Returns:
+            The AI tutor's response as a string
+        """
+        # System prompt that defines the AI tutor's persona
+        system_instruction = """You are the Collabstudy AI Tutor. You are an encouraging, highly knowledgeable, and concise study assistant. 
+
+Your role is to:
+- Help students understand complex topics with clear, easy-to-understand explanations
+- Break down difficult problems into manageable steps
+- Provide coding or academic guidance across various subjects
+- Offer encouragement and positive reinforcement
+- Keep responses concise but comprehensive
+- Use Markdown formatting for better readability (code blocks, lists, headers, etc.)
+
+Guidelines:
+- Be friendly and supportive in your tone
+- Use examples and analogies when helpful
+- If a topic is complex, break it into smaller concepts
+- For code-related questions, provide working examples with explanations
+- If you don't know something, admit it honestly and suggest resources
+- Encourage critical thinking by asking guiding questions when appropriate
+
+Format your responses with clear Markdown:
+- Use **bold** for important terms
+- Use `code` for inline code
+- Use ```language for code blocks
+- Use bullet points or numbered lists for clarity
+- Use headers (##) to organize longer responses"""
+
+        # Create a chat session with system instruction
+        loop = asyncio.get_event_loop()
+        
+        # Build conversation history in Gemini's format
+        conversation = []
+        for msg in history:
+            conversation.append({
+                "role": "user" if msg["role"] == "user" else "model",
+                "parts": [msg["content"]]
+            })
+        
+        # Add current message
+        conversation.append({
+            "role": "user",
+            "parts": [message]
+        })
+        
+        # Create model with system instruction
+        chat_model = genai.GenerativeModel(
+            self.CHAT_MODEL,
+            system_instruction=system_instruction
+        )
+        
+        try:
+            # Generate response with conversation history
+            chat_session = chat_model.start_chat(history=conversation[:-1])  # Exclude current message
+            response = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None, partial(chat_session.send_message, message)
+                ),
+                timeout=35.0,
+            )
+        except asyncio.TimeoutError:
+            raise RuntimeError("Gemini API call timed out after 35 seconds")
+        
+        # Extract text from response
+        result = getattr(response, "text", None)
+        if not result or not result.strip():
+            raise RuntimeError(
+                "Gemini returned an empty response — the content may have been blocked by safety filters"
+            )
+        return result.strip()
+
 
 # Module-level singleton — imported by routers
 gemini_service = GeminiService()

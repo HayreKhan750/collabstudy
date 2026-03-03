@@ -8,10 +8,10 @@
     "dev:web": "pnpm --filter @collabstudy/web dev",
     "dev:api": "pnpm --filter @collabstudy/api start:dev",
     "dev:ai": "cd apps/ai && source venv/bin/activate && uvicorn main:app --reload --port 8000",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
     "db:setup": "cd packages/db && pnpm prisma db push && pnpm prisma generate",
-    "db:studio": "cd packages/db && pnpm prisma studio",
+    "db:studio": "pnpm --filter @collabstudy/db db:studio",
     "build": "turbo run build",
     "build:web": "pnpm --filter @collabstudy/web build",
     "build:api": "pnpm --filter @collabstudy/api build",
@@ -25,9 +25,6 @@
     "db:migrate:deploy": "prisma migrate deploy --schema=packages/db/prisma/schema.prisma",
     "db:migrate:status": "prisma migrate status --schema=packages/db/prisma/schema.prisma",
     "db:seed": "pnpm --filter @collabstudy/db db:seed",
-    "db:studio": "pnpm --filter @collabstudy/db db:studio",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "clean": "turbo run clean && rm -rf node_modules",
     "clean:full": "pnpm clean && rm -rf .turbo && find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
@@ -47,5 +44,9 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.15.1"
+  "packageManager": "pnpm@8.15.1",
+  "dependencies": {
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  }
 }
