@@ -800,9 +800,10 @@ export default function CallModal({
               )}
             </button>
             {/* Flip camera button — only shown on devices with 2+ cameras (smartphones) */}
+            {console.log('[CAM] render: hasMultipleCameras=', hasMultipleCameras)}
             {hasMultipleCameras && (
               <button
-                onClick={switchCamera}
+                onClick={() => { console.log('[CAM] button clicked'); switchCamera(); }}
                 title={facingMode === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
                 className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all duration-150 active:scale-90"
               >
