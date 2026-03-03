@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, PanInfo } from 'framer-motion';
+import TextareaAutosize from 'react-textarea-autosize';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -27,6 +28,9 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -91,17 +95,31 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
     }
   }, [isOpen]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading || !token) return;
+  const sendMessage = async (messageText: string, historyUpToIndex?: number) => {
+    if (!messageText.trim() || isLoading || !token) return;
+
+    // If editing, slice history at the edit point
+    const effectiveHistory = historyUpToIndex !== undefined 
+      ? messages.slice(0, historyUpToIndex)
+      : messages;
 
     const userMessage: ChatMessage = {
       role: 'user',
-      content: input.trim(),
+      content: messageText.trim(),
       timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Update messages
+    if (historyUpToIndex !== undefined) {
+      // Editing mode: replace from edit point
+      setMessages([...effectiveHistory, userMessage]);
+    } else {
+      // Normal mode: append
+      setMessages((prev) => [...prev, userMessage]);
+    }
+
     setInput('');
+    setEditingIndex(null);
     setIsLoading(true);
     setError(null);
     setStreamingContent('');
@@ -114,7 +132,7 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
       const aiServiceUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'https://collabstudyai-production.up.railway.app';
       
       // Format history for API (last 20 messages)
-      const history = messages.slice(-20).map((msg) => ({
+      const history = effectiveHistory.slice(-20).map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
@@ -191,10 +209,34 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
     }
   };
 
+  const handleSendMessage = () => {
+    sendMessage(input);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleEditMessage = (index: number) => {
+    setEditingIndex(index);
+    setEditContent(messages[index].content);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex !== null && editContent.trim()) {
+      sendMessage(editContent, editingIndex);
+    }
+  };
+
+  const handleDeleteMessage = (index: number) => {
+    // Delete user message and following AI response (if exists)
+    const newMessages = messages.filter((_, i) => i !== index && i !== index + 1);
+    setMessages(newMessages);
+    if (newMessages.length === 0) {
+      localStorage.removeItem(STORAGE_KEY);
     }
   };
 
@@ -226,8 +268,9 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
     return (
       <motion.button
         drag
+        dragElastic={0.1}
         dragMomentum={false}
-        dragElastic={0}
+        dragTransition={{ bounceStiffness: 400, bounceDamping: 25 }}
         dragConstraints={{
           left: -window.innerWidth / 2 + 40,
           right: window.innerWidth / 2 - 40,
@@ -243,8 +286,8 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
         whileTap={{ scale: 0.95 }}
         aria-label="Open AI Study Tutor"
       >
-        <span className="text-2xl group-hover:scale-110 transition-transform duration-300 select-none">✨</span>
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white" />
+        <span className="text-2xl group-hover:scale-110 transition-transform duration-300 select-none pointer-events-none">✨</span>
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white pointer-events-none" />
       </motion.button>
     );
   }
@@ -333,21 +376,90 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
             </div>
           ) : (
             <>
-              {messages.map((msg, idx) => (
+              {messages.map((msg, idx) => {
+                const isUserMessage = msg.role === 'user';
+                const isEditing = editingIndex === idx;
+                
+                return (
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'} group`}
+                  onMouseEnter={() => setHoveredMessageIndex(idx)}
+                  onMouseLeave={() => setHoveredMessageIndex(null)}
                 >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-5 py-3.5 ${
-                      msg.role === 'user'
-                        ? 'bg-gradient-to-br from-purple-600/90 to-blue-600/90 text-white shadow-lg shadow-purple-500/20'
-                        : 'bg-white/10 backdrop-blur-xl border border-white/10 text-white shadow-lg'
-                    }`}
-                  >
+                  {isUserMessage && hoveredMessageIndex === idx && !isEditing && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-1 mr-2"
+                    >
+                      <button
+                        onClick={() => handleEditMessage(idx)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                        title="Edit message"
+                      >
+                        <svg className="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMessage(idx)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 transition-all"
+                        title="Delete message"
+                      >
+                        <svg className="w-3.5 h-3.5 text-white/70 hover:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </motion.div>
+                  )}
+                  
+                  {isEditing ? (
+                    <div className="max-w-[85%] w-full">
+                      <div className="rounded-2xl bg-[#1E1F22] border border-purple-500/50 p-3">
+                        <TextareaAutosize
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSaveEdit();
+                            }
+                            if (e.key === 'Escape') setEditingIndex(null);
+                          }}
+                          autoFocus
+                          minRows={2}
+                          maxRows={10}
+                          className="w-full bg-transparent text-white text-sm focus:outline-none resize-none"
+                        />
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10">
+                          <button
+                            onClick={handleSaveEdit}
+                            className="px-3 py-1.5 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-xs rounded-lg transition-all"
+                          >
+                            Save & Submit
+                          </button>
+                          <button
+                            onClick={() => setEditingIndex(null)}
+                            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-all"
+                          >
+                            Cancel
+                          </button>
+                          <span className="text-[10px] text-white/40 ml-auto">Enter to save • Esc to cancel</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-5 py-3.5 ${
+                        isUserMessage
+                          ? 'bg-gradient-to-br from-purple-600/90 to-blue-600/90 text-white shadow-lg shadow-purple-500/20'
+                          : 'bg-white/10 backdrop-blur-xl border border-white/10 text-white shadow-lg'
+                      }`}
+                    >
                     {msg.role === 'assistant' ? (
                       <div className="prose prose-sm prose-invert max-w-none">
                         <ReactMarkdown
@@ -378,9 +490,11 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
                     ) : (
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     )}
-                  </div>
+                    </div>
+                  )}
                 </motion.div>
-              ))}
+              );
+              })}
               {streamingContent && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -446,36 +560,41 @@ export default function AIAssistantPanelPremium({ isOpen, onClose }: AIAssistant
               Clear conversation
             </button>
           )}
-          <div className="flex gap-3">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask me anything..."
-              disabled={isLoading}
-              rows={1}
-              className="flex-1 resize-none rounded-xl px-4 py-3.5 bg-white/5 backdrop-blur-xl border border-white/10 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 text-white placeholder-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!input.trim() || isLoading}
-              className="px-5 py-3.5 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:shadow-none flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span className="hidden sm:inline text-sm">Sending</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                  <span className="hidden sm:inline text-sm">Send</span>
-                </>
-              )}
-            </button>
+          {/* Ultra-Premium Gemini-Style Input Pill */}
+          <div className="relative">
+            <div className="rounded-3xl bg-[#1E1F22] border border-white/10 shadow-inner overflow-hidden">
+              <div className="flex items-end gap-2 px-4 py-3">
+                <TextareaAutosize
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask me anything..."
+                  disabled={isLoading}
+                  minRows={1}
+                  maxRows={6}
+                  className="flex-1 resize-none bg-transparent text-white placeholder-white/40 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm leading-relaxed"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!input.trim() || isLoading}
+                  className={`flex-shrink-0 p-2.5 rounded-xl transition-all duration-200 ${
+                    input.trim() && !isLoading
+                      ? 'bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50'
+                      : 'bg-white/5 opacity-50 cursor-not-allowed'
+                  }`}
+                  aria-label="Send message"
+                >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
           <p className="text-xs text-white/40 mt-2.5 flex items-center gap-1">
             <kbd className="px-2 py-0.5 bg-white/10 backdrop-blur-xl border border-white/10 rounded text-xs">Enter</kbd>

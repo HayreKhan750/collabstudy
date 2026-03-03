@@ -114,11 +114,21 @@ Format your responses with clear Markdown:
         loop = asyncio.get_event_loop()
         
         # Build conversation history in Gemini's format
+        # Convert Pydantic models to dicts if needed
         conversation = []
         for msg in history:
+            # Handle both dict and Pydantic model formats
+            if isinstance(msg, dict):
+                role = msg["role"]
+                content = msg["content"]
+            else:
+                # Pydantic model - use attribute access
+                role = msg.role
+                content = msg.content
+            
             conversation.append({
-                "role": "user" if msg["role"] == "user" else "model",
-                "parts": [msg["content"]]
+                "role": "user" if role == "user" else "model",
+                "parts": [content]
             })
         
         # Create model with system instruction
@@ -185,11 +195,21 @@ Format your responses with clear Markdown:
         loop = asyncio.get_event_loop()
         
         # Build conversation history in Gemini's format
+        # Convert Pydantic models to dicts if needed
         conversation = []
         for msg in history:
+            # Handle both dict and Pydantic model formats
+            if isinstance(msg, dict):
+                role = msg["role"]
+                content = msg["content"]
+            else:
+                # Pydantic model - use attribute access
+                role = msg.role
+                content = msg.content
+            
             conversation.append({
-                "role": "user" if msg["role"] == "user" else "model",
-                "parts": [msg["content"]]
+                "role": "user" if role == "user" else "model",
+                "parts": [content]
             })
         
         # Add current message
