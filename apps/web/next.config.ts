@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+    eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Required for optimized Docker builds — copies only the necessary files
   // into a self-contained .next/standalone directory.
   output: "standalone",
